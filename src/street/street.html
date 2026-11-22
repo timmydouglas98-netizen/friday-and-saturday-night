@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Friday &amp; Saturday Night — The Strip</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style id="fsn-fonts">
+/* @@SHARED_FONTS@@ */
+</style>
+<style>
+:root {
+  --ink: #2a1c18; --cream: #fff3d6; --paper: #fbf4e4; --red: #c8352b; --navy: #1e3d93;
+  --gold: #f0b93a; --pink: #ff5fa2; --teal: #62e8de;
+  --f-toon: "Caprasimo", "Cooper Black", "Bookman Old Style", Georgia, serif;
+  --f-ui: "Oswald", "Arial Narrow", Arial, sans-serif;
+  --f-osd: "VT323", "Courier New", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; font-family: var(--f-ui); -webkit-user-select: none; user-select: none; }
+#stage { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #141942; }
+#zoom { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transition: transform .75s cubic-bezier(.5,0,.75,.25); }
+#stage.enter-video #zoom { transform-origin: 31% 62%; transform: scale(2.45); }
+#stage.enter-karaoke #zoom { transform-origin: 77% 62%; transform: scale(2.45); }
+.weave { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; animation: weave 2s steps(1) infinite; }
+.weave canvas, .weave svg { position: absolute; top: 0; left: 0; display: block; width: 1920px; height: 1080px; }
+@keyframes weave { 0% { transform: translate(-.35px,-.4px); } 17% { transform: translate(.35px,-.25px); } 33% { transform: translate(.4px,.3px); } 50% { transform: translate(-.4px,.2px); } 67% { transform: translate(.5px,-.3px); } 83% { transform: translate(-.25px,-.1px); } }
+#oSky { width: 1920px; height: 1080px; }
+.pan { position: absolute; top: 0; left: 0; width: 3840px; height: 640px; animation: cloudPan 760s linear infinite; }
+.pan canvas { position: absolute; top: 0; left: 0; width: 1920px !important; height: 640px !important; }
+.pan #oCloudB { left: 1920px; }
+@keyframes cloudPan { from { transform: translate3d(0,0,0); } to { transform: translate3d(-1920px,0,0); } }
+.rain { position: absolute; left: -25%; right: -25%; top: -25%; bottom: -25%; transform: rotate(9deg); pointer-events: none; }
+.rain i { position: absolute; left: 0; right: 0; bottom: 0; display: block; background-repeat: repeat; }
+.rain.near i { top: -320px; background-size: 320px 320px; animation: fallNear .35s steps(4) infinite; }
+.rain.far i { top: -220px; background-size: 220px 220px; animation: fallFar .52s steps(6) infinite; opacity: .55; }
+@keyframes fallNear { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,320px,0); } }
+@keyframes fallFar { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,220px,0); } }
+.grain { position: absolute; top: -128px; left: -128px; right: -128px; bottom: -128px; pointer-events: none; opacity: .14; background-size: 256px 256px; animation: grain .5s steps(1) infinite; z-index: 40; }
+@keyframes grain { 0% { transform: translate(0,0); } 17% { transform: translate(-61px,37px); } 33% { transform: translate(43px,-89px); } 50% { transform: translate(-97px,-21px); } 67% { transform: translate(23px,71px); } 83% { transform: translate(79px,-49px); } }
+.vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 41; background: radial-gradient(ellipse 78% 72% at 50% 48%, rgba(0,0,0,0) 60%, rgba(16,8,28,.45) 100%); }
+#fade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0c0a18; pointer-events: none; opacity: 1; transition: opacity .45s; z-index: 60; }
+#fade.off { opacity: 0; }
+
+/* Animated cels */
+.n-flick { animation: nflick 9s steps(1) infinite; }
+@keyframes nflick { 0%, 90% { opacity: 1; } 91% { opacity: .3; } 92% { opacity: 1; } 94% { opacity: .5; } 95%, 100% { opacity: 1; } }
+.n-buzz { animation: nbuzz 5.3s steps(1) infinite; }
+@keyframes nbuzz { 0%, 70% { opacity: 1; } 71% { opacity: .5; } 73% { opacity: .95; } 74% { opacity: .6; } 77%, 100% { opacity: 1; } }
+.disco { animation: disco 2.4s steps(1) infinite; }
+@keyframes disco { 0% { fill: #ff7ab0; opacity: .22; } 25% { fill: #62e8de; opacity: .16; } 50% { fill: #ffc857; opacity: .24; } 75% { fill: #b48cff; opacity: .18; } }
+#vDoor, #kDoor { transition: transform .42s steps(5); transform-box: fill-box; transform-origin: 0 50%; }
+#stage.open-video #vDoor { transform: scaleX(.12); }
+#stage.open-karaoke #kDoor { transform: scaleX(.12); }
+
+/* Interactive storefront plaques */
+.clock { position: absolute; top: 34px; right: 54px; z-index: 20; font-family: var(--f-toon); font-size: 36px; color: var(--cream);
+  text-shadow: 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink), 2px 4px 0 var(--ink); }
+/* the selected shop is lit (door glow, the other shop in shadow); one caption sits below the kerb */
+.shade { opacity: 0; transition: opacity .35s; }
+.shade.on { opacity: .45; }
+.dglow { opacity: 0; transition: opacity .35s; }
+.dglow.on { opacity: 1; }
+.dry .rain { display: none; }
+.hit { position: absolute; top: 120px; height: 700px; z-index: 22; cursor: pointer; }
+#caption { position: absolute; left: 50%; bottom: 92px; width: 1240px; margin-left: -620px; z-index: 25; display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center;
+  padding: 18px 34px 20px; background: var(--paper); color: var(--ink); border: 5px solid var(--ink); border-radius: 16px; box-shadow: 0 0 0 6px var(--gold), 0 0 0 11px var(--ink), 12px 16px 0 rgba(10,4,18,.6); cursor: pointer; }
+#caption .lft { -webkit-box-flex: 0; flex: 0 0 auto; padding-right: 34px; margin-right: 34px; border-right: 3px solid rgba(42,28,24,.18); }
+#caption .k { font-weight: 600; font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+#caption h2 { margin: 2px 0 0; font-family: var(--f-toon); font-weight: 400; font-size: 46px; line-height: 1.05; color: var(--navy); white-space: nowrap; }
+#caption.karaoke h2 { color: #7d1a29; }
+#caption p { margin: 0; font-size: 27px; color: #5b4d3f; line-height: 1.3; }
+#caption .arrow { position: absolute; top: 50%; margin-top: -24px; width: 48px; height: 48px; line-height: 44px; text-align: center; font-size: 26px; color: var(--cream);
+  background: var(--ink); border-radius: 50%; }
+#caption .arrow.l { left: -74px; } #caption .arrow.r { right: -74px; }
+.hint { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; z-index: 25; font-size: 28px; font-weight: 500; letter-spacing: .04em;
+  color: var(--cream); text-shadow: 2px 2px 0 var(--ink), 0 0 12px rgba(10,4,14,.9); }
+#toast { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); padding: 14px 30px; background: var(--paper); color: var(--ink);
+  border: 4px solid var(--ink); border-radius: 12px; box-shadow: 6px 8px 0 rgba(10,4,18,.55); font-family: var(--f-toon); font-size: 32px; z-index: 50; }
+#toast[hidden] { display: none; }
+</style>
+<body>
+<div id="stage" data-fsn="fsn-street">
+  <div id="zoom">
+    <div class="weave">
+      <canvas id="oSky" width="960" height="540"></canvas>
+      <div class="pan"><canvas id="oCloudA" width="1920" height="640"></canvas><canvas id="oCloudB" width="1920" height="640"></canvas></div>
+      <canvas id="oPlate" width="1920" height="1080"></canvas>
+      <svg id="oCels" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="Friday Night Video and Saturday Night Karaoke side by side on the strip"></svg>
+    </div>
+    <div class="rain far"><i></i></div>
+    <div class="rain near"><i></i></div>
+  </div>
+  <div class="clock" id="oClock"></div>
+  <div class="hit" id="hitVideo" style="left:0;width:960px"></div>
+  <div class="hit" id="hitKaraoke" style="left:960px;width:960px"></div>
+  <div id="caption"><span class="arrow l">◄</span><div class="lft"><div class="k" id="cK"></div><h2 id="cTitle"></h2></div><p id="cSub"></p><span class="arrow r">►</span></div>
+  <div class="hint" id="hint"></div>
+  <div id="toast" hidden></div>
+  <div class="grain" id="grain"></div>
+  <div class="vig"></div>
+  <div id="fade"></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var APP_VERSION = "1.0.2";
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function ljson(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+
+  /* @@SHARED_VENUE_BRIDGE@@ */
+  /* @@SHARED_ART_KIT@@ */
+  /* @@SHARED_WORLD@@ */
+  /* @@SHARED_UI@@ */
+
+  var SPINES = ["#c4313d", "#1e3d93", "#f2efe6", "#1b1b22", "#e2b33c", "#2f7a52", "#6b3f8c", "#d96b2b", "#3b8bc4", "#e7e2d2"];
+  var NEON = { pink: "#ff5fa2", teal: "#62e8de", amber: "#ffc857", red: "#ff5a4d" };
+
+  function splitName(name) {
+    var w = String(name || "").replace(/\s+/g, " ").trim().split(" ");
+    if (w.length < 2) return ["", w[0] || ""];
+    var last = w.pop(); return [w.join(" "), last];
+  }
+  function fitSize(txt, maxW, maxSize, k) { return Math.max(16, Math.min(maxSize, Math.floor(maxW / (Math.max(1, txt.length) * k)))); }
+  function neonText(x, y, size, txt, col, fam, ex) {
+    var a = ' font-family="' + (fam || YT) + '" font-size="' + size + '" text-anchor="middle" x="' + x + '" y="' + y + '"' + (ex || ""), t = esc(txt);
+    return "<text" + a + ' fill="none" stroke="' + col + '" stroke-width="' + n1(size * .34) + '" stroke-opacity=".14" stroke-linejoin="round">' + t + "</text>" +
+      "<text" + a + ' fill="none" stroke="' + col + '" stroke-width="' + n1(size * .16) + '" stroke-opacity=".3" stroke-linejoin="round">' + t + "</text>" +
+      "<text" + a + ' fill="' + cmix(col, "#ffffff", .78) + '" stroke="' + col + '" stroke-width="' + n1(Math.max(1.5, size * .045)) + '">' + t + "</text>";
+  }
+
+  var fnvPrefs = ljson("fnv-prefs", {}) || {};
+  var snkPrefs = ljson("snk-prefs", {}) || {};
+  var videoName = (typeof fnvPrefs.storeName === "string" && fnvPrefs.storeName.trim()) ? fnvPrefs.storeName.trim().slice(0, 40) : "Friday Night Video";
+  var barName = (typeof snkPrefs.barName === "string" && snkPrefs.barName.trim()) ? snkPrefs.barName.trim().slice(0, 40) : "Saturday Night Karaoke";
+  var fnvProg = ljson("fnv-progress", {}) || {};
+  var snkWall = ljson("snk-wall", []) || [];
+  var cwCount = Object.keys(fnvProg).filter(function (k) { return k.indexOf("ep:") !== 0; }).length;
+
+  var SHOPS = {
+    video: { k: "Left door · Movies & TV", t: videoName,
+      s: cwCount ? cwCount + (cwCount === 1 ? " tape" : " tapes") + " in Continue Watching — step in to pick up where you left off." : "Browse the shelves, rent a tape, or ask the clerk." },
+    karaoke: { k: "Right door · Open mic", t: barName,
+      s: Array.isArray(snkWall) && snkWall.length ? snkWall.length + (snkWall.length === 1 ? " polaroid" : " polaroids") + " on the regulars' wall — the songbook's ready." : "Pick a song, hand Rhonda a slip, and sing." }
+  };
+
+  // The Strip is the same block you see from each shop's own doorstep: the video store under its shingled mansard with
+  // red channel letters and its pole sign out front on the left, an alley, then the two-storey brick bar with the neon
+  // board, the striped awning and a streetlight on the corner.
+  function buildPlateSVG(P) {
+    var o = "", r = rand(43), x, y;
+    // far skyline
+    var c1 = Hz(P, Sc(P, "#545276"), .45);
+    x = -20;
+    while (x < 1940) {
+      var w = 60 + r() * 90, h = 150 + r() * 190;
+      o += R(x, 760 - h, w, h, c1);
+      if (P.lit) for (var wy = 760 - h + 14; wy < 700; wy += 18) for (var wx = x + 8; wx < x + w - 10; wx += 14) if (r() < .22) o += R(wx, wy, 5, 7, "#ffd98c", op(".7"));
+      x += w + 4 + r() * 14;
+    }
+    // --- Friday Night Video (x 260..940) ---
+    var X0 = 260, X1 = 940;
+    o += R(X0 - 4, 354, X1 - X0 + 8, 12, Tc(P, OB.cap));
+    var mL = Mc(P, OB.mansard), mD = Sc(P, OB.mansard);
+    o += R(X0, 366, X1 - X0, 92, mL);
+    for (y = 374; y < 456; y += 10) { o += R(X0, y, X1 - X0, 2.5, mD, op(".65")); for (x = X0 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) o += R(x, y + 2, 1.2, 8, mD, op(".35")); }
+    o += R(X0 - 4, 458, X1 - X0 + 8, 12, Lc(P, OB.trim)) + R(X0, 470, X1 - X0, 16, Sc(P, OB.soffit));
+    o += R(X0, 486, X1 - X0, 274, cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .32));
+    // windows full of tapes, and the door bay
+    function tapes(x0, w) {
+      var s = R(x0, 540, w, 180, Sc(P, OB.bronze)) + R(x0 + 8, 548, w - 16, 164, "#f3d489");
+      for (var yy = 556; yy < 702; yy += 34) { s += R(x0 + 8, yy + 26, w - 16, 4, "#8a6a3c"); for (var xx = x0 + 14; xx < x0 + w - 16; xx += 10 + r() * 3) s += R(xx, yy + 2, 7, 24, SPINES[Math.floor(r() * SPINES.length)]); }
+      return s + Pg([x0 + 8, 548, x0 + 70, 548, x0 + 8, 640], "#ffffff", op(".12"));
+    }
+    o += tapes(290, 220) + tapes(690, 220);
+    o += R(540, 548, 120, 212, Sc(P, OB.bronze)) + R(548, 556, 104, 204, "#ffe2a6");
+    o += R(X1 - 20, 486, 20, 274, Sc(P, OB.column));
+    // the pole sign out front (posts and frame; the faces are cels)
+    var post = "#5d606c";
+    [92, 196].forEach(function (px) { o += R(px, 300, 18, 492, Sc(P, post)) + R(px, 300, 6, 492, Lc(P, post)); });
+    o += '<rect x="34" y="106" width="244" height="198" rx="12" fill="' + Sc(P, "#2c2832") + '"/>' + R(50, 312, 212, 86, Sc(P, "#2c2832"));
+    // alley (940..980)
+    o += R(940, 470, 40, 290, Hz(P, Sc(P, "#3a3648"), .15));
+    for (x = 942; x < 978; x += 12) o += R(x, 650, 10, 110, Sc(P, OB.fence));
+    // --- Saturday Night Karaoke (x 980..1880): two storeys of brick ---
+    var bL = cmix(Wc(P, OB.brick, .35), Sc(P, OB.brick), .5), bD = Sc(P, "#7c4636");
+    o += R(980, 180, 900, 580, bL);
+    for (y = 188; y < 760; y += 14) { o += R(980, y, 900, 1.5, bD, op(".45")); }
+    o += R(972, 162, 916, 20, Tc(P, OB.cap)) + R(976, 182, 908, 6, Sc(P, "#5a3a30"));
+    // upstairs: one flat with the lamp still on
+    [[1080, false], [1290, true], [1500, false], [1710, false]].forEach(function (wv) {
+      var wx2 = wv[0], lit = wv[1] && P.lit;
+      o += R(wx2 - 8, 198, 96, 128, Lc(P, OB.trim)) + R(wx2, 206, 80, 112, lit ? "#f2c56b" : Sc(P, "#2e3448"));
+      if (lit) o += Pg([wx2, 206, wx2 + 34, 206, wx2 + 22, 318, wx2, 318], "#b9475a", op(".85")) + Pg([wx2 + 80, 206, wx2 + 50, 206, wx2 + 60, 318, wx2 + 80, 318], "#b9475a", op(".85"));
+      else o += Pg([wx2, 206, wx2 + 50, 206, wx2, 266], "#55607c", op(".5"));
+      o += R(wx2, 260, 80, 4, Lc(P, OB.trim)) + R(wx2 + 38, 206, 4, 112, Lc(P, OB.trim)) + R(wx2 - 12, 326, 104, 8, Tc(P, OB.cap));
+    });
+    o += '<rect x="1030" y="346" width="800" height="140" rx="10" fill="' + Sc(P, "#2a2230") + '" stroke="#2a1c18" stroke-width="4"/>';
+    for (x = 1010; x < 1850; x += 42) {
+      var c = Math.round((x - 1010) / 42) % 2 ? "#e8d6b4" : "#a8323e";
+      o += Pg([x + 6, 504, x + 48, 504, x + 42, 548, x, 548], Mc(P, c)) + El(x + 21, 548, 21, 8, Mc(P, c));
+    }
+    o += R(1036, 574, 340, 128, "#3a2a22") + R(1044, 582, 324, 112, "#f0b860") + R(1044, 582, 324, 112, "#7a2f3a", op(".48"));
+    o += R(1420, 548, 128, 212, "#3a2a22") + R(1428, 556, 112, 204, "#f2b25c");
+    o += R(1590, 574, 240, 128, "#3a2a22") + R(1598, 582, 224, 112, "#f7e9c8");
+    // the streetlight on the corner
+    var lc = Sc(P, "#4a4c56");
+    o += R(1892, 236, 12, 532, lc) + R(1892, 236, 4, 532, Lc(P, "#6a6c78")) + Pt("M1904,244 Q1904,200 1846,196 L1800,196 L1800,208 L1844,208 Q1888,212 1892,244 Z", lc) + Pt("M1782,192 L1846,192 L1836,212 L1792,212 Z", Sc(P, "#3a3c46"));
+    // footpath and lot (wet only when it's raining)
+    o += R(-10, 760, 1940, 46, wetC(P, Mc(P, OB.concrete))) + R(-10, 802, 1940, 10, Sc(P, OB.concrete));
+    o += '<defs><linearGradient id="rd" x1="0" y1="812" x2="0" y2="1080" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="' + wetC(P, Mc(P, OB.road)) + '"/><stop offset="1" stop-color="' + wetC(P, Mc(P, "#363644")) + '"/></linearGradient></defs>';
+    o += R(-10, 812, 1940, 280, "url(#rd)");
+    var k = P.wet ? 1 : .35;
+    o += smear(600, 814, 360, 220, "#ffd38c", .3 * k, r) + smear(400, 814, 220, 160, "#ffd38c", .2 * k, r) + smear(150, 814, 220, 170, "#fff0c8", .2 * k, r) +
+      smear(1320, 814, 420, 230, NEON.pink, .3 * k, r) + smear(1520, 814, 340, 210, NEON.teal, .24 * k, r);
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' + o + "</svg>";
+  }
+
+  function buildCelsSVG(P) {
+    var o = "", lit = P.lit;
+    // the video store's channel letters on the mansard (they glow from dusk on, like at the store)
+    var fs = fitSize(videoName, 620, 64, .52), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9");
+    if (lit) o += '<text x="600" y="436" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(videoName) + "</text>";
+    o += '<text x="604" y="442" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(videoName) + "</text>";
+    o += '<text x="600" y="436" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(videoName) + "</text>";
+    // OPEN, over the door rather than across the tapes
+    o += '<g class="n-flick">' + neonText(600, 532, 26, "OPEN", NEON.red, OSW, ' font-weight="600" letter-spacing="4"') + "</g>";
+    o += '<g id="vDoor"><rect x="548" y="556" width="104" height="204" fill="#1e3d93"' + ink(3) + "/>" + R(560, 574, 80, 104, "#fff0c8", ink(2.5)) + R(632, 676, 8, 28, "#f0b93a", ink(1.5)) + "</g>";
+    // the pole sign's faces
+    var fn = splitName(videoName);
+    if (lit) o += halo(156, 205, 190, 130, "#fff0c8", .45);
+    o += '<rect x="46" y="118" width="220" height="174" rx="8" fill="#fff3cf"' + ink(3) + "/>" + R(46, 118, 220, 30, "#c8352b", ink(3));
+    o += Tx(156, 139, 14, "MOVIES · TV · LATE NIGHT", "#fff3d6", ' font-weight="600" letter-spacing="2"', OSW);
+    if (fn[0]) o += Tx(156, 190, fitSize(fn[0].toUpperCase(), 196, 30, .62), esc(fn[0].toUpperCase()), "#1e3d93", ' font-weight="600" letter-spacing="1"', OSW);
+    o += Tx(156, fn[0] ? 262 : 240, fitSize(fn[1], 196, fn[0] ? 66 : 80, .7), esc(fn[1].toUpperCase()), "#d2263a", ' stroke="#2a1c18" stroke-width="2"');
+    o += '<rect x="60" y="322" width="192" height="66" fill="#f4ead2"' + ink(2.5) + "/>";
+    o += Tx(156, 350, 18, "OPEN TIL MIDNIGHT", "#1b1b22", ' font-weight="600" letter-spacing="2"', OSW) + Tx(156, 377, 18, "KARAOKE NEXT DOOR", "#c8352b", ' font-weight="600" letter-spacing="2"', OSW);
+    // the bar's neon
+    var bn = splitName(barName);
+    if (bn[0]) {
+      o += '<g class="n-buzz">' + neonText(1430, 404, fitSize(bn[0], 680, 54, .54), bn[0], NEON.pink) + "</g>";
+      var up = bn[1].toUpperCase();
+      o += '<g class="n-flick">' + neonText(1430, 466, fitSize(up, 640, 58, .76), up, NEON.teal, OSW, ' font-weight="600" letter-spacing="9"') + "</g>";
+    } else {
+      o += '<g class="n-flick">' + neonText(1430, 444, fitSize(bn[1], 680, 88, .58), bn[1], NEON.pink) + "</g>";
+    }
+    [[1100, 1], [1168, .88], [1290, 1.05], [1330, .9]].forEach(function (h) { o += Ci(h[0], 652, 12 * h[1], "#2a1622", op(".85")) + Pt("M" + (h[0] - 30 * h[1]) + ",694 Q" + h[0] + ",662 " + (h[0] + 30 * h[1]) + ",694 Z", "#2a1622", op(".85")); });
+    o += '<rect class="disco" x="1044" y="582" width="324" height="112"/>';
+    o += '<g id="kDoor"><rect x="1428" y="556" width="112" height="204" fill="#1f5a5c"' + ink(3) + "/>" + Ci(1484, 624, 24, "#ffcf7a", ink(3)) + R(1442, 676, 8, 28, "#d9a441", ink(1.5)) + "</g>";
+    o += Tx(1710, 622, 26, "TONIGHT", "#a8323e") + Tx(1710, 650, 22, "OPEN MIC", "#1b1b22", ' font-weight="600" letter-spacing="2"', OSW) + Tx(1710, 676, 15, "ALL VOICES WELCOME", "#5f5a4e", ' font-weight="500"', OSW);
+    // the streetlight
+    if (lit) o += halo(1814, 214, 120, 70, "#ffe2a6", .5 * P.warm) + Pg([1792, 212, 1836, 212, 1900, 800, 1720, 800], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
+    o += El(1814, 211, 22, 5, lit ? "#fff3cf" : "#c9c4b8");
+    // which shop you're at: the other one falls into shadow, and light spills from your door
+    o += '<g class="shade" id="shadeVideo">' + R(34, 106, 244, 198, "#0a0818") + R(50, 312, 212, 86, "#0a0818") + R(92, 398, 18, 394, "#0a0818") + R(196, 398, 18, 394, "#0a0818") + R(92, 304, 18, 8, "#0a0818") + R(196, 304, 18, 8, "#0a0818") + R(254, 352, 692, 410, "#0a0818") + "</g>";
+    o += '<g class="shade" id="shadeKaraoke">' + R(970, 160, 920, 602, "#0a0818") + R(1886, 230, 22, 540, "#0a0818") + "</g>";
+    // light spilling out of the open-for-business door onto the footpath
+    o += '<g class="dglow" id="glowVideo">' + R(548, 556, 104, 204, "#fff2c8", op(".22")) + Pg([548, 760, 652, 760, 760, 812, 440, 812], "#ffe2a6", op(".28")) + El(600, 812, 200, 18, "#ffd38c", op(".3")) + "</g>";
+    o += '<g class="dglow" id="glowKaraoke">' + R(1428, 556, 112, 204, "#ffd9b0", op(".18")) + Pg([1428, 760, 1540, 760, 1650, 812, 1318, 812], "#ffc8a0", op(".28")) + El(1484, 812, 200, 18, "#ffb8c8", op(".3")) + "</g>";
+    return o;
+  }
+
+  function fit() {
+    var w = window.innerWidth || 1920, h = window.innerHeight || 1080, s = Math.min(w / 1920, h / 1080);
+    $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
+  }
+  function updateClock() { $("oClock").textContent = UI.clock(); }
+
+  var sel = (function () {
+    try { var v = localStorage.getItem("fsn-last-venue"); if (v === "video" || v === "karaoke") return v; } catch (e) {}
+    return new Date().getDay() === 6 ? "karaoke" : "video";
+  })();
+  var entering = false, backArmed = 0, toastT = null;
+  function showToast(txt) {
+    var el = $("toast"); el.textContent = txt; el.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 2800);
+  }
+  function renderSel() {
+    var s = SHOPS[sel], cap = $("caption");
+    $("cK").textContent = s.k; $("cTitle").textContent = s.t; $("cSub").textContent = s.s;
+    cap.className = sel;
+    function tog(id, on) { var el = document.getElementById(id); if (el) el.setAttribute("class", el.getAttribute("class").replace(/\s*\bon\b/g, "") + (on ? " on" : "")); }
+    tog("shadeVideo", sel !== "video"); tog("shadeKaraoke", sel !== "karaoke");
+    tog("glowVideo", sel === "video"); tog("glowKaraoke", sel === "karaoke");
+  }
+  function enter(venue) {
+    if (entering) return;
+    entering = true; sel = venue; renderSel();
+    var st = $("stage");
+    st.classList.add("open-" + venue);
+    setTimeout(function () { st.classList.add("enter-" + venue); }, 280);
+    setTimeout(function () { $("fade").classList.remove("off"); }, 540);
+    setTimeout(function () { FSN.go(venue); }, 900);
+  }
+
+  document.addEventListener("keydown", function (e) {
+    var k = e.keyCode;
+    if (entering) return;
+    if (k === 37) { sel = "video"; renderSel(); e.preventDefault(); }
+    else if (k === 39) { sel = "karaoke"; renderSel(); e.preventDefault(); }
+    else if (k === 13) { enter(sel); e.preventDefault(); }
+    else if (k === 10009 || k === 27) {
+      if (Date.now() - backArmed < 3000) { try { tizen.application.getCurrentApplication().exit(); } catch (x) {} }
+      else { backArmed = Date.now(); showToast("Press Back again to exit"); }
+      e.preventDefault();
+    }
+  });
+  function pickOrEnter(v) { if (entering) return; if (sel === v) enter(v); else { sel = v; renderSel(); } }
+  $("hitVideo").addEventListener("click", function () { pickOrEnter("video"); });
+  $("hitKaraoke").addEventListener("click", function () { pickOrEnter("karaoke"); });
+  $("caption").addEventListener("click", function () { enter(sel); });
+  window.addEventListener("resize", fit);
+
+  // paint the scene in the street's shared light and weather
+  function paint() {
+    var P = WORLD.look();
+    $("stage").classList.toggle("dry", !P.wet);
+    function yes() { return true; }
+    svgToCanvas(skySVG(P), $("oSky"), yes, function () { texturize($("oSky"), .3, false); });
+    svgToCanvas(cloudsSVG(P), $("oCloudA"), yes, function () { texturize($("oCloudA"), .45, true); try { var g = $("oCloudB").getContext("2d"); g.clearRect(0, 0, 1920, 640); g.drawImage($("oCloudA"), 0, 0); } catch (e) {} });
+    svgToCanvas(buildPlateSVG(P), $("oPlate"), yes, function () { texturize($("oPlate"), .38, true, true); });
+    $("oCels").innerHTML = buildCelsSVG(P);
+    renderSel();
+  }
+  fit(); updateClock();
+  setInterval(updateClock, 30000);
+  $("hint").innerHTML = UI.hints([["◄ ►", "walk between doors"], ["OK", "step inside"], ["BACK", "exit"]]);
+  paint();
+  WORLD.refresh(paint);
+  setInterval(function () { if (!entering) WORLD.refresh(paint); }, 10 * 60 * 1000);
+  $("grain").style.backgroundImage = "url(" + grainTexture() + ")";
+  Array.prototype.forEach.call(document.querySelectorAll(".rain.near i"), function (i) { i.style.backgroundImage = dropTile(320, 22, 26, 52, 2.2, .3, .6, 31); });
+  Array.prototype.forEach.call(document.querySelectorAll(".rain.far i"), function (i) { i.style.backgroundImage = dropTile(220, 40, 12, 26, 1.4, .22, .5, 57); });
+  setTimeout(function () { $("fade").classList.add("off"); }, 120);
+  FSN.ackBoot("street", APP_VERSION);
+})();
+</script>
+</body>
+</html>

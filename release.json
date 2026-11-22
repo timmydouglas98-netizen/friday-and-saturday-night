@@ -1,0 +1,22 @@
+{
+  "ref": "v3",
+  "version": "1.0.2",
+  "venues": {
+    "street": {
+      "ref": "v3",
+      "version": "1.0.2",
+      "sha256": "d5da744f79e17013c4a3065fc7a84a336075865248db8b3fadb4f9bf86047008"
+    },
+    "video": {
+      "ref": "v3",
+      "version": "0.21.2",
+      "sha256": "10baf77258acb69e07d2eb54aed819b9e8b1cd92a3a5005919924c4bff8e4cdd"
+    },
+    "karaoke": {
+      "ref": "v3",
+      "version": "0.6.2",
+      "sha256": "956a135803aae59eb44b4b24c81ee8ce3ce687f14280cd32c06cab36dce3a02c"
+    }
+  },
+  "note": "Per-venue release manifest. Run python3 src/build.py (optionally with --ref-video / --ref-karaoke / --ref-street / --ref-all) to rebuild and refresh versions & sha256 hashes."
+}

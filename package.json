@@ -1,0 +1,25 @@
+{
+  "name": "friday-and-saturday-night",
+  "version": "1.0.0",
+  "description": "Friday Night Video & Saturday Night Karaoke — a 90s strip mall for Samsung TVs via TizenBrew",
+  "packageType": "app",
+  "appName": "Friday & Saturday Night",
+  "appPath": "app/index.html",
+  "keys": [
+    "ColorF0Red",
+    "ColorF1Green",
+    "ColorF2Yellow",
+    "ColorF3Blue",
+    "MediaPlayPause",
+    "MediaPlay",
+    "MediaPause",
+    "MediaStop",
+    "MediaRewind",
+    "MediaFastForward",
+    "ChannelUp",
+    "ChannelDown",
+    "Info",
+    "Caption"
+  ],
+  "license": "MIT"
+}

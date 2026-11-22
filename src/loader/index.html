@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Friday &amp; Saturday Night</title>
+<style id="fsn-fonts">
+/* @@SHARED_FONTS@@ */
+</style>
+<style>
+html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
+#card { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: -webkit-box; display: flex; -webkit-box-orient: vertical; flex-direction: column; -webkit-box-align: center; align-items: center; -webkit-box-pack: center; justify-content: center; text-align: center; }
+#card.instant { opacity: 0; }
+#burst { position: absolute; top: 50%; left: 50%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax; }
+#vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(0,0,0,0) 55%, rgba(10,6,24,.6) 100%); }
+#plate { position: relative; padding: 3.8vh 6.5vh 4.2vh; background: #c8352b; border: .6vh solid #2a1c18; border-radius: 3vh; box-shadow: 1.4vh 1.8vh 0 rgba(10,6,24,.55), inset 0 -1.2vh 0 rgba(0,0,0,.18); max-width: 86vw; }
+.t1 { font: 600 3vh/1 Oswald, "Arial Narrow", Arial, sans-serif; letter-spacing: .32em; text-transform: uppercase; color: #f0b93a; }
+.t2 { margin-top: 1.4vh; font: 400 10.5vh/.98 Caprasimo, "Cooper Black", "Bookman Old Style", Georgia, serif; color: #fff3d6;
+  text-shadow: .45vh 0 0 #2a1c18, -.45vh 0 0 #2a1c18, 0 .45vh 0 #2a1c18, 0 -.45vh 0 #2a1c18, .45vh .45vh 0 #2a1c18, -.45vh .45vh 0 #2a1c18, .45vh -.45vh 0 #2a1c18, -.45vh -.45vh 0 #2a1c18, .5vh 1.1vh 0 #2a1c18; }
+.t2 small { display: block; font-size: .44em; line-height: 1.15; color: #f0b93a; }
+.t3 { position: relative; margin-top: 4.5vh; font: 500 3vh/1 Oswald, "Arial Narrow", Arial, sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #fff3d6; text-shadow: .3vh .3vh 0 #2a1c18; }
+.t3 i { font-style: normal; display: inline-block; width: 1.6em; text-align: left; }
+#msg { position: relative; margin-top: 2vh; max-width: 72vw; font: 500 2.6vh/1.35 Oswald, "Arial Narrow", Arial, sans-serif; color: #f0b93a; text-shadow: .25vh .25vh 0 #2a1c18; }
+</style>
+<div id="card">
+  <svg id="burst" viewBox="-100 -100 200 200" aria-hidden="true"></svg>
+  <div id="vig"></div>
+  <div id="plate"><div class="t1" id="kicker">Tonight at</div><div class="t2" id="nm"><small>Friday Night</small>Video</div></div>
+  <div class="t3" id="ld">Loading tape<i id="dots"></i></div>
+  <div id="msg"></div>
+</div>
+<script>
+// Unified TizenBrew loader (app/index.html) for Friday & Saturday Night.
+// - Opens straight into whichever venue you used last ("video" by default; "street" is reached via Back from a storefront).
+// - Caches release.json in sessionStorage for the session so venue switches stay instant when up to date,
+//   while still downloading & caching OTA updates for every venue (video, karaoke, street) into IndexedDB.
+// - Verifies both APP_VERSION (always) and SHA-256 (when crypto.subtle is available), with per-venue two-strike rollback.
+// - Cleans up legacy localStorage caches (fnv-store-cache, snk-bar-cache) once on first run to free ~2.3 MB.
+(function () {
+  "use strict";
+  var REPO = "timmydouglas98-netizen/friday-and-saturday-night";
+  var RAW = "https://raw.githubusercontent.com/" + REPO + "/";
+  var FILES = { street: "street.html", video: "store.html", karaoke: "bar.html" };
+  var MARKERS = { street: "fsn-street", video: "fnv-prefs", karaoke: "snk-prefs" };
+  var MIN_LEN = { street: 8000, video: 50000, karaoke: 50000 };
+
+  var ls = null; try { ls = window.localStorage; } catch (e) {}
+  function lget(k) { try { return ls ? ls.getItem(k) : null; } catch (e) { return null; } }
+  function lset(k, v) { try { if (ls) ls.setItem(k, v); return true; } catch (e) { return false; } }
+  function ldel(k) { try { if (ls) ls.removeItem(k); } catch (e) {} }
+
+  // One-time cleanup of old single-app localStorage HTML caches (now stored in IndexedDB)
+  if (!lget("fsn-migrated-cache")) {
+    ldel("fnv-store-cache");
+    ldel("snk-bar-cache");
+    lset("fsn-migrated-cache", "1");
+  }
+
+  // Decide which venue to open: explicit switch target > last visited venue > Friday Night Video
+  var lastVenue = lget("fsn-last-venue");
+  var target = (lastVenue === "video" || lastVenue === "karaoke") ? lastVenue : "video";
+  var instant = false;
+  try {
+    var t = sessionStorage.getItem("fsn-target");
+    if (t && FILES[t]) target = t;
+    instant = sessionStorage.getItem("fsn-instant") === "1";
+    sessionStorage.removeItem("fsn-target");
+    sessionStorage.removeItem("fsn-instant");
+    sessionStorage.setItem("fsn-via-loader", "1");
+  } catch (e) {}
+
+  // When opened directly from disk (file://), redirect straight to the target HTML file
+  if (location.protocol === "file:") {
+    try { sessionStorage.removeItem("fsn-via-loader"); } catch (e) {}
+    location.replace(FILES[target]);
+    return;
+  }
+
+  var card = document.getElementById("card");
+  if (instant) card.className = "instant";
+  var MIN_CARD_MS = instant ? 0 : 1200, started = Date.now(), done = false;
+
+  // Show the right store/bar name on the cold-start title card
+  function setCardTitle(name, kicker, loading) {
+    var clean = String(name || "").replace(/\s+/g, " ").trim().slice(0, 40);
+    if (kicker) document.getElementById("kicker").textContent = kicker;
+    if (loading) document.getElementById("ld").firstChild.nodeValue = loading;
+    if (!clean) return;
+    var w = clean.split(" "), last = w.length > 1 ? w.pop() : w[0], first = w.length && w[0] !== last ? w.join(" ") : "";
+    var nm = document.getElementById("nm"); nm.innerHTML = "";
+    if (first) { var sm = document.createElement("small"); sm.textContent = first; nm.appendChild(sm); }
+    nm.appendChild(document.createTextNode(last));
+  }
+  try {
+    if (target === "karaoke") {
+      var sp = JSON.parse(lget("snk-prefs") || "{}");
+      setCardTitle((sp && sp.barName) || "Saturday Night Karaoke", "Tonight at", "Warming up the tubes");
+    } else if (target === "street") {
+      setCardTitle("Friday & Saturday Night", "Tonight on the strip", "Opening the strip");
+    } else {
+      var fp = JSON.parse(lget("fnv-prefs") || "{}");
+      setCardTitle((fp && fp.storeName) || "Friday Night Video", "Tonight at", "Loading tape");
+    }
+  } catch (e) {}
+
+  // Sunburst behind the title card
+  if (!instant) {
+    var s = "", n = 24;
+    for (var i = 0; i < n; i++) {
+      var a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
+      s += '<polygon points="0,0 ' + (Math.cos(a0) * 150).toFixed(1) + "," + (Math.sin(a0) * 150).toFixed(1) + " " + (Math.cos(a1) * 150).toFixed(1) + "," + (Math.sin(a1) * 150).toFixed(1) + '" fill="' + (i % 2 ? "#26307a" : "#1a1f4c") + '"/>';
+    }
+    document.getElementById("burst").innerHTML = s;
+  }
+
+  var dots = document.getElementById("dots"), dn = 0;
+  var dotT = setInterval(function () { dn = (dn + 1) % 4; dots.textContent = ["", ".", "..", "..."][dn]; }, 420);
+
+  function msg(t) { document.getElementById("msg").textContent = t; }
+  function show(html) {
+    if (done) return; done = true;
+    var wait = Math.max(0, MIN_CARD_MS - (Date.now() - started));
+    setTimeout(function () { clearInterval(dotT); document.open(); document.write(html); document.close(); }, wait);
+  }
+  function looksRight(venue, html) {
+    return typeof html === "string" && html.length > (MIN_LEN[venue] || 8000) &&
+      html.indexOf(MARKERS[venue]) !== -1 &&
+      html.indexOf("APP_VERSION") !== -1 &&
+      /<\/script>\s*(<\/body>\s*)?(<\/html>\s*)?$/.test(html);
+  }
+  function versionMatches(html, ver) {
+    return !ver || html.indexOf('APP_VERSION = "' + ver + '"') !== -1;
+  }
+  function verifyHash(html, expected, cb) {
+    if (!expected || !/^[0-9a-f]{64}$/i.test(expected)) return cb(true);
+    if (!window.crypto || !crypto.subtle || !window.TextEncoder) return cb(true);
+    try {
+      crypto.subtle.digest("SHA-256", new TextEncoder().encode(html)).then(function (buf) {
+        var b = new Uint8Array(buf), hex = "";
+        for (var i = 0; i < b.length; i++) hex += (b[i] < 16 ? "0" : "") + b[i].toString(16);
+        cb(hex.toLowerCase() === expected.toLowerCase());
+      }, function () { cb(true); });
+    } catch (e) { cb(true); }
+  }
+  function idbGet(venue, cb) {
+    if (!window.indexedDB) return cb(lget("fsn-cache-" + venue));
+    try {
+      var req = indexedDB.open("fsn-cache", 1);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains("venues")) db.createObjectStore("venues");
+      };
+      req.onsuccess = function () {
+        try {
+          var db = req.result, tx = db.transaction("venues", "readonly"), g = tx.objectStore("venues").get(venue);
+          g.onsuccess = function () { try { db.close(); } catch (e) {} cb(g.result || lget("fsn-cache-" + venue)); };
+          g.onerror = function () { try { db.close(); } catch (e) {} cb(lget("fsn-cache-" + venue)); };
+        } catch (e) { cb(lget("fsn-cache-" + venue)); }
+      };
+      req.onerror = function () { cb(lget("fsn-cache-" + venue)); };
+    } catch (e) { cb(lget("fsn-cache-" + venue)); }
+  }
+  function get(url, ms, ok, bad) {
+    var fin = false;
+    try {
+      var x = new XMLHttpRequest();
+      x.open("GET", url);
+      x.timeout = ms;
+      x.onload = function () { if (fin) return; fin = true; if (x.status === 200 || (x.status === 0 && x.responseText)) ok(x.responseText); else bad(); };
+      x.onerror = x.ontimeout = function () { if (fin) return; fin = true; bad(); };
+      x.send();
+    } catch (e) { if (!fin) { fin = true; bad(); } }
+  }
+  function fail() {
+    clearInterval(dotT);
+    card.className = "";
+    document.getElementById("ld").textContent = "Closed for the night";
+    msg("Couldn't open the strip. Check the TV's internet connection, then reopen the app.");
+  }
+  function fallback(cached) {
+    if (looksRight(target, cached)) return show(cached);
+    get(FILES[target], 15000, function (t) {
+      if (looksRight(target, t)) show(t);
+      else fail();
+    }, fail);
+  }
+
+  // Per-venue boot-loop protection: if a pending update for this venue failed to confirm twice, skip it.
+  var pendKey = "fsn-boot-pending-" + target, failKey = "fsn-boot-fails-" + target, badKey = "fsn-bad-ref-" + target;
+  var pending = lget(pendKey), bad = lget(badKey);
+  if (pending) {
+    ldel(pendKey);
+    var f = (lget(failKey) || "").split("|"), n = f[0] === pending ? (parseInt(f[1], 10) || 0) + 1 : 1;
+    lset(failKey, pending + "|" + n);
+    if (n >= 2) { bad = pending; lset(badKey, pending); }
+  }
+  var good = null; try { good = JSON.parse(lget("fsn-good-" + target) || "null"); } catch (e) {}
+
+  function applyRelease(rel, cached) {
+    var vrel = (rel && rel.venues && rel.venues[target]) || rel;
+    if (!vrel || typeof vrel.ref !== "string" || !/^[A-Za-z0-9._\-\/]{1,80}$/.test(vrel.ref)) return fallback(cached);
+    if (vrel.ref === bad) return fallback(cached);
+    // Cache hit: matching ref + matching APP_VERSION -> open immediately (zero network wait)
+    if (good && good.ref === vrel.ref && looksRight(target, cached) && versionMatches(cached, vrel.version)) return show(cached);
+    // Update needed (or first time visiting this venue): show loading card if it was hidden for an instant switch
+    if (instant) card.className = "";
+    get(RAW + vrel.ref + "/app/" + FILES[target], 20000, function (html) {
+      if (!looksRight(target, html) || !versionMatches(html, vrel.version)) return fallback(cached);
+      verifyHash(html, vrel.sha256, function (ok) {
+        if (!ok) return fallback(cached);
+        try { sessionStorage.setItem("fsn-next-html-" + target, html); } catch (e) {}
+        lset(pendKey, vrel.ref);
+        show(html);
+      });
+    }, function () { fallback(cached); });
+  }
+
+  function getRelease(cb) {
+    // Reuse release.json fetched earlier in this session so venue switches don't repeat the manifest request
+    if (instant) {
+      try {
+        var saved = sessionStorage.getItem("fsn-release");
+        if (saved) { var parsed = JSON.parse(saved); if (parsed && typeof parsed === "object") return cb(parsed); }
+      } catch (e) {}
+    }
+    get(RAW + "HEAD/release.json?t=" + Date.now(), 5000, function (t) {
+      var rel = null; try { rel = JSON.parse(t); } catch (e) {}
+      if (rel) { try { sessionStorage.setItem("fsn-release", t); } catch (e) {} }
+      cb(rel);
+    }, function () { cb(null); });
+  }
+
+  idbGet(target, function (cached) {
+    getRelease(function (rel) {
+      if (!rel) return fallback(cached);
+      applyRelease(rel, cached);
+    });
+  });
+})();
+</script>
+</html>
