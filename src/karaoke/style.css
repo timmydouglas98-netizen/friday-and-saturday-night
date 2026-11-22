@@ -251,3 +251,15 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 .card.desk { padding-top: 32px; padding-bottom: 30px; }
 .card.desk .opt { padding: 8px 22px 10px; margin-bottom: 8px; font-size: 29px; }
 .card.desk .btns { margin-top: 18px; }
+
+/* ---- the type system (0.6.5): Caprasimo for names and headings, never in capitals; Oswald for everything you read
+   or press; VT323 only on things that are screens (Rhonda's monitor, the VCR). ---- */
+.btn { font-family: var(--f-ui); font-weight: 600; font-size: 30px; letter-spacing: .08em; text-transform: uppercase; padding: 12px 34px 13px; }
+.spot { font-family: var(--f-ui); font-weight: 600; font-size: 27px; letter-spacing: .08em; text-transform: uppercase; }
+.spot small { text-transform: none; letter-spacing: .03em; }
+#say { font-family: var(--f-ui); font-weight: 500; font-size: 34px; line-height: 1.3; }
+.clock { font-family: var(--f-ui); font-weight: 600; font-size: 32px; letter-spacing: .06em; }
+.ln .code, .pgno, .slip .no { font-family: var(--f-ui); font-weight: 600; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.ln .code { font-size: 28px; top: 24px; }
+.pgno { font-size: 24px; }
+.slip .no { font-size: 30px; }

@@ -10,7 +10,8 @@ Produces:
   - player.html      (YouTube jukebox wrapper, served from GitHub Pages root)
   - release.json     (updated with parsed APP_VERSIONs, preserved per-venue refs, and SHA-256 hashes)
 
-Also runs the lyric timing test suite (src/karaoke/test-lyrics.js) via Node or macOS jsc,
+Also runs the lyric timing test suite (src/karaoke/test-lyrics.js) via Node or macOS jsc, and the state-logic
+suites in src/tests/ (loader rollback, add-on list de-duplication, hold matching) via Node,
 and refuses to write a changed venue hash under an unchanged ref + version.
 
 Optional flags to bump individual venue release refs independently:
@@ -36,6 +37,26 @@ def read(rel):
     return (HERE / rel).read_text(encoding="utf-8")
 
 
+INCLUDE_RE = re.compile(r"^.*@@INCLUDE ([\w./-]+)@@.*\n", re.M)
+
+
+def assemble(rel, depth=0):
+    """Reads a source file and swaps each `@@INCLUDE path@@` line for that file's text, exactly as written.
+
+    The video store's source is split this way (src/video/style.css, body.html and js/*.js); the pieces join back
+    into the same single page the store has always been."""
+    if depth > 4:
+        raise RuntimeError(f"Includes nested too deeply at {rel}")
+
+    def expand(m):
+        inc = m.group(1)
+        if not (HERE / inc).exists():
+            raise RuntimeError(f"{rel} includes {inc}, which doesn't exist")
+        return assemble(inc, depth + 1)
+
+    return INCLUDE_RE.sub(expand, read(rel))
+
+
 def sha256_hex(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -55,16 +76,22 @@ def extract_version(src, label):
 
 
 def run_tests():
-    test_file = HERE / "karaoke" / "test-lyrics.js"
+    # the lyric timing suite runs under Node or macOS jsc; the state-logic suites in src/tests/ need Node
+    run_test(HERE / "karaoke" / "test-lyrics.js", "Lyric test suite", allow_jsc=True)
+    for t in sorted((HERE / "tests").glob("test-*.js")):
+        run_test(t, t.stem, allow_jsc=False)
+
+
+def run_test(test_file, label, allow_jsc):
     if not test_file.exists():
         return
     runner = shutil.which("node")
-    if not runner:
+    if not runner and allow_jsc:
         jsc = pathlib.Path("/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc")
         if jsc.exists():
             runner = str(jsc)
     if not runner:
-        print("Warning: neither node nor macOS jsc found; skipping src/karaoke/test-lyrics.js", file=sys.stderr)
+        print(f"Warning: no JavaScript runner found; skipping {test_file.relative_to(ROOT)}", file=sys.stderr)
         return
     r = subprocess.run([runner, str(test_file.relative_to(ROOT))], cwd=str(ROOT), capture_output=True, text=True)
     if r.stdout:
@@ -72,7 +99,7 @@ def run_tests():
     if r.returncode != 0:
         if r.stderr:
             print(r.stderr.strip(), file=sys.stderr)
-        raise RuntimeError(f"Lyric test suite failed ({runner})")
+        raise RuntimeError(f"{label} failed ({runner})")
 
 
 def main():
@@ -108,7 +135,7 @@ def main():
     street = replace_once(street, "/* @@SHARED_UI@@ */", ui_js, "street/street.html")
 
     # 3. Friday Night Video (app/store.html)
-    store_src = read("video/store.html")
+    store_src = assemble("video/store.html")
     video_ver = extract_version(store_src, "video/store.html")
     store = replace_once(store_src, "/* @@SHARED_FONTS@@ */", fonts_css, "video/store.html")
     store = replace_once(store, "/* @@SHARED_VENUE_BRIDGE@@ */", venue_bridge_js, "video/store.html")
@@ -128,7 +155,6 @@ def main():
     bar = (
         '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         "<title>Saturday Night Karaoke</title>\n"
-        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         '<style id="snk-fonts">\n' + fonts_css + "</style>\n"
         "<style>\n" + read("karaoke/font-pix.css") + read("karaoke/style.css") + "\n</style>\n"
         "<body>\n" + read("karaoke/body.html") + "\n" + vendor_bar
@@ -195,6 +221,11 @@ def main():
         )
 
     # Write built files & manifest
+    # nothing goes out with a marker still in it (a shared file or a store piece that never got swapped in)
+    for name, content in (("app/index.html", loader), ("app/street.html", street), ("app/store.html", store), ("app/bar.html", bar)):
+        left = re.findall(r"@@(?:SHARED_[A-Z_]+|INCLUDE [\w./-]+)@@", content)
+        if left:
+            raise RuntimeError(f"{name} still has unreplaced markers: {', '.join(sorted(set(left)))}")
     (ROOT / "app" / "index.html").write_text(loader, encoding="utf-8")
     (ROOT / "app" / "street.html").write_text(street, encoding="utf-8")
     (ROOT / "app" / "store.html").write_text(store, encoding="utf-8")

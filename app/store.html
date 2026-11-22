@@ -1721,8 +1721,7 @@ body.night .logo { z-index: 6; }
 .overlay.holding.lifting { background: rgba(14,8,18,0); }
 .panel.case .case-view { align-items: center; }
 .panel.case .details { position: relative; background: var(--cel-paper) var(--fnv-tooth, none); background-size: auto, 256px 256px;
-  border: 3px solid var(--cel-ink); border-radius: 4px; box-shadow: 10px 12px 0 rgba(10,4,12,.55); padding: 26px 30px 20px; transform: rotate(-.6deg); }
-.panel.case.lifting .details { transform: translateX(3vh) rotate(-.6deg); }
+  border: 3px solid var(--cel-ink); border-radius: 4px; box-shadow: 10px 12px 0 rgba(10,4,12,.55); padding: 26px 30px 20px; }
 /* the slip's torn-off top edge */
 .panel.case .details::before { content: ""; position: absolute; left: -3px; right: -3px; top: -12px; height: 12px;
   background: radial-gradient(circle at 8px 12px, var(--cel-paper) 6px, var(--cel-ink) 6px, var(--cel-ink) 8.5px, transparent 9px) 0 0 / 16px 12px repeat-x; }
@@ -1746,6 +1745,18 @@ body.night .logo { z-index: 6; }
 .panel.case .actions.grid2 .btn.focused { background: #ffd75e; color: var(--cel-ink); box-shadow: inset 0 0 0 3px var(--cel-ink); transform: none; }
 .panel.case .actions.grid2 .btn.focused::before { content: "✓"; color: var(--cel-red); font-weight: 700; }
 .panel.case .actions.grid2 .btn:last-child { border-bottom: 0; }
+
+/* ---- 0.22.1: the type system. Caprasimo for names and headings, never in capitals; Oswald for everything you read or
+   press; VT323 only on things that are screens. Hints are the same size in every venue. ---- */
+.land-clock { font-family: var(--f-ui) !important; font-weight: 600; letter-spacing: .06em; }
+.hint kbd { display: inline-block; font-family: var(--f-ui) !important; font-weight: 700 !important; font-size: .92em !important; line-height: 1.15 !important; color: #2a1c18 !important;
+  background: #fff3d6 !important; border: 2px solid #2a1c18 !important; border-radius: 5px !important; padding: 0 .35em !important; margin-right: .4em; box-shadow: 0 2px 0 #2a1c18 !important;
+  text-shadow: none !important; vertical-align: .05em; min-width: 0 !important; height: auto !important; }
+@media (min-width: 960px) and (min-aspect-ratio: 4/3) {
+  .land-clock { font-size: 3vh !important; }
+  .land .land-press { font-size: 2.5vh; }
+  .hint { font-size: calc(var(--u) * 2.5) !important; }
+}
 
 /* ---- 0.22: the marquee board and the corner TV are gone; the wall is the logo, the deal card and two posters ---- */
 .marquee, .crt-mount { display: none !important; }
@@ -1863,6 +1874,57 @@ body.night .logo { z-index: 6; }
 
 <script>
 (function () {
+  // ---------- pure decisions: no store state, no screen, no network ----------
+  // These are the store's trickiest calls, kept apart so src/tests/test-store-logic.js can load this file on its own
+  // and check them. Everything here takes what it needs as arguments.
+
+  // A film's name and year boiled down for matching: case, punctuation and a leading "The"/"A"/"An" don't count.
+  function titleKey(name, year) { return String(name || "").toLowerCase().replace(/^(the|a|an) /, "").replace(/[^a-z0-9]+/g, "") + "|" + (year || 0); }
+
+  // The hold (from `holds`) that this tape answers to, or null. A hold matches by id first; failing that by title and
+  // year, because the same film can carry a different id on an add-on's shelf (a Letterboxd or TMDB id rather than the
+  // IMDb one) than on the shelf it was held from. A film never matches a series of the same name, and when either side
+  // doesn't know the year, the title alone will do.
+  function findHold(holds, id, it) {
+    var i;
+    for (i = 0; i < holds.length; i++) if (holds[i].id === id) return holds[i];
+    if (!it || !it.name) return null;
+    var k = titleKey(it.name, it.year), k0 = titleKey(it.name, 0);
+    for (i = 0; i < holds.length; i++) {
+      var h = holds[i];
+      if ((h.type === "series") !== (it.type === "series")) continue;
+      if (titleKey(h.name, h.year) === k || ((!h.year || !it.year) && titleKey(h.name, 0) === k0)) return h;
+    }
+    return null;
+  }
+
+  // Which of your add-ons' catalogs become lists in the store, in order, one entry each:
+  //   { m: manifest, base: the add-on's address, c: the catalog, isLB: a Letterboxd add-on, tv: needs " · TV" }
+  // The same list can turn up more than once (an add-on installed twice, which is what reconfiguring Stremboxd and
+  // pressing Install again does, or one list added twice under another id), and it only gets one shelf. Cinemeta is
+  // left out (it's the store's own stock), as is any add-on whose address `ok` rejects or catalog `usable` rejects.
+  // A series list that shares its name with a movie list from the same add-on is marked `tv`, so the two can be told apart.
+  function planAddonLists(addons, ok, usable) {
+    var seen = {}, typeNames = {}, out = [];
+    addons.forEach(function (ad) {
+      var m = (ad && ad.manifest) || {};
+      (m.catalogs || []).filter(usable).forEach(function (c) { var n = (m.id || "") + "|" + String(c.name || "").toLowerCase(); typeNames[n] = (typeNames[n] || 0) | (c.type === "series" ? 2 : 1); });
+    });
+    addons.forEach(function (ad) {
+      var url = (ad && ad.transportUrl) || "", m = (ad && ad.manifest) || {};
+      if (!ok(url) || /v3-cinemeta\.strem\.io/.test(url)) return;
+      var base = url.replace(/\/manifest\.json.*$/, "");
+      var isLB = /letterboxd|stremboxd/i.test(url + " " + (m.id || "") + " " + (m.name || ""));
+      (m.catalogs || []).filter(usable).forEach(function (c) {
+        var who = m.id || base, idKey = who + "|" + c.type + "|" + c.id, nameKey = who + "|" + c.type + "|" + String(c.name || c.id).toLowerCase().replace(/\s+/g, " ").trim();
+        if (seen[idKey] || seen[nameKey]) return;
+        seen[idKey] = seen[nameKey] = 1;
+        out.push({ m: m, base: base, c: c, isLB: isLB, tv: c.type === "series" && typeNames[(m.id || "") + "|" + String(c.name || "").toLowerCase()] === 3 });
+      });
+    });
+    return out;
+  }
+
   "use strict";
 
   // ---------- Sample shelf (used when the live Stremio catalog can't be reached) ----------
@@ -1958,7 +2020,7 @@ body.night .logo { z-index: 6; }
   var extraAisles = [];      // catalogs from the person's installed addons
   var pager = {};            // aisle key -> { base, extras, type, skip, done, loading }
   var MAX_PER_AISLE = 600;
-  var APP_VERSION = "0.22.0", APP_UPDATED = "22 Nov 2026";
+  var APP_VERSION = "0.22.1", APP_UPDATED = "22 Nov 2026";
     // ---------- shared venue bridge (Friday Night Video <-> Saturday Night Karaoke <-> Strip Mall) ----------
   var FSN = (function () {
     var MAP = { street: "street.html", video: "store.html", karaoke: "bar.html" };
@@ -3698,7 +3760,7 @@ body.night .logo { z-index: 6; }
       els.forEach(function (el, i) {
         if (i === modal.idx) return;
         var b = el.getBoundingClientRect(); if (!b.width && !b.height) return;
-        var gap, side, tol = 4;
+        var gap, side, tol = Math.max(4, Math.min(a.height, b.height) * .3);
         if (vert) {
           gap = fwd ? b.top - a.bottom : a.top - b.bottom;
           side = Math.max(0, Math.max(a.left, b.left) - Math.min(a.right, b.right));      // 0 when one is above the other
@@ -4525,23 +4587,9 @@ body.night .logo { z-index: 6; }
       }
       staffConnected = false;
       var roles = { day: [], night: [], back: [] }, choices = [];
-      // The same list can turn up more than once: an add-on installed twice (reconfiguring Stremboxd and pressing
-      // Install again leaves the old copy in your Stremio account too), or one list added twice. One shelf each.
-      var seenList = {}, typeNames = {};
-      addons.forEach(function (ad) {
-        var m = ad.manifest || {};
-        (m.catalogs || []).filter(catalogUsable).forEach(function (c) { var n = (m.id || "") + "|" + String(c.name || "").toLowerCase(); typeNames[n] = (typeNames[n] || 0) | (c.type === "series" ? 2 : 1); });
-      });
-      addons.forEach(function (ad) {
-        var url = ad.transportUrl || "", m = ad.manifest || {};
-        if (!addonOK(url) || /v3-cinemeta\.strem\.io/.test(url)) return;
-        var base = url.replace(/\/manifest\.json.*$/, "");
-        var cats = (m.catalogs || []).filter(catalogUsable);
-        var isLB = /letterboxd|stremboxd/i.test(url + " " + (m.id || "") + " " + (m.name || ""));
-        cats.forEach(function (c) {
-          var key, idKey = (m.id || base) + "|" + c.type + "|" + c.id, nameKey = (m.id || base) + "|" + c.type + "|" + String(c.name || c.id).toLowerCase().replace(/\s+/g, " ").trim();
-          if (seenList[idKey] || seenList[nameKey]) return;
-          seenList[idKey] = seenList[nameKey] = 1;
+      // one entry per list, duplicates (an add-on installed twice, a list added twice) already left out: see 00-logic.js
+      planAddonLists(addons, addonOK, catalogUsable).forEach(function (e) {
+          var m = e.m, base = e.base, c = e.c, isLB = e.isLB, key;
           if (isLB && !staffFound && /popular/i.test((c.id || "") + " " + (c.name || ""))) { key = "staff"; staffFound = true; }
           else {
             var ck = (m.id || base) + "|" + c.type + "|" + c.id, nm = c.name || m.name || "List", role = listRole(ck, nm);
@@ -4563,7 +4611,7 @@ body.night .logo { z-index: 6; }
             // the aisle's name in the store's books stays the same from visit to visit, whatever order the lists come in
             key = "addon" + hash(ck).toString(36); while (wanted[key]) key += "x";
             var label = c.name || m.name || "Addon";
-            var tv = c.type === "series" && typeNames[(m.id || "") + "|" + String(c.name || "").toLowerCase()] === 3 ? " · TV" : "", room = 24 - tv.length;
+            var tv = e.tv ? " · TV" : "", room = 24 - tv.length;
             extras.push({ key: key, label: (label.length > room ? label.slice(0, room - 1) + "…" : label) + tv });
           }
           wanted[key] = 1;
@@ -4576,8 +4624,7 @@ body.night .logo { z-index: 6; }
             if (choice) { choice.n = metas.length; choice.more = pages && metas.length >= 50; choice.fail = false; }
             if (pages && metas.length) pager[key] = { type: c.type, tail: 1e6, feeds: [{ base: cbase, extras: "", skip: metas.length, start: 0, done: false, pages: 1, fails: 0 }] };
             else delete pager[key];
-          }, function (e) { if (choice) choice.fail = true; diag.addonFail(m.name || "Add-on", "aisle " + (c.name || c.id), e); }));
-        });
+          }, function (err) { if (choice) choice.fail = true; diag.addonFail(m.name || "Add-on", "aisle " + (c.name || c.id), err); }));
       });
       extraAisles = extras;
       return Promise.all(jobs).then(function () {
@@ -4707,21 +4754,8 @@ body.night .logo { z-index: 6; }
   var holds = store("fnv-holds", [], function (l) {
     return l.filter(function (h) { return isObj(h) && typeof h.id === "string" && h.id && typeof h.name === "string" && numIn(h.t, 0, 1e13); }).slice(0, 80);
   });
-  // a hold matches by id, or by title and year: the same film can carry a different id on an add-on's shelf
-  // (a Letterboxd or TMDB id rather than the IMDb one) than on the shelf it was held from
-  function titleKey(name, year) { return String(name || "").toLowerCase().replace(/^(the|a|an) /, "").replace(/[^a-z0-9]+/g, "") + "|" + (year || 0); }
-  function holdFor(id) {
-    var i, it = byId[id];
-    for (i = 0; i < holds.length; i++) if (holds[i].id === id) return holds[i];
-    if (!it || !it.name) return null;
-    var k = titleKey(it.name, it.year), k0 = titleKey(it.name, 0);
-    for (i = 0; i < holds.length; i++) {
-      var h = holds[i];
-      if ((h.type === "series") !== (it.type === "series")) continue;
-      if (titleKey(h.name, h.year) === k || ((!h.year || !it.year) && titleKey(h.name, 0) === k0)) return h;
-    }
-    return null;
-  }
+  // a hold matches by id, or by title and year (see findHold in 00-logic.js)
+  function holdFor(id) { return findHold(holds, id, byId[id]); }
   function isHeld(id) { return !!holdFor(id); }
   // put the name slip on (or take it off) every copy of this tape already on the shelves, so a hold shows at once
   function refreshHoldMarks() {

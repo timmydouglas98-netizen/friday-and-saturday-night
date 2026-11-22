@@ -14,7 +14,18 @@
 
 - **Shared code (`src/shared/`)**: fonts, the cel art kit, the venue bridge (switching, boot confirmation, walking transitions), `world.js` (time of day and weather) and `ui.js` (the clock and the key-cap button hints every venue uses).
 
-- **Friday Night Video (`app/store.html`)**: The full 90s video store front-end for Stremio.
+- **Friday Night Video (`app/store.html`)**: The full 90s video store front-end for Stremio. Its source is split into pieces that `src/build.py` joins back into one page (each `@@INCLUDE path@@` line in `src/video/store.html` is swapped for that file):
+  - `src/video/style.css` and `src/video/body.html`: the store's styles and markup
+  - `src/video/js/01-data.js`: the sample shelf and the store's state
+  - `02-stock.js`: diagnostics, Cinemeta, where each aisle's tapes come from, Rewind Night's stock
+  - `03-shelves.js`: helpers; drawing the shelves, tapes, covers and focus; the YouTube embeds and the trailer player
+  - `04-room.js`: the painted ceiling, side aisles and carpet, and the store's sounds
+  - `05-panels.js`: panels and the tape box, the clerk, the back room, which lists go where, the letter-board keyboard, the Rewind Night picker
+  - `06-account.js`: your Stremio account, add-on aisles, holds, seasonal displays, search, the front desk, the screensaver
+  - `07-player.js`: renting and playing a tape
+  - `08-outside.js`: the doorstep (the strip mall outside)
+  - `09-input.js`: the remote, keyboard and touch, and opening the store
+- **Tests (`src/tests/`)**: Node test suites the build runs alongside the lyric timing tests: the loader's two-strike rollback, add-on list de-duplication, and hold matching by title and year.
 - **Saturday Night Karaoke (`app/bar.html`)**: The full karaoke bar with LRCLIB lyrics, YouTube backing tracks, bitmap karaoke lettering, duets, Sound Check, live `Info` timing overlay, and E2EE phone requests.
 - **Unified Loader (`app/index.html`)**:
   - Caches each venue in **IndexedDB** and automatically clears legacy `fnv-store-cache` / `snk-bar-cache` entries from `localStorage` once on first run.

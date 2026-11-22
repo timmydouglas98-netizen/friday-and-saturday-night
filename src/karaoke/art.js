@@ -145,7 +145,7 @@
     o += halo(1162, 610, 90, 44, "#ffe2a6", .7) + '<rect x="1140" y="604" width="44" height="14" rx="5" fill="#fff3cf"' + ink(2) + "/>";
     o += '<g id="oDoor"><rect x="1108" y="636" width="108" height="124" fill="#1f5a5c"' + ink(3) + "/>" + Ci(1162, 682, 23, "#ffcf7a", ink(3)) + R(1120, 706, 8, 26, "#d9a441", ink(1.5)) + R(1114, 742, 96, 12, "#17474a") + "</g>";
     // --- poster case and chalk board ---
-    o += Tx(1345, 690, 25, "TONIGHT", "#a8323e") + Tx(1345, 714, 21, "OPEN MIC", "#1b1b22", ' font-weight="600" letter-spacing="2"', OSW) + Tx(1345, 735, 13, "ALL VOICES WELCOME", "#5f5a4e", ' font-weight="500" letter-spacing=".5"', OSW);
+    o += Tx(1345, 690, 26, "Tonight", "#a8323e") + Tx(1345, 714, 21, "OPEN MIC", "#1b1b22", ' font-weight="600" letter-spacing="2"', OSW) + Tx(1345, 735, 13, "ALL VOICES WELCOME", "#5f5a4e", ' font-weight="500" letter-spacing=".5"', OSW);
     o += Tx(1475, 728, 19, "SING", "#f4ead2") + Tx(1475, 750, 15, "TONITE", "#ffc857", ' font-weight="600" letter-spacing="1"', OSW) + Tx(1475, 772, 16, "←", "#f4ead2", "", OSW);
     // --- the streetlight ---
     if (P.lit) o += halo(1570, 232, 150, 90, "#ffe2a6", .5 * P.warm) + Pg([1546, 228, 1594, 228, 1700, 800, 1440, 800], "#ffe2a6", op((.07 * P.warm).toFixed(3))) + El(1570, 227, 24, 6, "#fff3cf");
@@ -317,7 +317,7 @@
     o += fairyLights(-10, 60, 500, 108, 18, 9, 31) + fairyLights(1320, 108, 1930, 60, 18, 10, 47);
     // EXIT, and the regulars' wall
     o += R(30, 250, 72, 34, "#1a0c12", ink(2.5)) + '<g class="n-flick">' + neonText(66, 276, 24, "EXIT", NEON.red, OSW, ' font-weight="600" letter-spacing="2"') + "</g>";
-    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 138, 25, "THE REGULARS", "#2a1c18", ' letter-spacing="1"');
+    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 138, 28, "The Regulars", "#2a1c18");
     var wall = S.wall.slice(0, 6);
     for (i = 0; i < 6; i++) {
       var px = 168 + (i % 3) * 96, py = 176 + Math.floor(i / 3) * 112, rot = (r() - .5) * 12, w = wall[i];
@@ -343,7 +343,7 @@
     // the window behind the stage keeps a light or two blinking
     o += '<g class="beacon">' + Ci(1010, 232, 5, NEON.red) + "</g>" + '<g class="n-flick">' + R(742, 330, 14, 54, NEON.pink, op(".8")) + "</g>" + '<g class="n-buzz">' + R(1090, 300, 16, 60, NEON.teal, op(".7")) + "</g>";
     // the request board
-    o += Pt("M1560,84 L1800,84 L1784,106 L1800,128 L1560,128 L1576,106 Z", "#f4ead2", ink(3)) + Tx(1680, 118, 28, "UP NEXT", "#7d1a29");
+    o += Pt("M1560,84 L1800,84 L1784,106 L1800,128 L1560,128 L1576,106 Z", "#f4ead2", ink(3)) + Tx(1680, 117, 30, "Up Next", "#7d1a29");
     // nobody waiting: a blank slip pinned up, asking for the first song
     if (!S.queue.length) o += '<g transform="rotate(-3 1680 230)">' + R(1572, 180, 216, 90, "#fff6c9", ink(2.5)) + Ci(1680, 188, 6, "#e2364a", ink(1.5)) +
       Tx(1680, 226, 26, "Be the first", "#7d1a29") + Tx(1680, 255, 21, "on stage tonight", "#2a1c18", ' font-weight="600" letter-spacing="1"', OSW) + "</g>";
@@ -356,15 +356,15 @@
     o += rhonda();
     var lines = S.queue.length ? ["NEXT UP", clip(S.queue[0].singer, 9).toUpperCase(), S.queue.length + " WAITING"] : ["OPEN MIC", "NO QUEUE", "PICK ONE"];
     lines.forEach(function (t, k) { o += '<text class="crt-line" x="1456" y="' + (476 + k * 21) + '" font-family="VT323, monospace" font-size="21" fill="#7dffb0">' + esc(t) + "</text>"; });
-    o += Tx(1615, 646, 27, "REQUESTS", "#7d1a29") + Tx(1615, 672, 17, "SLIPS TO " + esc(HOST.toUpperCase()), "#2a1c18", ' font-weight="600" letter-spacing="2"', OSW);
+    o += Tx(1615, 646, 30, "Requests", "#7d1a29") + Tx(1615, 672, 17, "SLIPS TO " + esc(HOST.toUpperCase()), "#2a1c18", ' font-weight="600" letter-spacing="2"', OSW);
     // ---- on the counter ----
     o += '<g transform="translate(0,-36)">';
     o += R(540, 934, 60, 96, "#8ecae6", ink(3) + ' fill-opacity=".55"') + '<path d="M552,940 L540,880 M570,938 L574,872 M588,940 L604,884" stroke="#d9a441" stroke-width="7" stroke-linecap="round"/><path d="M552,940 L540,880 M570,938 L574,872 M588,940 L604,884" stroke="#2a1c18" stroke-width="2" fill="none"/>';
     o += Pg([626, 1000, 716, 990, 730, 1046, 636, 1058], "#fff6c9", ink(3)) + '<path d="M642,1014 L712,1006 M645,1028 L716,1020 M648,1042 L700,1036" stroke="#9db0c8" stroke-width="2"/>';
     o += Pg([742, 1066, 772, 944, 1166, 944, 1196, 1066], "#f4ead2", ink(3)) + Pg([732, 1052, 764, 930, 1158, 930, 1190, 1052], "#7d1a29", ink(4)) + Pg([800, 1030, 818, 952, 1104, 952, 1122, 1030], "#fbf7ea", ink(3));
-    o += Tx(961, 1008, 46, "SONGBOOK", "#7d1a29") + Ci(772, 968, 7, "#cfd3da", ink(2)) + Ci(762, 1010, 7, "#cfd3da", ink(2));
+    o += Tx(961, 1008, 50, "Songbook", "#7d1a29") + Ci(772, 968, 7, "#cfd3da", ink(2)) + Ci(762, 1010, 7, "#cfd3da", ink(2));
     o += El(1320, 1040, 62, 12, "#2a170f") + Pt("M1266,1036 Q1266,972 1320,970 Q1374,972 1374,1036 Z", "#d9a441", ink(3.5)) + Pt("M1284,1020 Q1288,988 1312,982", "none", ' stroke="#fff3cf" stroke-width="5" stroke-linecap="round"') + Ci(1320, 964, 9, "#d9a441", ink(3)) + R(1258, 1034, 124, 12, "#8a6238", ink(3));
-    o += Pg([1500, 1056, 1560, 936, 1660, 936, 1720, 1056], "#f4ead2", ink(3)) + Tx(1610, 984, 23, "PHONE", "#7d1a29") + Tx(1610, 1010, 23, "REQUESTS", "#7d1a29") + Tx(1610, 1036, 16, "SCAN THE CODE", "#6a5d4e", ' font-weight="600" letter-spacing="2"', OSW);
+    o += Pg([1500, 1056, 1560, 936, 1660, 936, 1720, 1056], "#f4ead2", ink(3)) + Tx(1610, 984, 26, "Phone", "#7d1a29") + Tx(1610, 1010, 26, "Requests", "#7d1a29") + Tx(1610, 1036, 16, "SCAN THE CODE", "#6a5d4e", ' font-weight="600" letter-spacing="2"', OSW);
     o += candle(1820, 1040) + candle(180, 1040) + "</g>";
     return o;
   }

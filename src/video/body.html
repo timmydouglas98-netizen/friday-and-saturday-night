@@ -1,0 +1,96 @@
+
+<div class="store">
+  <div class="top">
+    <canvas class="ceil" id="ceil" aria-hidden="true"></canvas>
+    <div class="wall">
+      <div class="bunting" id="bunting" hidden></div>
+      <div class="logo" id="logo" role="img" aria-label="Friday Night Video"><span class="l1" id="logo1">Friday Night</span><span class="l2" id="logo2">Video</span></div>
+      <div class="painted" id="painted" aria-hidden="true">new releases</div>
+      <div class="wposter" id="wp0" aria-hidden="true"></div>
+      <div class="wposter" id="wp1" aria-hidden="true"></div>
+      <div class="marquee" id="marquee" aria-live="polite"><div class="mq-head" id="mqHead">NOW ON THE SHELF</div><div class="mq-rows" id="mqRows"></div></div>
+      <div class="banner" id="banner" aria-hidden="true"><b>3</b><span>NIGHTS<br>$3.99</span><em>every new release</em></div>
+    </div>
+    <div class="crt-mount" id="crtMount">
+      <div class="crt">
+        <div class="screen" id="screen">
+          <div class="tv-still" id="tvStill"></div>
+          <div class="tv-frame" id="tvFrame"></div>
+          <div class="tv-card" id="tvCard"><span class="k">CHANNEL 3</span><span class="t">Friday Night Video</span><span class="s">Pick a tape to preview it here</span></div>
+          <canvas class="tv-noise" id="tvNoise" width="80" height="60"></canvas>
+          <div class="scan"></div>
+          <div class="tv-osd"><span id="osdL">STOP ■</span><span id="osdR"></span></div>
+        </div>
+        <div class="crt-base"><span class="brand">VIDEOVISION</span><span class="led"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="signs-wrap"><nav class="signs" id="signs" aria-label="Aisles"></nav><span class="signs-more l" id="signsL" aria-hidden="true">◀</span><span class="signs-more r" id="signsR" aria-hidden="true">▶</span></div>
+
+  <div class="fixture">
+    <canvas class="side" id="sideL" aria-hidden="true"></canvas>
+    <div class="standee" id="standee" aria-hidden="true" hidden></div>
+    <div class="slat" id="slat">
+      <div class="tiles" id="tiles" aria-hidden="true"></div>
+      <div class="shelf-wrap"><div class="shelf" id="shelf0"></div><div class="strip" aria-hidden="true"></div><div class="tag" aria-hidden="true" hidden></div></div>
+      <div class="shelf-wrap"><div class="shelf" id="shelf1"></div><div class="strip" aria-hidden="true"></div><div class="tag" aria-hidden="true" hidden></div></div>
+      <div class="shelf-wrap" id="wrap2"><div class="shelf" id="shelf2"></div><div class="strip" aria-hidden="true"></div><div class="tag" aria-hidden="true" hidden></div></div>
+    </div>
+    <canvas class="side" id="sideR" aria-hidden="true"></canvas>
+  </div>
+
+  <div class="floor">
+    <canvas class="carpet" id="carpet" aria-hidden="true"></canvas>
+    <div class="floor-in">
+      <nav class="counter" id="counter" aria-label="Counter">
+        <button class="btn" data-action="clerk"><span class="key" style="background:#e5484d"></span><span class="lab">Ask the clerk</span></button>
+        <button class="btn" data-action="search"><span class="lab">Search</span></button>
+        <button class="btn" data-action="rewind"><span class="key" style="background:#46a758"></span><span class="lab">Rewind Night</span><span class="val" id="rewindVal">OFF</span></button>
+        <button class="btn" data-action="returns"><span class="key" style="background:#ffd23f"></span><span class="lab">Return slot</span><span class="val" id="returnsVal">0</span></button>
+        <button class="btn" data-action="desk"><span class="lab">Front desk</span><span class="val" id="deskVal"></span></button>
+      </nav>
+      <div class="hint">
+        <span><kbd>◀ ▲ ▼ ▶</kbd> browse</span>
+        <span><kbd>OK</kbd> pick up a tape</span>
+        <span><kbd>▶</kbd> play it</span>
+        <span><kbd>BACK</kbd> step outside</span>
+        <span class="status" id="status">Stocking the shelves…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="land" id="land" hidden>
+  <div class="land-zoom" id="landZoom"></div>
+  <div class="land-wx" id="landWx"><div class="wx-dim"></div><div class="wx-fog"></div><div class="wx-rain far"><i></i></div><div class="wx-rain near"><i></i></div><div class="wx-snow"><i></i></div><div class="wx-bolt" id="wxBolt"></div></div>
+  <div class="land-vig"></div>
+  <div class="land-flick"></div>
+  <div class="land-grain" id="landGrain"></div>
+  <div class="land-dust" id="landDust"><i></i><i></i></div>
+  <div class="land-flash"></div>
+  <div class="land-fade"></div>
+  <div class="land-clock" id="landClock"></div>
+  <div class="land-ui"><div class="land-press" id="landPress">Press OK to go inside</div><div class="land-status" id="landStatus">Stocking the shelves…</div></div>
+</div>
+<div class="iris" id="iris" aria-hidden="true"></div>
+<div class="overlay" id="overlay" hidden></div>
+<div class="rw-veil" id="rwVeil" aria-hidden="true" hidden></div>
+<div class="osk" id="osk" hidden></div>
+<div class="mood" aria-hidden="true"></div>
+<div class="night-veil" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="demo" id="demo" hidden></div>
+<div class="player" id="player" hidden>
+  <div class="p-stage" id="pStage"></div>
+  <div class="p-vhs"></div>
+  <div class="p-sleep"></div>
+  <div class="p-subs" id="pSubs"></div>
+  <div class="p-center" id="pCenter"></div>
+  <div class="p-osd" id="pOsd"><span id="pOsdL">PLAY ▶</span><span id="pOsdR"></span></div>
+  <div class="p-bar"><div class="p-title" id="pTitle"></div><div class="p-track"><i id="pFill"></i></div>
+    <div class="p-times"><span id="pCur">0:00:00</span><span>OK pause · ◀ ▶ skip · ▼ options · BACK stop</span><span class="p-end" id="pEnd"></span><span id="pDur">0:00:00</span></div></div>
+  <div class="p-menu" id="pMenu" hidden></div>
+  <div class="p-intro" id="pIntro" hidden></div>
+</div>
+

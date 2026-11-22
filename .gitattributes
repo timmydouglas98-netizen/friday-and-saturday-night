@@ -1,0 +1,7 @@
+# Built by src/build.py from the files under src/. They're committed because TizenBrew and GitHub Pages serve them
+# straight from the repo, but they aren't hand-written: GitHub folds them up in diffs and leaves them out of the
+# language breakdown.
+app/*.html linguist-generated=true
+index.html linguist-generated=true
+player.html linguist-generated=true
+src/karaoke/vendor-*.js linguist-vendored=true

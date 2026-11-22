@@ -1,4 +1,4 @@
-  var APP_VERSION = "0.6.4", APP_DATE = "22 Nov 2026";
+  var APP_VERSION = "0.6.5", APP_DATE = "22 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -134,10 +134,24 @@
   }
 
   // ---------- the frame ----------
+  // The scene is drawn at 1920×1080 and scaled to the screen. The TV can settle on its real size a moment after the page
+  // has measured it (and not say so), which left the room zoomed in and cropped; so the size is checked again until
+  // it settles, and whenever the page comes back into view.
+  var fitW = 0, fitH = 0;
   function fit() {
-    var w = window.innerWidth || 1920, h = window.innerHeight || 1080, s = Math.min(w / 1920, h / 1080);
+    var de = document.documentElement, vv = window.visualViewport;
+    var w = Math.min(window.innerWidth || 1920, de.clientWidth || 1e6, vv && vv.width ? vv.width : 1e6);
+    var h = Math.min(window.innerHeight || 1080, de.clientHeight || 1e6, vv && vv.height ? vv.height : 1e6);
+    if (w === fitW && h === fitH) return;
+    fitW = w; fitH = h;
+    var s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
+  [100, 400, 1000, 2500, 5000].forEach(function (ms) { setTimeout(fit, ms); });
+  setInterval(fit, 3000);
+  window.addEventListener("load", fit);
+  window.addEventListener("pageshow", fit);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) fit(); });
   // a line Rhonda was saying belongs to the room she said it in: it doesn't follow you into the songbook
   function go(sc) { if (sc !== SC) { clearTimeout(sayT); $("say").hidden = true; } SC = sc; $("stage").setAttribute("data-sc", sc); }
   function fadeThen(fn, ms) { $("fade").classList.add("on"); setTimeout(function () { fn(); requestAnimationFrame(function () { requestAnimationFrame(function () { $("fade").classList.remove("on"); }); }); }, ms || 480); }

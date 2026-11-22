@@ -2,7 +2,6 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>Friday &amp; Saturday Night — The Strip</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style id="fsn-fonts">
 /* @@SHARED_FONTS@@ */
 </style>
@@ -52,7 +51,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 #stage.open-karaoke #kDoor { transform: scaleX(.12); }
 
 /* Interactive storefront plaques */
-.clock { position: absolute; top: 34px; right: 54px; z-index: 20; font-family: var(--f-toon); font-size: 36px; color: var(--cream);
+.clock { position: absolute; top: 34px; right: 54px; z-index: 20; font-family: var(--f-ui); font-weight: 600; font-size: 32px; letter-spacing: .06em; color: var(--cream);
   text-shadow: 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink), 2px 4px 0 var(--ink); }
 /* the selected shop is lit (door glow, the other shop in shadow); one caption sits below the kerb */
 .shade { opacity: 0; transition: opacity .35s; }
@@ -74,7 +73,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 #caption .arrow { position: absolute; top: 50%; margin-top: -24px; width: 48px; height: 48px; line-height: 44px; text-align: center; font-size: 26px; color: var(--cream);
   background: var(--ink); border-radius: 50%; }
 #caption .arrow.l { left: -74px; } #caption .arrow.r { right: -74px; }
-.hint { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; z-index: 25; font-size: 28px; font-weight: 500; letter-spacing: .04em;
+.hint { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; z-index: 25; font-size: 27px; font-weight: 500; letter-spacing: .04em;
   color: var(--cream); text-shadow: 2px 2px 0 var(--ink), 0 0 12px rgba(10,4,14,.9); }
 #toast { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); padding: 14px 30px; background: var(--paper); color: var(--ink);
   border: 4px solid var(--ink); border-radius: 12px; box-shadow: 6px 8px 0 rgba(10,4,18,.55); font-family: var(--f-toon); font-size: 32px; z-index: 50; }
@@ -105,7 +104,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "1.0.3";
+  var APP_VERSION = "1.0.4";
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function ljson(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
@@ -248,10 +247,24 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
     return o;
   }
 
+  // The scene is drawn at 1920×1080 and scaled to the screen. The TV can settle on its real size a moment after the page
+  // has measured it (and not say so), which left the room zoomed in and cropped; so the size is checked again until
+  // it settles, and whenever the page comes back into view.
+  var fitW = 0, fitH = 0;
   function fit() {
-    var w = window.innerWidth || 1920, h = window.innerHeight || 1080, s = Math.min(w / 1920, h / 1080);
+    var de = document.documentElement, vv = window.visualViewport;
+    var w = Math.min(window.innerWidth || 1920, de.clientWidth || 1e6, vv && vv.width ? vv.width : 1e6);
+    var h = Math.min(window.innerHeight || 1080, de.clientHeight || 1e6, vv && vv.height ? vv.height : 1e6);
+    if (w === fitW && h === fitH) return;
+    fitW = w; fitH = h;
+    var s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
+  [100, 400, 1000, 2500, 5000].forEach(function (ms) { setTimeout(fit, ms); });
+  setInterval(fit, 3000);
+  window.addEventListener("load", fit);
+  window.addEventListener("pageshow", fit);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) fit(); });
   function updateClock() { $("oClock").textContent = UI.clock(); }
 
   var sel = (function () {
