@@ -68,13 +68,16 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 .dglow.on { opacity: 1; }
 .dry .rain { display: none; }
 .hit { position: absolute; top: 120px; height: 700px; z-index: 22; cursor: pointer; }
-#caption { position: absolute; left: 50%; bottom: 92px; width: 1240px; margin-left: -620px; z-index: 25; display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center;
-  padding: 18px 34px 20px; background: var(--paper); color: var(--ink); border: 5px solid var(--ink); border-radius: 16px; box-shadow: 0 0 0 6px var(--gold), 0 0 0 11px var(--ink), 12px 16px 0 rgba(10,4,18,.6); cursor: pointer; }
+/* the shop names itself on its fascia; the caption only says what's waiting inside */
+#caption { position: absolute; left: 0; right: 0; bottom: 104px; z-index: 25; text-align: center; pointer-events: none; }
+#caption .slip { display: inline-block; max-width: 1200px; padding: 12px 30px 14px; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 10px;
+  box-shadow: 8px 10px 0 rgba(10,4,18,.55); pointer-events: auto; cursor: pointer; }
+#caption .lft, #caption .arrow { display: none; }
 #caption .lft { -webkit-box-flex: 0; flex: 0 0 auto; padding-right: 34px; margin-right: 34px; border-right: 3px solid rgba(42,28,24,.18); }
 #caption .k { font-weight: 600; font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
 #caption h2 { margin: 2px 0 0; font-family: var(--f-toon); font-weight: 400; font-size: 46px; line-height: 1.05; color: var(--navy); white-space: nowrap; }
 #caption.karaoke h2 { color: #7d1a29; }
-#caption p { margin: 0; font-size: 27px; color: #5b4d3f; line-height: 1.3; }
+#caption p { margin: 0; font-size: 30px; color: #3d3127; line-height: 1.3; }
 #caption .arrow { position: absolute; top: 50%; margin-top: -24px; width: 48px; height: 48px; line-height: 44px; text-align: center; font-size: 26px; color: var(--cream);
   background: var(--ink); border-radius: 50%; }
 #caption .arrow.l { left: -74px; } #caption .arrow.r { right: -74px; }
@@ -99,7 +102,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   <div class="clock" id="oClock"></div>
   <div class="hit" id="hitVideo" style="left:0;width:960px"></div>
   <div class="hit" id="hitKaraoke" style="left:960px;width:960px"></div>
-  <div id="caption"><span class="arrow l">◄</span><div class="lft"><div class="k" id="cK"></div><h2 id="cTitle"></h2></div><p id="cSub"></p><span class="arrow r">►</span></div>
+  <div id="caption"><div class="slip"><div class="lft"><div class="k" id="cK"></div><h2 id="cTitle"></h2></div><p id="cSub"></p></div></div>
   <div class="hint" id="hint"></div>
   <div id="toast" hidden></div>
   <div class="grain" id="grain"></div>
@@ -109,7 +112,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "1.0.2";
+  var APP_VERSION = "1.0.3";
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function ljson(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
@@ -502,12 +505,19 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   }
   var OSW = "Oswald, Arial Narrow, sans-serif", YT = "Caprasimo, Cooper Black, Georgia, serif";
   // a painted glow: hard-edged rings of light, the way they were laid in on a cel
+  // A pale lamp colour laid thinly over a dusk sky reads as grey smoke, not light; so the outer rings of a pale glow
+  // are a warmer, stronger version of it and only the core keeps the lamp's own cream.
+  function pale(col) { var c = hx(col), mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mn > 160 && mx - mn < 90; }
   function halo(cx, cy, rx, ry, col, a, cls) {
-    return '<g' + (cls ? ' class="' + cls + '"' : "") + ">" + El(cx, cy, rx, ry, col, op((a * .32).toFixed(3))) + El(cx, cy, rx * .72, ry * .72, col, op((a * .4).toFixed(3))) + El(cx, cy, rx * .46, ry * .46, col, op((a * .55).toFixed(3))) + "</g>";
+    var outer = col, mid = col;
+    var k = [.26, .38, .6];
+    // a lamp's glow is tighter and brighter than a neon's wash
+    if (pale(col)) { outer = cmix(col, "#ff8a3d", .6); mid = cmix(col, "#ffb04a", .35); rx *= .7; ry *= .7; k = [.2, .42, .85]; }
+    return '<g' + (cls ? ' class="' + cls + '"' : "") + ">" + El(cx, cy, rx, ry, outer, op((a * k[0]).toFixed(3))) + El(cx, cy, rx * .7, ry * .7, mid, op((a * k[1]).toFixed(3))) + El(cx, cy, rx * .42, ry * .42, col, op((a * k[2]).toFixed(3))) + "</g>";
   }
   function rhalo(x, y, w, h, pad, col, a) {
     var o = "";
-    for (var i = 2; i >= 1; i--) o += '<rect x="' + n1(x - pad * i) + '" y="' + n1(y - pad * i) + '" width="' + n1(w + pad * i * 2) + '" height="' + n1(h + pad * i * 2) + '" rx="' + n1(pad * i * 2) + '" fill="' + col + '"' + op((a * (i === 2 ? .1 : .16)).toFixed(3)) + "/>";
+    for (var i = 2; i >= 1; i--) o += '<rect x="' + n1(x - pad * i) + '" y="' + n1(y - pad * i) + '" width="' + n1(w + pad * i * 2) + '" height="' + n1(h + pad * i * 2) + '" rx="' + n1(pad * i * 2) + '" fill="' + (i === 2 && pale(col) ? cmix(col, "#ff8a3d", .5) : col) + '"' + op((a * (i === 2 ? .1 : .16)).toFixed(3)) + "/>";
     return o;
   }
 
@@ -582,6 +592,185 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
     return grainURL;
   }
 
+  // ===== Friday Night Video's building, shared by the store, the Strip and the bar =====
+  function Ic(P, base, cool) { return cmix(cmul(base, "#787e94"), cmul(base, cool ? "#f2fbff" : "#fff3dc", 1.05), P.warm); }
+  function snowCap(P, x, y, w, t) {
+    if (!P.snow) return "";
+    var r = rand(Math.round(x * 7 + y)), d = "M" + n1(x - 2) + "," + n1(y + 1), n = Math.max(2, Math.round(w / 18));
+    for (var i = 0; i <= n; i++) d += " L" + n1(x - 2 + (w + 4) * i / n) + "," + n1(y - t * (.6 + r() * .6));
+    d += " L" + n1(x + w + 2) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x - 2) + "," + n1(y + 1) + "Z";
+    return Pt(d, Tc(P, OB.snow)) + Pt("M" + n1(x) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x + w) + "," + n1(y + 1) + "Z", Sc(P, OB.snow), op(".7"));
+  }
+  function roofUnit(P, x, y, w, h) {
+    var o = R(x, y, w, h, Lc(P, "#b9bcc2")) + R(x + w * .62, y, w * .38, h, Sc(P, "#b9bcc2")) + R(x, y, w, 4, Tc(P, "#d9dbe0"));
+    for (var i = 1; i < 5; i++) o += R(x + 4, y + 6 + i * (h - 8) / 5, w * .55, 1.4, Sc(P, "#8a8d96"), op(".7"));
+    return o + snowCap(P, x, y, w, 7);
+  }
+  function column(P, x) {
+    var o = Pg([x - 7, 461, x, 461, x, 692, x - 7, 692], Sc(P, OB.column)) + R(x, 461, 24, 231, Lc(P, OB.column));
+    o += R(x + 17, 461, 7, 231, cmix(Lc(P, OB.column), Sc(P, OB.column), .45));
+    if (P.mode === "day" || P.mode === "golden") o += Pg([x, 461, x + 24, 461, x + 24, 498, x, 516], Sc(P, OB.column), op(".85"));
+    else o += R(x, 461, 24, 231, Sc(P, OB.column), op(P.night ? ".55" : ".35"));
+    if (P.lit) o += R(x, 600, 24, 92, "#ffcf87", op((.18 * P.warm).toFixed(2)));
+    return o + R(x - 7, 684, 31, 8, Sc(P, "#bfb4a2"));
+  }
+  function glassOver(P, x, y, w, h, seed) {
+    var r = rand(seed), o = "", day = P.mode === "day" || P.mode === "golden";
+    var refl = day ? cmix(P.sky[1][1], "#ffffff", .25) : P.night ? "#4b5690" : cmix(P.sky[2][1], "#ffffff", .1);
+    o += R(x, y, w, h, refl, op(day ? (P.heavy ? ".42" : ".5") : P.lit ? ".1" : ".3"));
+    // the two diagonal glints every cel painter puts on glass
+    var a = x + w * (.18 + r() * .2), g = day ? ".42" : ".12";
+    o += Pg([a, y, a + 34, y, a - 30, y + h, a - 64, y + h], "#ffffff", op(g)) + Pg([a + 46, y, a + 56, y, a - 8, y + h, a - 18, y + h], "#ffffff", op(g));
+    return o;
+  }
+  function videoInterior(P, x, y, w, h, seed) {
+    var r = rand(seed), o = "", wallc = Ic(P, "#efe0bc");
+    o += R(x, y, w, h, wallc) + R(x, y, w, 12, Ic(P, "#cdbf9c"));
+    for (var fx = x + 20; fx < x + w - 30; fx += 92) o += R(fx, y + 4, 56, 5, P.lit ? "#fffef2" : Ic(P, "#dcdcd0"));
+    for (var row = 0; row < 3; row++) {
+      var ry = y + 30 + row * 30;
+      if (ry + 22 > y + h - 34) break;
+      o += R(x, ry + 22, w, 4, Ic(P, "#8a6440"));
+      for (var sx = x + 2; sx < x + w - 4; sx += 5 + (r() < .2 ? 2 : 0)) o += R(sx, ry + (r() < .3 ? 2 : 0), 4, 22 - (r() < .3 ? 2 : 0), Ic(P, cmix(SPINES[Math.floor(r() * SPINES.length)], "#d9c9a6", .3)));
+    }
+    // a gondola of new releases facing out
+    o += R(x, y + h - 30, w, 30, Ic(P, "#a7744a"));
+    for (sx = x + 4; sx < x + w - 14; sx += 15) o += R(sx, y + h - 27, 12, 18, Ic(P, SPINES[Math.floor(r() * SPINES.length)])) + R(sx + 2, y + h - 22, 8, 3, Ic(P, "#f4efe0"), op(".7"));
+    return o;
+  }
+  function glassPoster(P, x, y, w, h, kind) {
+    var o = "", t = function (c) { return Wc(P, c, .45); };
+    if (kind === 0) { // a sci-fi one-sheet: a ringed planet over a red title band
+      o += R(x, y, w, h, t("#1d2a5c")) + Ci(x + w * .55, y + h * .4, w * .28, t("#e98a3a")) + El(x + w * .55, y + h * .42, w * .46, w * .08, "none", ' stroke="' + t("#f7d488") + '" stroke-width="2"');
+      o += Ci(x + w * .2, y + h * .15, 1.4, t("#ffffff")) + Ci(x + w * .8, y + h * .2, 1.2, t("#ffffff")) + R(x, y + h * .74, w, h * .12, t("#c4313d"));
+    } else if (kind === 1) { // a creature feature
+      o += R(x, y, w, h, t("#14161c")) + Ci(x + w * .5, y + h * .38, w * .3, t("#9fdc5a")) + Ci(x + w * .5, y + h * .38, w * .11, t("#14161c"));
+      for (var i = 0; i < 5; i++) o += R(x + w * (.12 + i * .17), y + h * .66, 3, 6 + i % 3 * 5, t("#c4313d"));
+      o += R(x + w * .1, y + h * .82, w * .8, 4, t("#e8e2d0"));
+    } else if (kind === 2) { // an action picture
+      o += R(x, y, w, h, t("#e8762c")) + Pg([x + w * .5, y + h * .1, x + w * .62, y + h * .38, x + w * .92, y + h * .4, x + w * .66, y + h * .56, x + w * .76, y + h * .84, x + w * .5, y + h * .66, x + w * .24, y + h * .84, x + w * .34, y + h * .56, x + w * .08, y + h * .4, x + w * .38, y + h * .38], t("#ffd84d"));
+      o += R(x + w * .1, y + h * .86, w * .8, 5, t("#1b1b22"));
+    }
+    return R(x - 2, y - 2, w + 4, h + 4, t("#f2ede0")) + o;
+  }
+  function bulkhead(P, x, y, w) {
+    var o = R(x, y, w, 30, Wc(P, OB.brick, .35)), m = cmix(Wc(P, OB.brick, .35), "#e8dccb", .3);
+    for (var row = 0; row < 4; row++) { o += R(x, y + row * 7.5, w, 1.2, m, op(".7")); for (var bx = x + (row % 2 ? 0 : 9); bx < x + w; bx += 18) o += R(bx, y + row * 7.5, 1.2, 7.5, m, op(".6")); }
+    return o + R(x, y, w, 3, Sc(P, OB.brick), op(".6"));
+  }
+  function sodaMachine(P, x, y) {
+    var h = 692 - y, body = "#c63a33", o = "";
+    o += R(x, y, 62, h, Wc(P, body, .4)) + R(x + 46, y, 16, h, Sc(P, body));
+    o += R(x + 6, y + 8, 36, 74, P.lit ? "#fff0d6" : Wc(P, "#e9e2d2", .4));
+    o += Pt("M" + (x + 6) + "," + (y + 54) + " Q" + (x + 24) + "," + (y + 40) + " " + (x + 42) + "," + (y + 56) + " L" + (x + 42) + "," + (y + 64) + " Q" + (x + 24) + "," + (y + 50) + " " + (x + 6) + "," + (y + 62) + "Z", P.lit ? "#e0443a" : Wc(P, body, .4));
+    for (var i = 0; i < 4; i++) o += R(x + 8 + i * 8, y + 14, 6, 9, P.lit ? ["#e0443a", "#2f6fc4", "#f2c13a", "#3c9a5a"][i] : Sc(P, "#888888"));
+    o += R(x + 44, y + 20, 10, 40, Sc(P, "#2a2a30")) + R(x + 8, y + 96, 34, 14, Sc(P, "#2a2224"));
+    return o;
+  }
+  function returnsBox(P, x, by) {
+    var b = "#2f5cad", o = El(x + 22, by, 30, 4, Sc(P, "#1a1820"), op(".4"));
+    o += Pt("M" + x + "," + by + " L" + x + "," + (by - 58) + " Q" + x + "," + (by - 70) + " " + (x + 22) + "," + (by - 70) + " Q" + (x + 44) + "," + (by - 70) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Wc(P, b, .5));
+    o += Pt("M" + (x + 28) + "," + by + " L" + (x + 28) + "," + (by - 69) + " Q" + (x + 44) + "," + (by - 66) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Sc(P, b));
+    o += R(x + 8, by - 52, 28, 6, "#15131c") + R(x + 6, by - 30, 32, 12, Wc(P, "#f1eee6", .4));
+    return o + snowCap(P, x + 2, by - 70, 40, 6);
+  }
+  function videoFront(P) {
+    var o = "", fr = Sc(P, OB.bronze), frL = Lc(P, OB.bronze);
+    // a drinks machine glowing under the walkway
+    o += sodaMachine(P, 898, 548);
+    // left window
+    o += R(964, 490, 288, 172, fr) + videoInterior(P, 970, 496, 276, 160, 3);
+    o += R(990, 504, 110, 16, Ic(P, "#c4313d")) + R(990, 520, 110, 3, Ic(P, "#8a2230"));
+    o += glassPoster(P, 1172, 512, 52, 78, 0) + glassPoster(P, 980, 566, 50, 74, 2);
+    // a cardboard standee: a space ranger, arms folded
+    var sd = Ic(P, "#5a7fb8"), sdl = Ic(P, "#e8d6b0");
+    o += R(1112, 586, 34, 66, sd) + Ci(1129, 578, 13, sdl) + Pt("M1114,574 a15,15 0 0 1 30,0 l0,-4 a15,13 0 0 0 -30,0z", Ic(P, "#d8d8e0")) + R(1110, 604, 38, 8, Ic(P, "#e2b33c"));
+    o += glassOver(P, 970, 496, 276, 160, 5) + R(1106, 490, 6, 172, fr) + R(964, 490, 288, 3, frL, op(".6"));
+    // the door bay: transom glass over the door opening
+    o += R(1250, 490, 104, 202, fr) + videoInterior(P, 1258, 498, 88, 64, 9) + glassOver(P, 1258, 498, 88, 64, 11) + R(1250, 562, 104, 8, fr);
+    o += R(1258, 570, 88, 122, Ic(P, "#efe0bc")) + R(1258, 570, 88, 10, Ic(P, "#d9c6a0"));
+    for (var sx = 1262; sx < 1344; sx += 5) o += R(sx, 596, 4, 22, Ic(P, SPINES[(sx * 7) % SPINES.length]));
+    o += R(1258, 618, 88, 4, Ic(P, "#8a6440")) + R(1258, 650, 88, 42, Ic(P, "#b4a07a")) + R(1272, 640, 60, 52, Ic(P, "#7a4c34")) + R(1272, 640, 60, 5, Ic(P, "#a8764e"));
+    // right window
+    o += R(1350, 490, 292, 172, fr) + videoInterior(P, 1356, 496, 280, 160, 7);
+    o += glassPoster(P, 1560, 510, 54, 80, 1);
+    // a customer browsing, back to us
+    var cu = Ic(P, "#4a5a7a"), sk = Ic(P, "#c99a78");
+    o += Pt("M1528,656 L1530,606 Q1532,592 1546,590 L1566,590 Q1580,592 1582,606 L1584,656 Z", cu) + Ci(1556, 578, 12, Ic(P, "#5a3a2a")) + R(1550, 588, 12, 4, sk);
+    o += glassOver(P, 1356, 496, 280, 160, 13) + R(1492, 490, 6, 172, fr) + R(1350, 490, 292, 3, frL, op(".6"));
+    o += bulkhead(P, 964, 662, 288) + bulkhead(P, 1350, 662, 292);
+    // the returns box by the door
+    o += returnsBox(P, 1362, 708);
+    return o;
+  }
+  // Friday Night Video's building as seen from its own car park: the master drawing. The Strip and the bar's doorstep
+  // draw this same building, scaled into place, so the store looks the same from every side of the street.
+  function videoBuilding(P) {
+    var o = "", r = rand(19), X0 = 868, X1 = 1666, i, x, y;
+    // rooftop air-conditioners peeking over the mansard
+    o += roofUnit(P, 1064, 306, 80, 36) + roofUnit(P, 1480, 314, 62, 28) + R(1196, 318, 8, 24, Sc(P, OB.steel)) + R(1193, 315, 14, 5, Lc(P, OB.steel));
+    // the left end of the building, turning away from us
+    o += Pg([848, 366, 868, 340, 868, 692, 848, 686], cmul(Sc(P, OB.stucco), "#e2e2ea"));
+    o += Pg([846, 366, 868, 340, 868, 348, 846, 372], Sc(P, OB.cap));
+    // coping, then the shingled mansard
+    o += R(X0 - 8, 338, X1 - X0 + 16, 10, Tc(P, OB.cap)) + R(X0 - 8, 347, X1 - X0 + 16, 3, Sc(P, OB.cap));
+    var mL = Mc(P, OB.mansard), mS = cmix(mL, Sc(P, OB.mansard), .55), mD = Sc(P, OB.mansard), mH = cmix(mL, Tc(P, "#c49a76"), .35);
+    o += R(X0 - 6, 350, X1 - X0 + 12, 101, mL);
+    for (y = 358; y < 450; y += 10) {
+      o += R(X0 - 6, y - 1, X1 - X0 + 12, 3.2, mD, op(".7")) + R(X0 - 6, y + 2.2, X1 - X0 + 12, 1.2, mH, op(".35"));
+      for (x = X0 - 6 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) {
+        o += R(x, y + 2, 1.2, 8, mS, op(".35"));
+        var q = r(); if (q < .12) o += R(x + 2, y + 2, 18, 8, mH, op(".5")); else if (q < .2) o += R(x + 2, y + 2, 18, 8, mD, op(".35"));
+      }
+    }
+    o += R(X0 - 6, 350, X1 - X0 + 12, 7, mD, op(".75"));
+    if (P.snow) o += R(X0 - 8, 330, X1 - X0 + 16, 10, Tc(P, OB.snow)) + snowCap(P, X0 - 6, 352, X1 - X0 + 12, 7);
+    // fascia board and the deep shade under the overhang
+    o += R(X0 - 8, 450, X1 - X0 + 16, 11, Lc(P, OB.trim)) + R(X0 - 8, 459, X1 - X0 + 16, 2.5, Sc(P, OB.trim));
+    o += R(X0, 461, X1 - X0, 19, Sc(P, OB.soffit));
+    var wall = cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .35);
+    o += R(X0, 480, X1 - X0, 212, wall);
+    // recessed cans in the soffit, and the little pools they throw (lit from dusk on)
+    for (x = 960; x < X1; x += 150) {
+      o += El(x, 470, 9, 2.6, P.lit ? "#fff3cf" : Sc(P, "#d8d0c0"));
+      if (P.lit) o += Pg([x - 9, 472, x + 9, 472, x + 34, 692, x - 34, 692], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
+    }
+    o += videoFront(P);
+    [868, 1640].forEach(function (cx) { o += column(P, cx); });
+    return o;
+  }
+  function waterTower(P, cx, cy) {
+    var dist = .32, body = "#d9dee4", lit = Hz(P, Lc(P, body), dist), shd = Hz(P, Sc(P, body), dist), leg = Hz(P, Sc(P, "#8a909c"), dist), o = "";
+    o += Ln(cx - 46, cy + 22, cx - 62, 360, leg, 5) + Ln(cx + 46, cy + 22, cx + 62, 360, leg, 5) + Ln(cx - 16, cy + 30, cx - 20, 360, leg, 4) + Ln(cx + 16, cy + 30, cx + 20, 360, leg, 4);
+    o += Ln(cx - 56, cy + 62, cx + 56, cy + 62, leg, 2.4) + Ln(cx - 58, cy + 62, cx + 18, cy + 92, leg, 1.6) + Ln(cx + 58, cy + 62, cx - 18, cy + 92, leg, 1.6);
+    o += Ln(cx, cy + 30, cx, 360, leg, 6);
+    var tank = "M" + (cx - 64) + "," + cy + " Q" + (cx - 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + 64) + "," + (cy - 34) + " " + (cx + 64) + "," + cy + " Q" + (cx + 60) + "," + (cy + 32) + " " + cx + "," + (cy + 34) + " Q" + (cx - 60) + "," + (cy + 32) + " " + (cx - 64) + "," + cy + "Z";
+    o += Pt(tank, shd);
+    var lx = P.lx < 0 ? -1 : 1;
+    o += Pt("M" + (cx + lx * 64) + "," + cy + " Q" + (cx + lx * 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + lx * 14) + "," + cy + " " + cx + "," + (cy + 34) + " Q" + (cx + lx * 60) + "," + (cy + 32) + " " + (cx + lx * 64) + "," + cy + "Z", lit);
+    o += Pg([cx - 54, cy - 22, cx, cy - 58, cx + 54, cy - 22], shd) + Pg([cx + 54 * lx, cy - 22, cx, cy - 58, cx + 4 * lx, cy - 22], lit, op(".85"));
+    o += R(cx - 1.5, cy - 70, 3, 14, leg);
+    o += Ln(cx - 66, cy + 4, cx + 66, cy + 4, leg, 2) + Ln(cx - 66, cy - 6, cx + 66, cy - 6, leg, 1);
+    return o + snowCap(P, cx - 44, cy - 30, 88, 8);
+  }
+  // the edge of town behind the shops, as the store's car park sees it: a far line of trees, a few roofs, no towers
+  function suburbBand(P, base) {
+    var r = rand(7), o = "", x, w, hh, d;
+    var far = Hz(P, Sc(P, "#4f6a48"), .7), far2 = Hz(P, Sc(P, "#486642"), .52), roofc = Hz(P, Sc(P, OB.roof), .45), wall = Hz(P, Sc(P, OB.siding), .4);
+    d = "M-10," + base + " L-10," + (base - 70); x = -10;
+    while (x < 1930) { w = 40 + r() * 70; hh = 14 + r() * 30; d += " Q" + n1(x + w * .5) + "," + n1(base - 70 - hh) + " " + n1(x + w) + "," + n1(base - 70 + (r() - .5) * 10); x += w; }
+    o += Pt(d + " L1930," + base + " Z", far);
+    // a few houses at the edge of town, their windows lit after dark
+    [[20, 150, 120], [180, 110, 86], [1010, 130, 96], [1620, 150, 110]].forEach(function (h) {
+      var hx0 = h[0], hw = h[1], top = base - h[2];
+      o += R(hx0, top, hw, h[2], wall) + Pg([hx0 - 10, top + 4, hx0 + hw * .5, top - hw * .32, hx0 + hw + 10, top + 4], roofc);
+      if (P.lit) [.25, .62].forEach(function (f) { if (r() < .75) o += R(hx0 + hw * f, top + 22, 16, 20, "#ffd88a", op(".75")); });
+    });
+    d = "M-10," + base + " L-10," + (base - 30); x = -10;
+    while (x < 1930) { w = 60 + r() * 90; hh = 10 + r() * 26; d += " Q" + n1(x + w * .5) + "," + n1(base - 30 - hh) + " " + n1(x + w) + "," + n1(base - 30 + (r() - .5) * 8); x += w; }
+    o += Pt(d + " L1930," + base + " Z", far2);
+    return o;
+  }
 
     // ---------- the shared street: one time of day and one sky for the Strip, the video store and the bar ----------
   // The video store owns the settings (its front desk "Outside" panel) and fetches the weather. The Strip and the bar
@@ -664,7 +853,8 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
     function clock(d) {
       d = d || new Date();
       var h = d.getHours(), m = d.getMinutes();
-      return DAYS[d.getDay()] + " · " + ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
+      // just the time: the shops are named for Friday and Saturday night, so a clock saying "Sunday" argues with them
+      return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
     }
     function e(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     // parts: [key, label]. key is the button as printed ("OK", "BACK", "◄ ►"), or r / g / y / b for a coloured button,
@@ -721,34 +911,15 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   // The Strip is the same block you see from each shop's own doorstep: the video store under its shingled mansard with
   // red channel letters and its pole sign out front on the left, an alley, then the two-storey brick bar with the neon
   // board, the striped awning and a streetlight on the corner.
+  // where the store's building (drawn in its own car park's coordinates, x 868..1666, ground at 692) sits on the Strip
+  var VS = .852, VT = "translate(" + n1(260 - 868 * VS) + "," + n1(760 - 692 * VS) + ") scale(" + VS + ")";
+  function vx(x) { return 260 + (x - 868) * VS; } function vy(y) { return 760 + (y - 692) * VS; }
   function buildPlateSVG(P) {
     var o = "", r = rand(43), x, y;
-    // far skyline
-    var c1 = Hz(P, Sc(P, "#545276"), .45);
-    x = -20;
-    while (x < 1940) {
-      var w = 60 + r() * 90, h = 150 + r() * 190;
-      o += R(x, 760 - h, w, h, c1);
-      if (P.lit) for (var wy = 760 - h + 14; wy < 700; wy += 18) for (var wx = x + 8; wx < x + w - 10; wx += 14) if (r() < .22) o += R(wx, wy, 5, 7, "#ffd98c", op(".7"));
-      x += w + 4 + r() * 14;
-    }
-    // --- Friday Night Video (x 260..940) ---
-    var X0 = 260, X1 = 940;
-    o += R(X0 - 4, 354, X1 - X0 + 8, 12, Tc(P, OB.cap));
-    var mL = Mc(P, OB.mansard), mD = Sc(P, OB.mansard);
-    o += R(X0, 366, X1 - X0, 92, mL);
-    for (y = 374; y < 456; y += 10) { o += R(X0, y, X1 - X0, 2.5, mD, op(".65")); for (x = X0 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) o += R(x, y + 2, 1.2, 8, mD, op(".35")); }
-    o += R(X0 - 4, 458, X1 - X0 + 8, 12, Lc(P, OB.trim)) + R(X0, 470, X1 - X0, 16, Sc(P, OB.soffit));
-    o += R(X0, 486, X1 - X0, 274, cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .32));
-    // windows full of tapes, and the door bay
-    function tapes(x0, w) {
-      var s = R(x0, 540, w, 180, Sc(P, OB.bronze)) + R(x0 + 8, 548, w - 16, 164, "#f3d489");
-      for (var yy = 556; yy < 702; yy += 34) { s += R(x0 + 8, yy + 26, w - 16, 4, "#8a6a3c"); for (var xx = x0 + 14; xx < x0 + w - 16; xx += 10 + r() * 3) s += R(xx, yy + 2, 7, 24, SPINES[Math.floor(r() * SPINES.length)]); }
-      return s + Pg([x0 + 8, 548, x0 + 70, 548, x0 + 8, 640], "#ffffff", op(".12"));
-    }
-    o += tapes(290, 220) + tapes(690, 220);
-    o += R(540, 548, 120, 212, Sc(P, OB.bronze)) + R(548, 556, 104, 204, "#ffe2a6");
-    o += R(X1 - 20, 486, 20, 274, Sc(P, OB.column));
+    // the edge of town behind the shops (the same trees and roofs the store's car park looks out on)
+    o += suburbBand(P, 760);
+    // --- Friday Night Video: the store's own building, drawn once and scaled into place (x 260..940) ---
+    o += '<g transform="' + VT + '">' + videoBuilding(P) + "</g>";
     // the pole sign out front (posts and frame; the faces are cels)
     var post = "#5d606c";
     [92, 196].forEach(function (px) { o += R(px, 300, 18, 492, Sc(P, post)) + R(px, 300, 6, 492, Lc(P, post)); });
@@ -792,14 +963,18 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 
   function buildCelsSVG(P) {
     var o = "", lit = P.lit;
-    // the video store's channel letters on the mansard (they glow from dusk on, like at the store)
-    var fs = fitSize(videoName, 620, 64, .52), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9");
-    if (lit) o += '<text x="600" y="436" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(videoName) + "</text>";
-    o += '<text x="604" y="442" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(videoName) + "</text>";
-    o += '<text x="600" y="436" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(videoName) + "</text>";
-    // OPEN, over the door rather than across the tapes
-    o += '<g class="n-flick">' + neonText(600, 532, 26, "OPEN", NEON.red, OSW, ' font-weight="600" letter-spacing="4"') + "</g>";
-    o += '<g id="vDoor"><rect x="548" y="556" width="104" height="204" fill="#1e3d93"' + ink(3) + "/>" + R(560, 574, 80, 104, "#fff0c8", ink(2.5)) + R(632, 676, 8, 28, "#f0b93a", ink(1.5)) + "</g>";
+    // the video store's channel letters, its OPEN sign and its glass door, exactly where they are at the store
+    var fs = Math.min(62, fitSize(videoName, 700, 62, .52)), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9"), g = '<g transform="' + VT + '">';
+    if (lit) g += '<text x="1262" y="430" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(videoName) + "</text>";
+    g += '<text x="1266" y="436" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(videoName) + "</text>";
+    g += '<text x="1262" y="430" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(videoName) + "</text>";
+    g += '<g class="n-flick">' + (lit ? halo(1430, 532, 110, 52, "#ff4f86", .5) : "") + '<rect x="1378" y="512" width="104" height="38" rx="12" fill="none" stroke="#ff3d7a" stroke-width="4"/>' +
+      '<text x="1430" y="541" text-anchor="middle" font-family="' + YT + '" font-size="25" fill="#ffd3e2" stroke="#ff2d6f" stroke-width="2.2" paint-order="stroke" letter-spacing="1">OPEN</text></g>';
+    var gl = P.night ? "#4b5690" : cmix(P.sky[2][1], "#ffffff", .1), fr = Lc(P, OB.bronze);
+    g += '<g id="vDoor">' + R(1258, 570, 88, 122, gl, op(".14")) + '<rect x="1261" y="573" width="82" height="116" fill="none" stroke="' + fr + '" stroke-width="7"/>' +
+      '<rect x="1257.5" y="569.5" width="89" height="123" fill="none"' + ink(2) + "/>" + R(1264, 626, 76, 7, Lc(P, "#c9c6c0")) +
+      '<rect x="1272" y="584" width="60" height="16" rx="3" fill="#ffd84d"' + ink(1) + "/>" + "</g>";
+    o += g + "</g>";
     // the pole sign's faces
     var fn = splitName(videoName);
     if (lit) o += halo(156, 205, 190, 130, "#fff0c8", .45);
@@ -826,10 +1001,11 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
     if (lit) o += halo(1814, 214, 120, 70, "#ffe2a6", .5 * P.warm) + Pg([1792, 212, 1836, 212, 1900, 800, 1720, 800], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
     o += El(1814, 211, 22, 5, lit ? "#fff3cf" : "#c9c4b8");
     // which shop you're at: the other one falls into shadow, and light spills from your door
-    o += '<g class="shade" id="shadeVideo">' + R(34, 106, 244, 198, "#0a0818") + R(50, 312, 212, 86, "#0a0818") + R(92, 398, 18, 394, "#0a0818") + R(196, 398, 18, 394, "#0a0818") + R(92, 304, 18, 8, "#0a0818") + R(196, 304, 18, 8, "#0a0818") + R(254, 352, 692, 410, "#0a0818") + "</g>";
+    o += '<g class="shade" id="shadeVideo">' + R(34, 106, 244, 198, "#0a0818") + R(50, 312, 212, 86, "#0a0818") + R(92, 398, 18, 394, "#0a0818") + R(196, 398, 18, 394, "#0a0818") + R(92, 304, 18, 8, "#0a0818") + R(196, 304, 18, 8, "#0a0818") + R(252, 420, 696, 342, "#0a0818") + R(vx(1352), vy(692), 60 * VS, 30, "#0a0818") + "</g>";
     o += '<g class="shade" id="shadeKaraoke">' + R(970, 160, 920, 602, "#0a0818") + R(1886, 230, 22, 540, "#0a0818") + "</g>";
     // light spilling out of the open-for-business door onto the footpath
-    o += '<g class="dglow" id="glowVideo">' + R(548, 556, 104, 204, "#fff2c8", op(".22")) + Pg([548, 760, 652, 760, 760, 812, 440, 812], "#ffe2a6", op(".28")) + El(600, 812, 200, 18, "#ffd38c", op(".3")) + "</g>";
+    var dx0 = vx(1258), dx1 = vx(1346), dyt = vy(570), dcx = (dx0 + dx1) / 2;
+    o += '<g class="dglow" id="glowVideo">' + R(dx0, dyt, dx1 - dx0, 760 - dyt, "#fff2c8", op(".22")) + Pg([dx0, 760, dx1, 760, dx1 + 100, 812, dx0 - 100, 812], "#ffe2a6", op(".28")) + El(dcx, 812, 190, 18, "#ffd38c", op(".3")) + "</g>";
     o += '<g class="dglow" id="glowKaraoke">' + R(1428, 556, 112, 204, "#ffd9b0", op(".18")) + Pg([1428, 760, 1540, 760, 1650, 812, 1318, 812], "#ffc8a0", op(".28")) + El(1484, 812, 200, 18, "#ffb8c8", op(".3")) + "</g>";
     return o;
   }

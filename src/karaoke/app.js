@@ -1,4 +1,4 @@
-  var APP_VERSION = "0.6.2", APP_DATE = "22 Nov 2026";
+  var APP_VERSION = "0.6.4", APP_DATE = "22 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -138,7 +138,8 @@
     var w = window.innerWidth || 1920, h = window.innerHeight || 1080, s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
-  function go(sc) { SC = sc; $("stage").setAttribute("data-sc", sc); }
+  // a line Rhonda was saying belongs to the room she said it in: it doesn't follow you into the songbook
+  function go(sc) { if (sc !== SC) { clearTimeout(sayT); $("say").hidden = true; } SC = sc; $("stage").setAttribute("data-sc", sc); }
   function fadeThen(fn, ms) { $("fade").classList.add("on"); setTimeout(function () { fn(); requestAnimationFrame(function () { requestAnimationFrame(function () { $("fade").classList.remove("on"); }); }); }, ms || 480); }
   function yes() { return true; }
   var sayT = null;
@@ -275,7 +276,8 @@
 
   // ---------- inside ----------
   var SPOTS = [
-    { id: "book", x: 961, y: 882, t: "The songbook", s: function () { return "Pick a song"; } },
+    // the book has SONGBOOK printed on it, so its tag says only what it's for
+    { id: "book", x: 961, y: 882, t: "Pick a song", s: function () { return ""; } },
     { id: "stage", x: 910, y: 396, t: "The stage", s: function () { return queue.length ? queue[0].singer + " is up — take the stage" : "Nobody's up yet"; } },
     { id: "board", x: 1680, y: 134, t: "Up next", s: function () { return queue.length ? queue.length + (queue.length === 1 ? " slip" : " slips") + " on the board" : "The request board"; } },
     { id: "bell", x: 1320, y: 914, t: "Ring the bell", s: function () { return "Bar name, sounds and set-up"; } },
@@ -289,7 +291,7 @@
     $("bCels").innerHTML = barCelsSVG({ queue: queue, wall: wall });
     var on = (cur() && SC === "bar" && cur().getAttribute("data-id")) || (queue.length ? "stage" : "book");
     $("bSpots").innerHTML = SPOTS.map(function (s) {
-      return '<div class="spot-dot" data-for="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y + 16) + 'px"></div><div class="spot f' + (s.id === on ? " on" : "") + '" data-act="spot" data-id="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y - 14) + 'px">' + esc(s.t) + "<small>" + esc(s.s()) + "</small></div>";
+      return '<div class="spot-dot" data-for="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y + 16) + 'px"></div><div class="spot f' + (s.id === on ? " on" : "") + '" data-act="spot" data-id="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y - 14) + 'px">' + esc(s.t) + (s.s() ? "<small>" + esc(s.s()) + "</small>" : "") + "</div>";
     }).join("");
     spotDots();
     hint("bHint", [["", "◄ ► ▲ ▼  look around"], ["", "OK  choose"], ["y", "Up next"], ["b", "Sounds " + (prefs.sound ? "on" : "off")]]);
@@ -591,7 +593,7 @@
     h += '<div class="opt f" data-act="d-name">The name on the sign<span>' + esc(prefs.barName) + "</span></div>";
     h += '<div class="opt f" data-act="d-sound">Bar sounds<span>' + (prefs.sound ? "On" : "Off") + "</span></div>";
     h += '<div class="opt f" data-act="d-lights">Lights<span>' + LIGHTS[prefs.lights].n + "</span></div>";
-    h += '<div class="opt f" data-act="d-screen">Stage screen<span>' + (prefs.screen === "classic" ? "Classic blue" : "Rainy window") + "</span></div>";
+    h += '<div class="opt f" data-act="d-screen">Stage screen<span>' + (prefs.screen === "classic" ? "Classic blue" : "City backdrop") + "</span></div>";
     h += '<div class="opt f" data-act="d-big">Words on the stage screen<span>' + (prefs.big ? "Extra big" : "Big") + "</span></div>";
     h += '<div class="opt f" data-act="d-fair">Turns<span>' + (prefs.fair ? "Fair: everyone gets a go first" : "In the order slips arrive") + "</span></div>";
     h += '<div class="opt f" data-act="d-check">Sound check<span>' + lagText() + "</span></div>";
@@ -956,7 +958,7 @@
       var c = $("cue"); c.hidden = false; c.classList.remove("open");
       cue(who(q) + " — you're up", q.song.t, HOST + " is finding the words…");
       hint("sgHint", [["", "OK  pause"], ["", "◄ ►  words earlier / later"], ["", "INFO  timing"], ["r", "Stop the song"]]);
-      $("sgProg").firstChild.style.width = "0"; $("sgProg").hidden = false;
+      $("sgProg").firstChild.style.transform = "scaleX(0)"; $("sgProg").hidden = false;
       S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
       var mine = S.id, load = prepare(q);
       load.then(function (d) { if (S && S.id === mine) beginSong(d); }, function (e) { if (S && S.id === mine) songFailed(e && e.kind || "net"); });
@@ -1212,7 +1214,7 @@
     if (lit !== S.glowLit) { S.glowLit = lit; if (lit > 0) stageGlow("tick"); }
     pix.draw(tl, lit, !!now && wait <= 4.5);
     var total = p.dur || S.dur || 0, pct = total > 0 ? Math.max(0, Math.min(100, t / total * 100)) : 0;
-    if (Math.abs(pct - (S.progPct || 0)) >= .1) { S.progPct = pct; $("sgProg").firstChild.style.width = pct.toFixed(1) + "%"; }
+    if (Math.abs(pct - (S.progPct || 0)) >= .2) { S.progPct = pct; $("sgProg").firstChild.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")"; }
     var osd = (S.flash ? S.flash + "\n" : "") + (p.playing() ? "▶ PLAY   " : "❚❚ PAUSE  ") + mmss(t) + (S.dur ? " / " + mmss(p.dur || S.dur) : "");
     if (S.osd !== osd) { S.osd = osd; $("osd").textContent = osd; }
     if (S.showHud) {
@@ -1470,7 +1472,7 @@
     var el = e.target.closest ? e.target.closest(".f") : null;
     if (el && scope().contains(el)) { var was = cur() === el; setFocus(el, true); if (was || !el.classList.contains("tab")) activate(el); return; }
     if (osk || !$("modal").hidden) return;
-    if (SC === "out" && !entering) { if (e.target && e.target.id === "goVideo") FSN.go("video"); else enterBar(); }
+    if (SC === "out" && !entering) { var gv = $("goVideo"); if (gv && e.target && gv.contains(e.target)) FSN.go("video"); else enterBar(); }
     else if (SC === "sing" && CHK) endCheck(true);
     else if (SC === "sing" && INT) endIntermission(true);
     else if (SC === "sing" && S && !S.loading) { if (S.player.playing()) S.player.pause(); else S.player.resume(); }

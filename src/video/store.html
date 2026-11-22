@@ -98,6 +98,9 @@ button { font: inherit; color: inherit; }
    (the film itself keeps its full width). Nothing in it can be clicked or focused. */
 .tv-frame, .intro-yt { overflow: hidden; }
 .intro-yt { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #000; }
+.trailer-view { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 900; background: #000; overflow: hidden; }
+.trailer-view .tv-osd { pointer-events: none; transition: opacity .6s; font-size: 3.6vh; top: 6vh; }
+.trailer-view .tv-osd.gone { opacity: 0; }
 .tv-frame iframe.yt, .intro-yt iframe.yt { position: absolute; left: 0; top: -30%; width: 100%; height: 160%; border: 0; pointer-events: none; }
 .tv-card {
   display: -webkit-box; display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -673,6 +676,12 @@ html.calm .t2-cas1 { transform: translate(612px, 22px); }
   animation: pressBob 1.33s steps(1) infinite; }
 @keyframes pressBob { 0% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-5px) rotate(.8deg); } }
 .land-status { display: none; }
+/* 0.22: the doorstep hint matches the Strip's: words on the night air, key caps for the buttons */
+.land .land-press { background: none; border: 0; box-shadow: none; padding: 0; transform: none; animation: none; font-family: var(--f-ui); font-weight: 500; font-size: 2.6vh;
+  letter-spacing: .04em; color: #fff3d6; text-shadow: 2px 2px 0 #2a1c18, 0 0 12px rgba(10,4,14,.9); }
+.fsn-h { display: inline-block; margin: 0 .9em; white-space: nowrap; }
+.fsn-h kbd { display: inline-block; font-family: var(--f-ui); font-weight: 700; font-size: .92em; line-height: 1.15; color: #2a1c18; background: #fff3d6; border: 2px solid #2a1c18;
+  border-radius: 5px; padding: 0 .35em; margin-right: .4em; text-shadow: none; box-shadow: 0 2px 0 #2a1c18; vertical-align: .05em; }
 .land-clock { position: absolute; top: 3.2vh; right: 3vw; font-family: var(--f-toon); font-size: 26px; color: #fff1d2; pointer-events: none; opacity: .92;
   text-shadow: 2px 0 0 #3a1d14, -2px 0 0 #3a1d14, 0 2px 0 #3a1d14, 0 -2px 0 #3a1d14, 2px 2px 0 #3a1d14, -2px 2px 0 #3a1d14, 2px -2px 0 #3a1d14, -2px -2px 0 #3a1d14, 1px 4px 0 #3a1d14; }
 @media (min-width: 960px) and (min-aspect-ratio: 4/3) {
@@ -1698,6 +1707,56 @@ body.night .logo { z-index: 6; }
 .hold-slip span { display: block; margin-top: calc(var(--case-h) * .03); font-family: var(--f-ui); font-weight: 700; color: #c8402e; font-size: calc(var(--case-h) * .045); letter-spacing: .08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .face.front .hold-slip { top: 50%; }
 
+/* ---- 0.22: the tape box. You're holding the box over the counter; what you can do with it is a rental slip beside
+   it, not a web form: the facts are one typed line, the choices are ruled lines with a box to tick. ---- */
+.panel.case::before { display: none; }
+.overlay.holding { background: rgba(14,8,18,.86); }
+.overlay.holding.lifting { background: rgba(14,8,18,0); }
+.panel.case .case-view { align-items: center; }
+.panel.case .details { position: relative; background: var(--cel-paper) var(--fnv-tooth, none); background-size: auto, 256px 256px;
+  border: 3px solid var(--cel-ink); border-radius: 4px; box-shadow: 10px 12px 0 rgba(10,4,12,.55); padding: 26px 30px 20px; transform: rotate(-.6deg); }
+.panel.case.lifting .details { transform: translateX(3vh) rotate(-.6deg); }
+/* the slip's torn-off top edge */
+.panel.case .details::before { content: ""; position: absolute; left: -3px; right: -3px; top: -12px; height: 12px;
+  background: radial-gradient(circle at 8px 12px, var(--cel-paper) 6px, var(--cel-ink) 6px, var(--cel-ink) 8.5px, transparent 9px) 0 0 / 16px 12px repeat-x; }
+.panel.case .facts { display: block; }
+.panel.case .facts .chip { display: inline; background: none; border: 0; box-shadow: none; padding: 0; margin: 0; border-radius: 0;
+  font-family: var(--f-ui); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cel-ink); }
+.panel.case .facts .chip + .chip::before { content: "·"; margin: 0 .45em; color: var(--muted); }
+.panel.case .facts .chip.imdb, .panel.case .facts .chip.late-chip, .panel.case .facts .chip.br-chip { padding: 0 .35em; border-radius: 3px; margin-left: .45em; }
+.panel.case .facts .chip.imdb::before, .panel.case .facts .chip.late-chip::before, .panel.case .facts .chip.br-chip::before { content: none; }
+.panel.case .facts .chip.imdb { background: var(--cel-mustard); }
+.panel.case .facts .chip.late-chip { background: var(--cel-red); color: #fff3d6; }
+.panel.case .facts .chip.br-chip { background: var(--cel-ink); color: var(--cel-mustard); }
+.panel.case .ccred span { display: block; }
+.panel.case .actions.grid2 { display: block; margin-top: 18px; border-top: 3px solid var(--cel-ink); }
+.panel.case .actions.grid2 .btn { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; width: 100%; margin: 0; padding: 10px 12px;
+  background: none; border: 0; border-bottom: 2px dashed rgba(42,28,24,.3); border-radius: 0; box-shadow: none; transform: none;
+  justify-content: flex-start; text-align: left; color: var(--cel-ink); letter-spacing: .08em; }
+.panel.case .actions.grid2 .btn::before { content: ""; flex: 0 0 auto; width: .9em; height: .9em; margin-right: .8em; border: 3px solid var(--cel-ink); border-radius: 3px;
+  background: #fff8ea; font-size: 1em; line-height: .8em; text-align: center; }
+.panel.case .actions.grid2 .btn.primary { color: var(--cel-red); font-weight: 700; }
+.panel.case .actions.grid2 .btn.focused { background: #ffd75e; color: var(--cel-ink); box-shadow: inset 0 0 0 3px var(--cel-ink); transform: none; }
+.panel.case .actions.grid2 .btn.focused::before { content: "✓"; color: var(--cel-red); font-weight: 700; }
+.panel.case .actions.grid2 .btn:last-child { border-bottom: 0; }
+
+/* ---- 0.22: the marquee board and the corner TV are gone; the wall is the logo, the deal card and two posters ---- */
+.marquee, .crt-mount { display: none !important; }
+@media (min-width: 960px) and (min-aspect-ratio: 4/3) {
+  .banner { left: 32.6%; }
+  #wp0 { left: 56.9%; }
+  #wp1 { left: 80.4%; }
+  .strip { height: calc(var(--u) * 2.4); font-size: calc(var(--u) * 1.75); line-height: calc(var(--u) * 2.3); text-align: left; }
+  .strip span { padding: 0 calc(var(--u) * 3); }
+  .strip.far { text-align: right; }
+  .panel.case .details { max-width: calc(var(--u) * 76); padding: calc(var(--u) * 3.2) calc(var(--u) * 3.6) calc(var(--u) * 2); }
+  .panel.case .facts .chip { font-size: calc(var(--u) * 2.4); }
+  .panel.case .details h3 { font-size: calc(var(--u) * 6.4); line-height: 1.05; }
+  .panel.case .actions.grid2 { margin-top: calc(var(--u) * 2.2); }
+  .panel.case .actions.grid2 .btn { width: 100%; margin: 0; padding: calc(var(--u) * 1.15) calc(var(--u) * 1.4); font-size: calc(var(--u) * 2.5); }
+  .panel.case .actions.grid2 .btn:nth-child(2n) { margin: 0; }
+}
+
 </style>
 
 <div class="store">
@@ -1892,7 +1951,7 @@ body.night .logo { z-index: 6; }
   var extraAisles = [];      // catalogs from the person's installed addons
   var pager = {};            // aisle key -> { base, extras, type, skip, done, loading }
   var MAX_PER_AISLE = 600;
-  var APP_VERSION = "0.21.2", APP_UPDATED = "22 Nov 2026";
+  var APP_VERSION = "0.22.0", APP_UPDATED = "22 Nov 2026";
   /* @@SHARED_VENUE_BRIDGE@@ */
   var staffConnected = false;
   function staffOn() { return staffConnected || !!(account && prefs.staffSeen); }
@@ -2682,7 +2741,7 @@ body.night .logo { z-index: 6; }
       key === "season" ? [name, "5 nights", "2 for $5"] : key === "classic" ? ["Classics", "7 nights", "99¢"] :
       key === "hold" ? ["On hold", "behind the counter", (prefs.memberName || "your name").toUpperCase()] : [name || "Catalog", "5 nights", "$1.99"];
     var one = "<span>" + esc(deal[0]) + " · " + esc(deal[1]) + "<b>" + esc(deal[2]) + "</b></span>", html = "";
-    for (var i = 0; i < 10; i++) html += one;
+    html = one;   // one shelf label, not the same price printed fourteen times
     Array.prototype.forEach.call(document.querySelectorAll(".strip"), function (st) { st.innerHTML = html; });
   }
   // painted stand-ins: if a poster is missing or fails to load, the frame shows one of these instead of a black hole
@@ -2794,13 +2853,8 @@ body.night .logo { z-index: 6; }
       var it = byId[el.getAttribute("data-id")];
       loadCover(el);
       if (rowKinds[focus.r] === "shelf" && focus.c >= rows[focus.r].length - 8 && !growShelves()) loadMore(aisle);
-      if (el.getAttribute("data-blind")) { tvBlind(it); marqueeFor(null, true); }
-      else {
-        if (it && it.genres && it.genres[0]) lastGenre = it.genres[0];
-        tvSchedule(it);
-        marqueeFor(it);
-      }
-    } else marqueeFor(null);
+      if (!el.getAttribute("data-blind") && it && it.genres && it.genres[0]) lastGenre = it.genres[0];
+    }
     showTag(el);
     // phones scroll the page; the TV layout fits on one screen
     if (r && (r.top < 0 || r.bottom > window.innerHeight)) window.scrollTo(0, window.pageYOffset + r.top - window.innerHeight * 0.35);
@@ -2820,6 +2874,9 @@ body.night .logo { z-index: 6; }
     tag.className = "tag" + (cx < edge ? " l" : cx > W - edge ? " r" : "");
     tag.style.left = Math.round(cx < edge ? Math.max(0, x) : cx > W - edge ? Math.min(W, x + w) : cx) + "px";
     tag.hidden = false;
+    // the shelf's deal label moves to the far end from the tag, so the tag never covers it
+    Array.prototype.forEach.call(document.querySelectorAll(".strip"), function (st) { st.classList.remove("far"); });
+    var strip = sh.parentNode.querySelector(".strip"); if (strip && cx < W / 2) strip.classList.add("far");
   }
   function loadCover(el) {
     var cov = el.querySelector(".cover[data-poster]");
@@ -2972,6 +3029,39 @@ body.night .logo { z-index: 6; }
     var v = encodeURIComponent(id);
     return '<iframe class="yt" tabindex="-1" title="' + esc(o.title || "Trailer") + '" allow="autoplay; encrypted-media" src="https://www.youtube-nocookie.com/embed/' + v +
       "?autoplay=1&mute=" + (o.mute ? 1 : 0) + "&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" + (o.loop ? "&loop=1&playlist=" + v : "") + '"></iframe>';
+  }
+  // Watch the trailer: full screen, with sound, over the box you're holding. Back or OK stops it; it closes by
+  // itself when the trailer ends, and moves on to the next trailer if YouTube won't play one.
+  var trailerView = null;
+  function playTrailer(it, ids) {
+    closeTrailer();
+    clearTimeout(trailerTimer); $("tvFrame").innerHTML = ""; tvCurrent = null; stopHum();
+    var el = document.createElement("div"); el.className = "trailer-view";
+    document.body.appendChild(el);
+    var tv = trailerView = { el: el, n: 0, osdT: 0 };
+    function show(n) {
+      if (trailerView !== tv) return;
+      if (n >= ids.length) { closeTrailer(); toast("YouTube won't play that trailer on this TV", 3000); return; }
+      tv.n = n;
+      el.innerHTML = '<div class="intro-yt">' + ytHTML(ids[n], { title: "Trailer: " + it.name }) + '</div>' +
+        '<div class="intro-osd tv-osd"><span>TRAILER · ' + esc(String(it.name).toUpperCase()) + '</span><span>BACK ◀ STOP</span></div>';
+      clearTimeout(tv.osdT); tv.osdT = setTimeout(function () { var o = el.querySelector(".tv-osd"); if (o) o.classList.add("gone"); }, 4000);
+      ytWatch(el.querySelector("iframe"), { ended: closeTrailer, error: function () { show(n + 1); } });
+    }
+    el.addEventListener("click", closeTrailer);
+    sfx("clack");
+    show(0);
+  }
+  function closeTrailer() {
+    var tv = trailerView; if (!tv) return;
+    trailerView = null; clearTimeout(tv.osdT);
+    tv.el.innerHTML = ""; if (tv.el.parentNode) tv.el.parentNode.removeChild(tv.el);
+    if (modal) modalFocus(true);
+  }
+  function trailerKey(k) {
+    if (k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || k === KEY.OK || k === MEDIA.STOP || k === MEDIA.PLAYPAUSE) { sfx("close"); closeTrailer(); return; }
+    var o = trailerView.el.querySelector(".tv-osd");   // any other key just brings the label back for a moment
+    if (o) { o.classList.remove("gone"); clearTimeout(trailerView.osdT); trailerView.osdT = setTimeout(function () { o.classList.add("gone"); }, 3000); }
   }
   function ytSay(frame, msg) { try { frame.contentWindow.postMessage(JSON.stringify(msg), "https://www.youtube-nocookie.com"); } catch (e) {} }
   function ytQuiet(frame) {
@@ -3429,6 +3519,7 @@ body.night .logo { z-index: 6; }
   function openModal(html, onBack) {
     if (!lastStoreFocus) lastStoreFocus = { r: focus.r, c: focus.c };
     $("tvFrame").innerHTML = ""; clearTimeout(trailerTimer);
+    overlay.classList.remove("holding");
     overlay.innerHTML = html; overlay.hidden = false;
     Array.prototype.forEach.call(overlay.querySelectorAll(".clerk-face"), function (f) {
       var who = f.getAttribute("data-who") || shiftNow(), g = (f.textContent || "").trim();
@@ -3502,9 +3593,10 @@ body.night .logo { z-index: 6; }
   function sameView(v) { return !!modal && modal.seq === v; }
   function closeModal() {
     viewSeq++;
+    closeTrailer();
     if (osk) closeBoard(true);
     stopLinkPoll();
-    overlay.hidden = true; overlay.innerHTML = ""; modal = null;
+    overlay.hidden = true; overlay.innerHTML = ""; modal = null; overlay.classList.remove("holding");
     if (ac) duckRoom(false);
     overlay.classList.remove("lifting");
     if (picked) { if (picked.src) picked.src.style.visibility = ""; picked = null; }
@@ -3568,9 +3660,9 @@ body.night .logo { z-index: 6; }
     var lateChip = daysLate(it) ? '<span class="chip late-chip">LATE · ' + lateFee(it) + " owing</span>" : "";
     if (from === "backroom") lateChip += '<span class="chip br-chip">BACK ROOM</span>';
     var talker = it.aisles.indexOf("staff") !== -1 ? '<div class="shelf-talker">' + STAFF_NOTE + " <b>— Staff</b></div>" : "";
-    var facts = [it.year, rating(it)].concat((it.genres || []).slice(0, 2)).filter(Boolean)
+    var facts = [it.year, rating(it)].concat((it.genres || []).slice(0, 2), it.runtime ? [it.runtime + " min"] : []).filter(Boolean)
       .map(function (f) { return '<span class="chip">' + esc(f) + "</span>"; }).join("");
-    openModal('<div class="panel" role="dialog" aria-label="' + esc(it.name) + '"><div class="case-view">' +
+    openModal('<div class="panel case" role="dialog" aria-label="' + esc(it.name) + '"><div class="case-view">' +
       '<div class="box3d" id="box3d"><div class="card"><div class="face front">' + coverHTML(it) + (isHeld(it.id) ? holdSlip() : "") + '</div><div class="face back" id="boxBack">' + backHTML(it, { description: it.blurb, cast: it.cast || [], director: arr(it.director) }) + "</div></div></div>" +
       '<div class="details"><h3>' + esc(it.name) + '</h3><div class="facts" id="facts">' + facts + lateChip + "</div>" +
       '<div class="case-info"><p class="cblurb" id="cBlurb">' + esc(it.blurb || "") + '</p><p class="ccred" id="cCred">' + caseCredits(it, { director: arr(it.director), cast: it.cast || [] }) + "</p></div>" +
@@ -3588,6 +3680,7 @@ body.night .logo { z-index: 6; }
       '<button class="btn" data-m="close">Put it back</button>' +
       "</div></div></div></div>", putBack);
     modal.caseId = it.id; modal.from = from || "";
+    overlay.classList.add("holding");   // the store dims further while you've got a box in your hands
     sharpenPoster($("box3d"), it);
     prefetchCopies(it, modal.seq);
     liftFrom($("box3d"));
@@ -3597,12 +3690,24 @@ body.night .logo { z-index: 6; }
       var cb = $("cBlurb"), cc = $("cCred");
       if (cb && m.description) cb.textContent = m.description;
       if (cc) cc.innerHTML = caseCredits(it, m);
+      var rtm = parseInt(m.runtime, 10);
+      if (rtm && $("facts") && !$("facts").querySelector(".rt") && !/\d min/.test($("facts").textContent)) $("facts").insertAdjacentHTML("beforeend", '<span class="chip rt">' + rtm + " min</span>");
       if (m.imdbRating && $("facts")) $("facts").insertAdjacentHTML("beforeend", '<span class="chip imdb">IMDb ' + esc(m.imdbRating) + "</span>");
+      // the trailer button goes on the box once we know there's a trailer to show
+      if (m.trailers && m.trailers.length && modal && modal.caseId === it.id && !overlay.querySelector('[data-m="trailer"]')) {
+        var flipBtn = overlay.querySelector('[data-m="flip"]'), cur = modal.els[modal.idx];
+        if (flipBtn) {
+          flipBtn.insertAdjacentHTML("beforebegin", '<button class="btn" data-m="trailer" data-id="' + esc(it.id) + '">Watch the trailer</button>');
+          modal.trailers = m.trailers.slice(0, 4);
+          refreshModalEls(); modal.idx = Math.max(0, modal.els.indexOf(cur)); modalFocus(true);
+        }
+      }
     });
   }
   function caseCredits(it, m) {
     var dir = (m.director || []).filter(Boolean).join(", "), cast = (m.cast || []).filter(Boolean).slice(0, 3).join(", "), mins = parseInt(m.runtime || it.runtime, 10);
-    return [dir ? "<b>Directed by</b> " + esc(dir) : "", cast ? "<b>Starring</b> " + esc(cast) : "", mins ? esc(mins + " min") : ""].filter(Boolean).join(" · ");
+    // (the runtime sits on the facts line above, not here)
+    return [dir ? "<span><b>Directed by</b> " + esc(dir) + "</span>" : "", cast ? "<span><b>Starring</b> " + esc(cast) + "</span>" : ""].filter(Boolean).join("");
   }
   function flipBox() {
     var b = $("box3d"); if (!b) return;
@@ -3908,6 +4013,7 @@ body.night .logo { z-index: 6; }
     if (act === "input") { if (useBoard()) openBoard(el); else editField(el); return; }
     if (act === "close") { if (modal && modal.onBack === putBack) putBack(); else { sfx("close"); closeModal(); } }
     else if (act === "flip") flipBox();
+    else if (act === "trailer" && it && modal.trailers) playTrailer(it, modal.trailers);
     else if (act === "hold" && it) {
       if (isHeld(it.id)) unholdIt(it); else holdIt(it);
       el.textContent = isHeld(it.id) ? "Take it off hold" : "Put it on hold";
@@ -4260,6 +4366,13 @@ body.night .logo { z-index: 6; }
       }
       staffConnected = false;
       var roles = { day: [], night: [], back: [] }, choices = [];
+      // The same list can turn up more than once: an add-on installed twice (reconfiguring Stremboxd and pressing
+      // Install again leaves the old copy in your Stremio account too), or one list added twice. One shelf each.
+      var seenList = {}, typeNames = {};
+      addons.forEach(function (ad) {
+        var m = ad.manifest || {};
+        (m.catalogs || []).filter(catalogUsable).forEach(function (c) { var n = (m.id || "") + "|" + String(c.name || "").toLowerCase(); typeNames[n] = (typeNames[n] || 0) | (c.type === "series" ? 2 : 1); });
+      });
       addons.forEach(function (ad) {
         var url = ad.transportUrl || "", m = ad.manifest || {};
         if (!addonOK(url) || /v3-cinemeta\.strem\.io/.test(url)) return;
@@ -4267,7 +4380,9 @@ body.night .logo { z-index: 6; }
         var cats = (m.catalogs || []).filter(catalogUsable);
         var isLB = /letterboxd|stremboxd/i.test(url + " " + (m.id || "") + " " + (m.name || ""));
         cats.forEach(function (c) {
-          var key;
+          var key, idKey = (m.id || base) + "|" + c.type + "|" + c.id, nameKey = (m.id || base) + "|" + c.type + "|" + String(c.name || c.id).toLowerCase().replace(/\s+/g, " ").trim();
+          if (seenList[idKey] || seenList[nameKey]) return;
+          seenList[idKey] = seenList[nameKey] = 1;
           if (isLB && !staffFound && /popular/i.test((c.id || "") + " " + (c.name || ""))) { key = "staff"; staffFound = true; }
           else {
             var ck = (m.id || base) + "|" + c.type + "|" + c.id, nm = c.name || m.name || "List", role = listRole(ck, nm);
@@ -4289,7 +4404,8 @@ body.night .logo { z-index: 6; }
             // the aisle's name in the store's books stays the same from visit to visit, whatever order the lists come in
             key = "addon" + hash(ck).toString(36); while (wanted[key]) key += "x";
             var label = c.name || m.name || "Addon";
-            extras.push({ key: key, label: label.length > 24 ? label.slice(0, 23) + "…" : label });
+            var tv = c.type === "series" && typeNames[(m.id || "") + "|" + String(c.name || "").toLowerCase()] === 3 ? " · TV" : "", room = 24 - tv.length;
+            extras.push({ key: key, label: (label.length > room ? label.slice(0, room - 1) + "…" : label) + tv });
           }
           wanted[key] = 1;
           var choice = key === "staff" ? null : choices[choices.length - 1];
@@ -4432,7 +4548,31 @@ body.night .logo { z-index: 6; }
   var holds = store("fnv-holds", [], function (l) {
     return l.filter(function (h) { return isObj(h) && typeof h.id === "string" && h.id && typeof h.name === "string" && numIn(h.t, 0, 1e13); }).slice(0, 80);
   });
-  function isHeld(id) { for (var i = 0; i < holds.length; i++) if (holds[i].id === id) return true; return false; }
+  // a hold matches by id, or by title and year: the same film can carry a different id on an add-on's shelf
+  // (a Letterboxd or TMDB id rather than the IMDb one) than on the shelf it was held from
+  function titleKey(name, year) { return String(name || "").toLowerCase().replace(/^(the|a|an) /, "").replace(/[^a-z0-9]+/g, "") + "|" + (year || 0); }
+  function holdFor(id) {
+    var i, it = byId[id];
+    for (i = 0; i < holds.length; i++) if (holds[i].id === id) return holds[i];
+    if (!it || !it.name) return null;
+    var k = titleKey(it.name, it.year), k0 = titleKey(it.name, 0);
+    for (i = 0; i < holds.length; i++) {
+      var h = holds[i];
+      if ((h.type === "series") !== (it.type === "series")) continue;
+      if (titleKey(h.name, h.year) === k || ((!h.year || !it.year) && titleKey(h.name, 0) === k0)) return h;
+    }
+    return null;
+  }
+  function isHeld(id) { return !!holdFor(id); }
+  // put the name slip on (or take it off) every copy of this tape already on the shelves, so a hold shows at once
+  function refreshHoldMarks() {
+    Array.prototype.forEach.call(document.querySelectorAll(".tape[data-id]"), function (el) {
+      if (el.getAttribute("data-blind")) return;
+      var id = el.getAttribute("data-id"), old = el.querySelector(".hold-slip"), want = isHeld(id) && el.querySelector(".cover") && !el.querySelector(".spine");
+      if (old && !want) old.parentNode.removeChild(old);
+      else if (want && !old) el.insertAdjacentHTML("beforeend", holdSlip());
+    });
+  }
   function applyHolds() {
     items.forEach(function (it) { var i = it.aisles.indexOf("hold"); if (i !== -1) it.aisles.splice(i, 1); });
     holds.forEach(function (h, i) {
@@ -4446,6 +4586,7 @@ body.night .logo { z-index: 6; }
     holds = holds.slice(0, 80); save("fnv-holds", holds);
     applyHolds();
     sfx("clack"); later([180], function () { sfx("tick"); });
+    refreshHoldMarks();
     toast("On hold behind the counter · under " + (prefs.memberName ? prefs.memberName.toUpperCase() : "your name") + (account ? " · and in your Stremio library" : ""), 3200);
     if (account && !(libRaw[it.id] && !libRaw[it.id].removed)) {
       var now = new Date().toISOString(), li = libRaw[it.id] ? JSON.parse(JSON.stringify(libRaw[it.id])) : {
@@ -4461,16 +4602,20 @@ body.night .logo { z-index: 6; }
     renderSigns(); setTimeout(saveSnapshot, 0);
   }
   function unholdIt(it, quiet) {
-    var h = null; holds = holds.filter(function (x) { if (x.id === it.id) { h = x; return false; } return true; });
+    var h = holdFor(it.id);
     if (!h) return;
+    holds = holds.filter(function (x) { return x !== h; });
     save("fnv-holds", holds);
     var i = it.aisles.indexOf("hold"); if (i !== -1) it.aisles.splice(i, 1);
+    var heldCopy = byId[h.id];   // the copy on the On Hold shelf, if it was held under another id
+    if (heldCopy && heldCopy !== it) { i = heldCopy.aisles.indexOf("hold"); if (i !== -1) heldCopy.aisles.splice(i, 1); it = heldCopy; }
     // only take it back out of the Stremio library if putting it on hold is what put it there
     if (h.lib && account && libRaw[it.id] && !(libRaw[it.id].state && libRaw[it.id].state.timeOffset > 0)) {
       var li = JSON.parse(JSON.stringify(libRaw[it.id])); li.removed = true; li._mtime = new Date().toISOString(); libRaw[it.id] = li;
       var j = it.aisles.indexOf("lib"); if (j !== -1) it.aisles.splice(j, 1);
       api("datastorePut", { authKey: account.authKey, collection: "libraryItem", changes: [li] }).catch(function () {});
     }
+    refreshHoldMarks();
     if (!quiet) { sfx("close"); toast("Back on the shelf", 2200); }
     if (aisle === "hold" && !aisleList("hold").length) aisle = "new";
     renderSigns(); setTimeout(saveSnapshot, 0);
@@ -4654,7 +4799,7 @@ body.night .logo { z-index: 6; }
     openModal('<div class="panel" role="dialog" aria-label="Back office">' + clerkHead(shiftNow() === "day" ? "Mind the boxes. Everything technical lives back here." : "Staff only. Don't touch the wires.") +
       '<div class="actions grid3">' +
       '<button class="btn" data-m="psettings">Player settings</button>' +
-      '<button class="btn" data-m="toggle-crt">Corner TV: ' + (prefs.trailers ? "Trailers" : "Stills only") + "</button>" +
+      '<button class="btn" data-m="toggle-crt">Screensaver: ' + (prefs.trailers ? "Trailers" : "Stills only") + "</button>" +
       '<button class="btn" data-m="lists">Clerks &amp; back room</button>' +
       '<button class="btn" data-m="staffinfo">Staff Picks: ' + (staffOn() ? "From Letterboxd" : "Set up") + "</button>" +
       '<button class="btn" data-m="checks">Test my setup</button>' +
@@ -6488,14 +6633,6 @@ body.night .logo { z-index: 6; }
   function persp(x, y0, y1) { var k = (y1 - HZ) / (y0 - HZ); return VPX + (x - VPX) * (1 + (k - 1) * .3); }
   var SPINES = ["#c4313d", "#1e3d93", "#f2efe6", "#1b1b22", "#e2b33c", "#2f7a52", "#6b3f8c", "#d96b2b", "#3b8bc4", "#e7e2d2", "#8f2a52", "#0f2c5c"];
   // interiors light themselves at night and sit in gloom behind the glass by day
-  function Ic(P, base, cool) { return cmix(cmul(base, "#787e94"), cmul(base, cool ? "#f2fbff" : "#fff3dc", 1.05), P.warm); }
-  function snowCap(P, x, y, w, t) {
-    if (!P.snow) return "";
-    var r = rand(Math.round(x * 7 + y)), d = "M" + n1(x - 2) + "," + n1(y + 1), n = Math.max(2, Math.round(w / 18));
-    for (var i = 0; i <= n; i++) d += " L" + n1(x - 2 + (w + 4) * i / n) + "," + n1(y - t * (.6 + r() * .6));
-    d += " L" + n1(x + w + 2) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x - 2) + "," + n1(y + 1) + "Z";
-    return Pt(d, Tc(P, OB.snow)) + Pt("M" + n1(x) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x + w) + "," + n1(y + 1) + "Z", Sc(P, OB.snow), op(".7"));
-  }
   // a leafy canopy: a dark mass, then clumps each with a hard-edged light side (cel shading)
   function canopy(P, cx, cy, rx, ry, seed, base, dist, n) {
     var r = rand(seed), o = "", cl = [], lx = P.lx, ly = P.ly;
@@ -6540,20 +6677,6 @@ body.night .logo { z-index: 6; }
     // the water tower over the rooftops
     o += waterTower(P, 1752, 262);
     return o;
-  }
-  function waterTower(P, cx, cy) {
-    var dist = .32, body = "#d9dee4", lit = Hz(P, Lc(P, body), dist), shd = Hz(P, Sc(P, body), dist), leg = Hz(P, Sc(P, "#8a909c"), dist), o = "";
-    o += Ln(cx - 46, cy + 22, cx - 62, 360, leg, 5) + Ln(cx + 46, cy + 22, cx + 62, 360, leg, 5) + Ln(cx - 16, cy + 30, cx - 20, 360, leg, 4) + Ln(cx + 16, cy + 30, cx + 20, 360, leg, 4);
-    o += Ln(cx - 56, cy + 62, cx + 56, cy + 62, leg, 2.4) + Ln(cx - 58, cy + 62, cx + 18, cy + 92, leg, 1.6) + Ln(cx + 58, cy + 62, cx - 18, cy + 92, leg, 1.6);
-    o += Ln(cx, cy + 30, cx, 360, leg, 6);
-    var tank = "M" + (cx - 64) + "," + cy + " Q" + (cx - 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + 64) + "," + (cy - 34) + " " + (cx + 64) + "," + cy + " Q" + (cx + 60) + "," + (cy + 32) + " " + cx + "," + (cy + 34) + " Q" + (cx - 60) + "," + (cy + 32) + " " + (cx - 64) + "," + cy + "Z";
-    o += Pt(tank, shd);
-    var lx = P.lx < 0 ? -1 : 1;
-    o += Pt("M" + (cx + lx * 64) + "," + cy + " Q" + (cx + lx * 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + lx * 14) + "," + cy + " " + cx + "," + (cy + 34) + " Q" + (cx + lx * 60) + "," + (cy + 32) + " " + (cx + lx * 64) + "," + cy + "Z", lit);
-    o += Pg([cx - 54, cy - 22, cx, cy - 58, cx + 54, cy - 22], shd) + Pg([cx + 54 * lx, cy - 22, cx, cy - 58, cx + 4 * lx, cy - 22], lit, op(".85"));
-    o += R(cx - 1.5, cy - 70, 3, 14, leg);
-    o += Ln(cx - 66, cy + 4, cx + 66, cy + 4, leg, 2) + Ln(cx - 66, cy - 6, cx + 66, cy - 6, leg, 1);
-    return o + snowCap(P, cx - 44, cy - 30, 88, 8);
   }
 
   function backyards(P) {
@@ -6653,143 +6776,7 @@ body.night .logo { z-index: 6; }
   }
 
   function building(P) {
-    var o = "", r = rand(19), X0 = 868, X1 = 1666, i, x, y;
-    // rooftop air-conditioners peeking over the mansard
-    o += roofUnit(P, 1064, 306, 80, 36) + roofUnit(P, 1480, 314, 62, 28) + R(1196, 318, 8, 24, Sc(P, OB.steel)) + R(1193, 315, 14, 5, Lc(P, OB.steel));
-    // the left end of the building, turning away from us
-    o += Pg([848, 366, 868, 340, 868, 692, 848, 686], cmul(Sc(P, OB.stucco), "#e2e2ea"));
-    o += Pg([846, 366, 868, 340, 868, 348, 846, 372], Sc(P, OB.cap));
-    // coping, then the shingled mansard
-    o += R(X0 - 8, 338, X1 - X0 + 16, 10, Tc(P, OB.cap)) + R(X0 - 8, 347, X1 - X0 + 16, 3, Sc(P, OB.cap));
-    var mL = Mc(P, OB.mansard), mS = cmix(mL, Sc(P, OB.mansard), .55), mD = Sc(P, OB.mansard), mH = cmix(mL, Tc(P, "#c49a76"), .35);
-    o += R(X0 - 6, 350, X1 - X0 + 12, 101, mL);
-    for (y = 358; y < 450; y += 10) {
-      o += R(X0 - 6, y - 1, X1 - X0 + 12, 3.2, mD, op(".7")) + R(X0 - 6, y + 2.2, X1 - X0 + 12, 1.2, mH, op(".35"));
-      for (x = X0 - 6 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) {
-        o += R(x, y + 2, 1.2, 8, mS, op(".35"));
-        var q = r(); if (q < .12) o += R(x + 2, y + 2, 18, 8, mH, op(".5")); else if (q < .2) o += R(x + 2, y + 2, 18, 8, mD, op(".35"));
-      }
-    }
-    o += R(X0 - 6, 350, X1 - X0 + 12, 7, mD, op(".75"));
-    if (P.snow) o += R(X0 - 8, 330, X1 - X0 + 16, 10, Tc(P, OB.snow)) + snowCap(P, X0 - 6, 352, X1 - X0 + 12, 7);
-    // fascia board and the deep shade under the overhang
-    o += R(X0 - 8, 450, X1 - X0 + 16, 11, Lc(P, OB.trim)) + R(X0 - 8, 459, X1 - X0 + 16, 2.5, Sc(P, OB.trim));
-    o += R(X0, 461, X1 - X0, 19, Sc(P, OB.soffit));
-    var wall = cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .35);
-    o += R(X0, 480, X1 - X0, 212, wall);
-    // recessed cans in the soffit, and the little pools they throw (lit from dusk on)
-    for (x = 960; x < X1; x += 150) {
-      o += El(x, 470, 9, 2.6, P.lit ? "#fff3cf" : Sc(P, "#d8d0c0"));
-      if (P.lit) o += Pg([x - 9, 472, x + 9, 472, x + 34, 692, x - 34, 692], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
-    }
-    o += videoFront(P);
-    [868, 1640].forEach(function (cx) { o += column(P, cx); });
-    o += karaokeNeighbour(P);
-    o += sidewalk(P);
-    o += iceChest(P, 790, 706);
-    return o;
-  }
-  function roofUnit(P, x, y, w, h) {
-    var o = R(x, y, w, h, Lc(P, "#b9bcc2")) + R(x + w * .62, y, w * .38, h, Sc(P, "#b9bcc2")) + R(x, y, w, 4, Tc(P, "#d9dbe0"));
-    for (var i = 1; i < 5; i++) o += R(x + 4, y + 6 + i * (h - 8) / 5, w * .55, 1.4, Sc(P, "#8a8d96"), op(".7"));
-    return o + snowCap(P, x, y, w, 7);
-  }
-  function column(P, x) {
-    var o = Pg([x - 7, 461, x, 461, x, 692, x - 7, 692], Sc(P, OB.column)) + R(x, 461, 24, 231, Lc(P, OB.column));
-    o += R(x + 17, 461, 7, 231, cmix(Lc(P, OB.column), Sc(P, OB.column), .45));
-    if (P.mode === "day" || P.mode === "golden") o += Pg([x, 461, x + 24, 461, x + 24, 498, x, 516], Sc(P, OB.column), op(".85"));
-    else o += R(x, 461, 24, 231, Sc(P, OB.column), op(P.night ? ".55" : ".35"));
-    if (P.lit) o += R(x, 600, 24, 92, "#ffcf87", op((.18 * P.warm).toFixed(2)));
-    return o + R(x - 7, 684, 31, 8, Sc(P, "#bfb4a2"));
-  }
-  function glassOver(P, x, y, w, h, seed) {
-    var r = rand(seed), o = "", day = P.mode === "day" || P.mode === "golden";
-    var refl = day ? cmix(P.sky[1][1], "#ffffff", .25) : P.night ? "#4b5690" : cmix(P.sky[2][1], "#ffffff", .1);
-    o += R(x, y, w, h, refl, op(day ? (P.heavy ? ".42" : ".5") : P.lit ? ".1" : ".3"));
-    // the two diagonal glints every cel painter puts on glass
-    var a = x + w * (.18 + r() * .2), g = day ? ".42" : ".12";
-    o += Pg([a, y, a + 34, y, a - 30, y + h, a - 64, y + h], "#ffffff", op(g)) + Pg([a + 46, y, a + 56, y, a - 8, y + h, a - 18, y + h], "#ffffff", op(g));
-    return o;
-  }
-  function videoInterior(P, x, y, w, h, seed) {
-    var r = rand(seed), o = "", wallc = Ic(P, "#efe0bc");
-    o += R(x, y, w, h, wallc) + R(x, y, w, 12, Ic(P, "#cdbf9c"));
-    for (var fx = x + 20; fx < x + w - 30; fx += 92) o += R(fx, y + 4, 56, 5, P.lit ? "#fffef2" : Ic(P, "#dcdcd0"));
-    for (var row = 0; row < 3; row++) {
-      var ry = y + 30 + row * 30;
-      if (ry + 22 > y + h - 34) break;
-      o += R(x, ry + 22, w, 4, Ic(P, "#8a6440"));
-      for (var sx = x + 2; sx < x + w - 4; sx += 5 + (r() < .2 ? 2 : 0)) o += R(sx, ry + (r() < .3 ? 2 : 0), 4, 22 - (r() < .3 ? 2 : 0), Ic(P, cmix(SPINES[Math.floor(r() * SPINES.length)], "#d9c9a6", .3)));
-    }
-    // a gondola of new releases facing out
-    o += R(x, y + h - 30, w, 30, Ic(P, "#a7744a"));
-    for (sx = x + 4; sx < x + w - 14; sx += 15) o += R(sx, y + h - 27, 12, 18, Ic(P, SPINES[Math.floor(r() * SPINES.length)])) + R(sx + 2, y + h - 22, 8, 3, Ic(P, "#f4efe0"), op(".7"));
-    return o;
-  }
-  function glassPoster(P, x, y, w, h, kind) {
-    var o = "", t = function (c) { return Wc(P, c, .45); };
-    if (kind === 0) { // a sci-fi one-sheet: a ringed planet over a red title band
-      o += R(x, y, w, h, t("#1d2a5c")) + Ci(x + w * .55, y + h * .4, w * .28, t("#e98a3a")) + El(x + w * .55, y + h * .42, w * .46, w * .08, "none", ' stroke="' + t("#f7d488") + '" stroke-width="2"');
-      o += Ci(x + w * .2, y + h * .15, 1.4, t("#ffffff")) + Ci(x + w * .8, y + h * .2, 1.2, t("#ffffff")) + R(x, y + h * .74, w, h * .12, t("#c4313d"));
-    } else if (kind === 1) { // a creature feature
-      o += R(x, y, w, h, t("#14161c")) + Ci(x + w * .5, y + h * .38, w * .3, t("#9fdc5a")) + Ci(x + w * .5, y + h * .38, w * .11, t("#14161c"));
-      for (var i = 0; i < 5; i++) o += R(x + w * (.12 + i * .17), y + h * .66, 3, 6 + i % 3 * 5, t("#c4313d"));
-      o += R(x + w * .1, y + h * .82, w * .8, 4, t("#e8e2d0"));
-    } else if (kind === 2) { // an action picture
-      o += R(x, y, w, h, t("#e8762c")) + Pg([x + w * .5, y + h * .1, x + w * .62, y + h * .38, x + w * .92, y + h * .4, x + w * .66, y + h * .56, x + w * .76, y + h * .84, x + w * .5, y + h * .66, x + w * .24, y + h * .84, x + w * .34, y + h * .56, x + w * .08, y + h * .4, x + w * .38, y + h * .38], t("#ffd84d"));
-      o += R(x + w * .1, y + h * .86, w * .8, 5, t("#1b1b22"));
-    }
-    return R(x - 2, y - 2, w + 4, h + 4, t("#f2ede0")) + o;
-  }
-  function videoFront(P) {
-    var o = "", fr = Sc(P, OB.bronze), frL = Lc(P, OB.bronze);
-    // a drinks machine glowing under the walkway
-    o += sodaMachine(P, 898, 548);
-    // left window
-    o += R(964, 490, 288, 172, fr) + videoInterior(P, 970, 496, 276, 160, 3);
-    o += R(990, 504, 110, 16, Ic(P, "#c4313d")) + R(990, 520, 110, 3, Ic(P, "#8a2230"));
-    o += glassPoster(P, 1172, 512, 52, 78, 0) + glassPoster(P, 980, 566, 50, 74, 2);
-    // a cardboard standee: a space ranger, arms folded
-    var sd = Ic(P, "#5a7fb8"), sdl = Ic(P, "#e8d6b0");
-    o += R(1112, 586, 34, 66, sd) + Ci(1129, 578, 13, sdl) + Pt("M1114,574 a15,15 0 0 1 30,0 l0,-4 a15,13 0 0 0 -30,0z", Ic(P, "#d8d8e0")) + R(1110, 604, 38, 8, Ic(P, "#e2b33c"));
-    o += glassOver(P, 970, 496, 276, 160, 5) + R(1106, 490, 6, 172, fr) + R(964, 490, 288, 3, frL, op(".6"));
-    // the door bay: transom glass over the door opening
-    o += R(1250, 490, 104, 202, fr) + videoInterior(P, 1258, 498, 88, 64, 9) + glassOver(P, 1258, 498, 88, 64, 11) + R(1250, 562, 104, 8, fr);
-    o += R(1258, 570, 88, 122, Ic(P, "#efe0bc")) + R(1258, 570, 88, 10, Ic(P, "#d9c6a0"));
-    for (var sx = 1262; sx < 1344; sx += 5) o += R(sx, 596, 4, 22, Ic(P, SPINES[(sx * 7) % SPINES.length]));
-    o += R(1258, 618, 88, 4, Ic(P, "#8a6440")) + R(1258, 650, 88, 42, Ic(P, "#b4a07a")) + R(1272, 640, 60, 52, Ic(P, "#7a4c34")) + R(1272, 640, 60, 5, Ic(P, "#a8764e"));
-    // right window
-    o += R(1350, 490, 292, 172, fr) + videoInterior(P, 1356, 496, 280, 160, 7);
-    o += glassPoster(P, 1560, 510, 54, 80, 1);
-    // a customer browsing, back to us
-    var cu = Ic(P, "#4a5a7a"), sk = Ic(P, "#c99a78");
-    o += Pt("M1528,656 L1530,606 Q1532,592 1546,590 L1566,590 Q1580,592 1582,606 L1584,656 Z", cu) + Ci(1556, 578, 12, Ic(P, "#5a3a2a")) + R(1550, 588, 12, 4, sk);
-    o += glassOver(P, 1356, 496, 280, 160, 13) + R(1492, 490, 6, 172, fr) + R(1350, 490, 292, 3, frL, op(".6"));
-    o += bulkhead(P, 964, 662, 288) + bulkhead(P, 1350, 662, 292);
-    // the returns box by the door
-    o += returnsBox(P, 1362, 708);
-    return o;
-  }
-  function bulkhead(P, x, y, w) {
-    var o = R(x, y, w, 30, Wc(P, OB.brick, .35)), m = cmix(Wc(P, OB.brick, .35), "#e8dccb", .3);
-    for (var row = 0; row < 4; row++) { o += R(x, y + row * 7.5, w, 1.2, m, op(".7")); for (var bx = x + (row % 2 ? 0 : 9); bx < x + w; bx += 18) o += R(bx, y + row * 7.5, 1.2, 7.5, m, op(".6")); }
-    return o + R(x, y, w, 3, Sc(P, OB.brick), op(".6"));
-  }
-  function sodaMachine(P, x, y) {
-    var h = 692 - y, body = "#c63a33", o = "";
-    o += R(x, y, 62, h, Wc(P, body, .4)) + R(x + 46, y, 16, h, Sc(P, body));
-    o += R(x + 6, y + 8, 36, 74, P.lit ? "#fff0d6" : Wc(P, "#e9e2d2", .4));
-    o += Pt("M" + (x + 6) + "," + (y + 54) + " Q" + (x + 24) + "," + (y + 40) + " " + (x + 42) + "," + (y + 56) + " L" + (x + 42) + "," + (y + 64) + " Q" + (x + 24) + "," + (y + 50) + " " + (x + 6) + "," + (y + 62) + "Z", P.lit ? "#e0443a" : Wc(P, body, .4));
-    for (var i = 0; i < 4; i++) o += R(x + 8 + i * 8, y + 14, 6, 9, P.lit ? ["#e0443a", "#2f6fc4", "#f2c13a", "#3c9a5a"][i] : Sc(P, "#888888"));
-    o += R(x + 44, y + 20, 10, 40, Sc(P, "#2a2a30")) + R(x + 8, y + 96, 34, 14, Sc(P, "#2a2224"));
-    return o;
-  }
-  function returnsBox(P, x, by) {
-    var b = "#2f5cad", o = El(x + 22, by, 30, 4, Sc(P, "#1a1820"), op(".4"));
-    o += Pt("M" + x + "," + by + " L" + x + "," + (by - 58) + " Q" + x + "," + (by - 70) + " " + (x + 22) + "," + (by - 70) + " Q" + (x + 44) + "," + (by - 70) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Wc(P, b, .5));
-    o += Pt("M" + (x + 28) + "," + by + " L" + (x + 28) + "," + (by - 69) + " Q" + (x + 44) + "," + (by - 66) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Sc(P, b));
-    o += R(x + 8, by - 52, 28, 6, "#15131c") + R(x + 6, by - 30, 32, 12, Wc(P, "#f1eee6", .4));
-    return o + snowCap(P, x + 2, by - 70, 40, 6);
+    return videoBuilding(P) + karaokeNeighbour(P) + sidewalk(P) + iceChest(P, 790, 706);
   }
   function iceChest(P, x, by) {
     var o = El(x + 30, by + 2, 40, 5, Sc(P, "#1a1820"), op(".35")), body = "#eef1f2";
@@ -7078,7 +7065,7 @@ body.night .logo { z-index: 6; }
       return (lit ? "<text" + a + ' fill="none" stroke="' + col + '" stroke-width="' + n1(size * .3) + '" stroke-opacity=".16" stroke-linejoin="round">' + t + "</text>" : "") +
         "<text" + a + ' fill="' + (lit ? cmix(col, "#ffffff", .78) : cmix(col, "#3a3048", .45)) + '" stroke="' + col + '" stroke-width="' + n1(Math.max(1.2, size * .045)) + '">' + t + "</text>";
     }
-    o += '<g class="o-neon">' + (bFirst ? tube(1756, 468, 36, bFirst, "#ff5fa2", "Caprasimo, Cooper Black, Georgia, serif") : "") +
+    o += '<g class="o-barneon">' + (bFirst ? tube(1756, 468, 36, bFirst, "#ff5fa2", "Caprasimo, Cooper Black, Georgia, serif") : "") +
       tube(1756, bFirst ? 516 : 494, bFirst ? 42 : 52, bLast.toUpperCase(), "#62e8de", "Oswald, Arial Narrow, sans-serif", ' font-weight="600" letter-spacing="7"') + "</g>";
 
     // little painted lettering
@@ -7534,10 +7521,13 @@ body.night .logo { z-index: 6; }
       }
       on.setAttribute("data-w", closed ? "c" : "o");
     }
-    // the same clock as the Strip and the bar: "Sunday · 11:21 am"
+    // the same clock as the Strip and the bar: "11:21 am" (no weekday: the shops are named for Friday and Saturday)
     var d = new Date(), h = d.getHours(), m = d.getMinutes(), days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    $("landClock").textContent = ry ? "Saturday · 8:00 pm · " + ry : days[d.getDay()] + " · " + ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
-    $("landPress").innerHTML = (("ontouchstart" in window) && !window.tizen ? "<b>Tap</b>" : "Press <b>OK</b>") + (ry ? " to step back into " + ry : closed ? " to sneak in" : " to go inside") + " &nbsp;·&nbsp; <span id=\"goKaraoke\" style=\"cursor:pointer;color:#7d1a29\">► Karaoke next door</span>";
+    $("landClock").textContent = ry ? "8:00 pm · " + ry : ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
+    // the same key-cap hints as the Strip and the bar's doorstep
+    var tap = ("ontouchstart" in window) && !window.tizen;
+    $("landPress").innerHTML = '<span class="fsn-h"><kbd>' + (tap ? "TAP" : "OK") + "</kbd>" + (ry ? "step back into " + ry : closed ? "sneak in" : "go inside") + "</span>" +
+      '<span class="fsn-h" id="goKaraoke" style="cursor:pointer;pointer-events:auto"><kbd>►</kbd>karaoke next door</span>' + (tap ? "" : '<span class="fsn-h"><kbd>BACK</kbd>the street</span>');
     var gk = $("goKaraoke"); if (gk) gk.addEventListener("click", function (ev) { ev.stopPropagation(); FSN.go("karaoke"); });
   }
 
@@ -7927,6 +7917,7 @@ body.night .logo { z-index: 6; }
       e.preventDefault(); return;
     }
     if (P) { if (playerKey(k)) e.preventDefault(); return; }
+    if (trailerView) { trailerKey(k); e.preventDefault(); return; }
     if (prefs.sound && !hum) startHum();
     if (rewinding) { e.preventDefault(); return; }
     if (osk) { if (boardKey(e)) e.preventDefault(); return; }

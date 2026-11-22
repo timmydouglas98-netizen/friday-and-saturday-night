@@ -38,7 +38,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 @keyframes grain { 0% { transform: translate(0,0); } 17% { transform: translate(-61px,37px); } 33% { transform: translate(43px,-89px); } 50% { transform: translate(-97px,-21px); } 67% { transform: translate(23px,71px); } 83% { transform: translate(79px,-49px); } }
 .flick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #140c06; opacity: 0; pointer-events: none; animation: filmFlick 1.75s steps(1) infinite; z-index: 91; }
 @keyframes filmFlick { 0% { opacity: .02; } 14% { opacity: 0; } 29% { opacity: .035; } 43% { opacity: .01; } 57% { opacity: .03; } 71% { opacity: 0; } 86% { opacity: .025; } }
-.vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 92; background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0,0,0,0) 62%, rgba(24,10,30,.34) 100%); }
+.vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 92; background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0,0,0,0) 66%, rgba(24,10,30,.18) 100%); }
 #fade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #08060c; pointer-events: none; opacity: 0; transition: opacity .5s; z-index: 95; }
 #fade.on { opacity: 1; }
 
@@ -64,7 +64,9 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 .rain.far i { top: -220px; background-size: 220px 220px; animation: fallFar .5s steps(6) infinite; opacity: .6; }
 @keyframes fallNear { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,320px,0); } }
 @keyframes fallFar { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,220px,0); } }
-.press { position: absolute; left: 0; right: 0; bottom: 48px; text-align: center; font-size: 50px; animation: pressBob 1.33s steps(1) infinite; transition: opacity .5s; }
+/* the doorstep hint matches the Strip's: words on the night air, key caps for the buttons (shared/ui.js styles the caps) */
+.press { position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font-family: var(--f-ui); font-weight: 500; font-size: 28px; letter-spacing: .04em;
+  color: #fff3d6; text-shadow: 2px 2px 0 #2a1c18, 0 0 12px rgba(10,4,14,.9); transition: opacity .5s; }
 @keyframes pressBob { 0% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-5px) rotate(.8deg); } }
 .clock { position: absolute; top: 34px; right: 58px; font-size: 38px; opacity: .92; transition: opacity .5s; }
 #scOut.cam-in .press, #scOut.cam-in .clock, #scOut.entering .press, #scOut.entering .clock { opacity: 0; }
@@ -112,7 +114,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 .crt-line { animation: tvGlow 3.1s steps(1) infinite; }
 @keyframes tvGlow { 0% { opacity: 1; } 12% { opacity: .7; } 20% { opacity: .95; } 41% { opacity: .6; } 47% { opacity: 1; } 70% { opacity: .78; } 82% { opacity: .92; } }
 #bSpots { position: absolute; top: 0; left: 0; z-index: 5; }
-#scBar.dim:after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(12,4,14,.24); pointer-events: none; z-index: 2; }
+#scBar.dim:after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(12,4,14,.1); pointer-events: none; z-index: 2; }
 
 /* host speech / announcements */
 #say { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); max-width: 1300px; padding: 16px 34px 18px; background: var(--paper); border: 4px solid var(--ink); border-radius: 14px; box-shadow: 6px 7px 0 rgba(20,8,14,.55); font-family: var(--f-toon); font-size: 36px; line-height: 1.25; text-align: center; z-index: 60; animation: sayIn .33s steps(4); }
@@ -137,14 +139,14 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 .pg h2 { margin: 0 0 6px; height: 72px; font-family: var(--f-toon); font-weight: 400; font-size: 46px; line-height: 72px; color: #7d1a29; white-space: nowrap; overflow: hidden; }
 .pg h2 small { font-family: var(--f-ui); font-size: 24px; font-weight: 500; color: var(--muted); letter-spacing: .06em; margin-left: 14px; }
 .ln { position: relative; height: 79px; padding: 5px 12px 0 100px; border-radius: 8px; white-space: nowrap; overflow: hidden; }
-.ln .code { position: absolute; left: 10px; top: 20px; font-family: var(--f-osd); font-size: 34px; color: #9a8f7c; }
+.ln .code { position: absolute; left: 10px; top: 20px; font-family: var(--f-osd); font-size: 34px; color: #6f6455; }
 .ln .t { display: block; font-family: var(--f-ui); font-weight: 600; font-size: 34px; line-height: 40px; overflow: hidden; text-overflow: ellipsis; }
 .ln .a { display: block; font-family: var(--f-ui); font-weight: 400; font-size: 24px; line-height: 28px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 .ln .star { position: absolute; right: 10px; top: 20px; font-family: var(--f-ui); font-size: 22px; font-weight: 600; color: #a8323e; letter-spacing: .06em; }
 .ln.on { background: #ffe08a; box-shadow: inset 0 0 0 4px var(--ink); }
 .ln.on .code { color: #7d1a29; }
 .ln.ask .t { font-family: var(--f-toon); font-weight: 400; color: #7d1a29; }
-.pgno { position: absolute; bottom: 10px; font-family: var(--f-osd); font-size: 30px; color: #9a8f7c; }
+.pgno { position: absolute; bottom: 10px; font-family: var(--f-osd); font-size: 30px; color: #6f6455; }
 .pg.l .pgno { left: 46px; } .pg.r .pgno { right: 34px; }
 .note { font-family: var(--f-ui); font-size: 27px; line-height: 1.4; color: var(--muted); padding: 14px 6px; white-space: normal; }
 .tabs { position: absolute; left: 60px; right: 60px; top: -64px; height: 70px; white-space: nowrap; }
@@ -156,7 +158,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 #scSing { background: #0a0d2c; }
 #chkLamp { position: absolute; left: 50%; width: 170px; height: 170px; margin-left: -85px; background: #463e58; border: 10px solid #3a3840; box-shadow: 10px 10px 0 rgba(14,12,22,.75); }
 #chkLamp.on { background: #ecba48; }
-#lyCv { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; }
+#lyCv { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; image-rendering: -webkit-optimize-contrast; image-rendering: pixelated; }
 #dimmer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #07040c; opacity: 0; pointer-events: none; z-index: 89; transition: opacity 1.5s; }
 #ytBox { position: absolute; left: 640px; top: 360px; width: 640px; height: 360px; }
 #ytBox iframe { width: 640px; height: 360px; border: 0; }
@@ -164,7 +166,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 .dry .rain { display: none; }
 /* stage lights: a warm wash from above and two coloured side lights; they flare on each new line and each count-in lamp */
 #stageGlow { position: absolute; left: 0; right: 0; top: 0; height: 760px; pointer-events: none; }
-#stageGlow i { position: absolute; display: block; opacity: 0; }
+#stageGlow i { position: absolute; display: block; opacity: 0; will-change: opacity; }
 #stageGlow .w { left: 15%; right: 15%; top: -120px; height: 700px; background: radial-gradient(ellipse 50% 55% at 50% 0, rgba(255,214,150,.55), rgba(255,214,150,0) 70%); }
 #stageGlow .l { left: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 0 30%, rgba(255,95,162,.45), rgba(255,95,162,0) 70%); }
 #stageGlow .r { right: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 100% 30%, rgba(98,232,222,.4), rgba(98,232,222,0) 70%); }
@@ -177,7 +179,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 @keyframes glowTick { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 /* how far through the song: a thin tape-counter line along the bottom edge */
 #sgProg { position: absolute; left: 60px; right: 60px; bottom: 58px; height: 6px; border-radius: 3px; background: rgba(255,243,214,.16); pointer-events: none; }
-#sgProg i { display: block; height: 100%; width: 0; border-radius: 3px; background: #ffc857; box-shadow: 0 0 8px rgba(255,200,87,.6); }
+#sgProg i { display: block; height: 100%; width: 100%; border-radius: 3px; background: #ffc857; transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
 #scSing.classic #stageGlow { display: none; }
 .rain.glass.near i { animation-duration: .5s; opacity: .5; }
 .rain.glass.far i { opacity: .38; }
@@ -280,7 +282,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
       </div>
       <div class="rain far"><i></i></div><div class="rain near"><i></i></div>
     </div></div>
-    <div class="press inked" id="oPress">Press OK to come in &nbsp;·&nbsp; <span id="goVideo" style="cursor:pointer;color:#ffc857">◄ Video store next door</span></div>
+    <div class="press" id="oPress"><span class="fsn-h"><kbd>OK</kbd>come in</span><span class="fsn-h" id="goVideo" style="cursor:pointer"><kbd>◄</kbd>video store next door</span><span class="fsn-h"><kbd>BACK</kbd>the street</span></div>
     <div class="clock inked" id="oClock"></div>
   </div>
 
@@ -315,7 +317,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
     <div id="lyDim"></div>
     <div id="lyCard" hidden></div>
     <div id="lyBreak" class="inked" hidden>♪ &nbsp; ♪ &nbsp; ♪</div>
-    <canvas id="lyCv" width="1920" height="1080"></canvas>
+    <canvas id="lyCv" width="384" height="216"></canvas>
     <div id="chkLamp" hidden></div>
     <div id="osd"></div><div id="osdR"></div>
     <div id="timingHud" hidden></div>
@@ -3026,12 +3028,19 @@ var qrcode = function() {
   }
   var OSW = "Oswald, Arial Narrow, sans-serif", YT = "Caprasimo, Cooper Black, Georgia, serif";
   // a painted glow: hard-edged rings of light, the way they were laid in on a cel
+  // A pale lamp colour laid thinly over a dusk sky reads as grey smoke, not light; so the outer rings of a pale glow
+  // are a warmer, stronger version of it and only the core keeps the lamp's own cream.
+  function pale(col) { var c = hx(col), mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mn > 160 && mx - mn < 90; }
   function halo(cx, cy, rx, ry, col, a, cls) {
-    return '<g' + (cls ? ' class="' + cls + '"' : "") + ">" + El(cx, cy, rx, ry, col, op((a * .32).toFixed(3))) + El(cx, cy, rx * .72, ry * .72, col, op((a * .4).toFixed(3))) + El(cx, cy, rx * .46, ry * .46, col, op((a * .55).toFixed(3))) + "</g>";
+    var outer = col, mid = col;
+    var k = [.26, .38, .6];
+    // a lamp's glow is tighter and brighter than a neon's wash
+    if (pale(col)) { outer = cmix(col, "#ff8a3d", .6); mid = cmix(col, "#ffb04a", .35); rx *= .7; ry *= .7; k = [.2, .42, .85]; }
+    return '<g' + (cls ? ' class="' + cls + '"' : "") + ">" + El(cx, cy, rx, ry, outer, op((a * k[0]).toFixed(3))) + El(cx, cy, rx * .7, ry * .7, mid, op((a * k[1]).toFixed(3))) + El(cx, cy, rx * .42, ry * .42, col, op((a * k[2]).toFixed(3))) + "</g>";
   }
   function rhalo(x, y, w, h, pad, col, a) {
     var o = "";
-    for (var i = 2; i >= 1; i--) o += '<rect x="' + n1(x - pad * i) + '" y="' + n1(y - pad * i) + '" width="' + n1(w + pad * i * 2) + '" height="' + n1(h + pad * i * 2) + '" rx="' + n1(pad * i * 2) + '" fill="' + col + '"' + op((a * (i === 2 ? .1 : .16)).toFixed(3)) + "/>";
+    for (var i = 2; i >= 1; i--) o += '<rect x="' + n1(x - pad * i) + '" y="' + n1(y - pad * i) + '" width="' + n1(w + pad * i * 2) + '" height="' + n1(h + pad * i * 2) + '" rx="' + n1(pad * i * 2) + '" fill="' + (i === 2 && pale(col) ? cmix(col, "#ff8a3d", .5) : col) + '"' + op((a * (i === 2 ? .1 : .16)).toFixed(3)) + "/>";
     return o;
   }
 
@@ -3106,6 +3115,185 @@ var qrcode = function() {
     return grainURL;
   }
 
+  // ===== Friday Night Video's building, shared by the store, the Strip and the bar =====
+  function Ic(P, base, cool) { return cmix(cmul(base, "#787e94"), cmul(base, cool ? "#f2fbff" : "#fff3dc", 1.05), P.warm); }
+  function snowCap(P, x, y, w, t) {
+    if (!P.snow) return "";
+    var r = rand(Math.round(x * 7 + y)), d = "M" + n1(x - 2) + "," + n1(y + 1), n = Math.max(2, Math.round(w / 18));
+    for (var i = 0; i <= n; i++) d += " L" + n1(x - 2 + (w + 4) * i / n) + "," + n1(y - t * (.6 + r() * .6));
+    d += " L" + n1(x + w + 2) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x - 2) + "," + n1(y + 1) + "Z";
+    return Pt(d, Tc(P, OB.snow)) + Pt("M" + n1(x) + "," + n1(y + 1) + " Q" + n1(x + w * .5) + "," + n1(y + t * .7) + " " + n1(x + w) + "," + n1(y + 1) + "Z", Sc(P, OB.snow), op(".7"));
+  }
+  function roofUnit(P, x, y, w, h) {
+    var o = R(x, y, w, h, Lc(P, "#b9bcc2")) + R(x + w * .62, y, w * .38, h, Sc(P, "#b9bcc2")) + R(x, y, w, 4, Tc(P, "#d9dbe0"));
+    for (var i = 1; i < 5; i++) o += R(x + 4, y + 6 + i * (h - 8) / 5, w * .55, 1.4, Sc(P, "#8a8d96"), op(".7"));
+    return o + snowCap(P, x, y, w, 7);
+  }
+  function column(P, x) {
+    var o = Pg([x - 7, 461, x, 461, x, 692, x - 7, 692], Sc(P, OB.column)) + R(x, 461, 24, 231, Lc(P, OB.column));
+    o += R(x + 17, 461, 7, 231, cmix(Lc(P, OB.column), Sc(P, OB.column), .45));
+    if (P.mode === "day" || P.mode === "golden") o += Pg([x, 461, x + 24, 461, x + 24, 498, x, 516], Sc(P, OB.column), op(".85"));
+    else o += R(x, 461, 24, 231, Sc(P, OB.column), op(P.night ? ".55" : ".35"));
+    if (P.lit) o += R(x, 600, 24, 92, "#ffcf87", op((.18 * P.warm).toFixed(2)));
+    return o + R(x - 7, 684, 31, 8, Sc(P, "#bfb4a2"));
+  }
+  function glassOver(P, x, y, w, h, seed) {
+    var r = rand(seed), o = "", day = P.mode === "day" || P.mode === "golden";
+    var refl = day ? cmix(P.sky[1][1], "#ffffff", .25) : P.night ? "#4b5690" : cmix(P.sky[2][1], "#ffffff", .1);
+    o += R(x, y, w, h, refl, op(day ? (P.heavy ? ".42" : ".5") : P.lit ? ".1" : ".3"));
+    // the two diagonal glints every cel painter puts on glass
+    var a = x + w * (.18 + r() * .2), g = day ? ".42" : ".12";
+    o += Pg([a, y, a + 34, y, a - 30, y + h, a - 64, y + h], "#ffffff", op(g)) + Pg([a + 46, y, a + 56, y, a - 8, y + h, a - 18, y + h], "#ffffff", op(g));
+    return o;
+  }
+  function videoInterior(P, x, y, w, h, seed) {
+    var r = rand(seed), o = "", wallc = Ic(P, "#efe0bc");
+    o += R(x, y, w, h, wallc) + R(x, y, w, 12, Ic(P, "#cdbf9c"));
+    for (var fx = x + 20; fx < x + w - 30; fx += 92) o += R(fx, y + 4, 56, 5, P.lit ? "#fffef2" : Ic(P, "#dcdcd0"));
+    for (var row = 0; row < 3; row++) {
+      var ry = y + 30 + row * 30;
+      if (ry + 22 > y + h - 34) break;
+      o += R(x, ry + 22, w, 4, Ic(P, "#8a6440"));
+      for (var sx = x + 2; sx < x + w - 4; sx += 5 + (r() < .2 ? 2 : 0)) o += R(sx, ry + (r() < .3 ? 2 : 0), 4, 22 - (r() < .3 ? 2 : 0), Ic(P, cmix(SPINES[Math.floor(r() * SPINES.length)], "#d9c9a6", .3)));
+    }
+    // a gondola of new releases facing out
+    o += R(x, y + h - 30, w, 30, Ic(P, "#a7744a"));
+    for (sx = x + 4; sx < x + w - 14; sx += 15) o += R(sx, y + h - 27, 12, 18, Ic(P, SPINES[Math.floor(r() * SPINES.length)])) + R(sx + 2, y + h - 22, 8, 3, Ic(P, "#f4efe0"), op(".7"));
+    return o;
+  }
+  function glassPoster(P, x, y, w, h, kind) {
+    var o = "", t = function (c) { return Wc(P, c, .45); };
+    if (kind === 0) { // a sci-fi one-sheet: a ringed planet over a red title band
+      o += R(x, y, w, h, t("#1d2a5c")) + Ci(x + w * .55, y + h * .4, w * .28, t("#e98a3a")) + El(x + w * .55, y + h * .42, w * .46, w * .08, "none", ' stroke="' + t("#f7d488") + '" stroke-width="2"');
+      o += Ci(x + w * .2, y + h * .15, 1.4, t("#ffffff")) + Ci(x + w * .8, y + h * .2, 1.2, t("#ffffff")) + R(x, y + h * .74, w, h * .12, t("#c4313d"));
+    } else if (kind === 1) { // a creature feature
+      o += R(x, y, w, h, t("#14161c")) + Ci(x + w * .5, y + h * .38, w * .3, t("#9fdc5a")) + Ci(x + w * .5, y + h * .38, w * .11, t("#14161c"));
+      for (var i = 0; i < 5; i++) o += R(x + w * (.12 + i * .17), y + h * .66, 3, 6 + i % 3 * 5, t("#c4313d"));
+      o += R(x + w * .1, y + h * .82, w * .8, 4, t("#e8e2d0"));
+    } else if (kind === 2) { // an action picture
+      o += R(x, y, w, h, t("#e8762c")) + Pg([x + w * .5, y + h * .1, x + w * .62, y + h * .38, x + w * .92, y + h * .4, x + w * .66, y + h * .56, x + w * .76, y + h * .84, x + w * .5, y + h * .66, x + w * .24, y + h * .84, x + w * .34, y + h * .56, x + w * .08, y + h * .4, x + w * .38, y + h * .38], t("#ffd84d"));
+      o += R(x + w * .1, y + h * .86, w * .8, 5, t("#1b1b22"));
+    }
+    return R(x - 2, y - 2, w + 4, h + 4, t("#f2ede0")) + o;
+  }
+  function bulkhead(P, x, y, w) {
+    var o = R(x, y, w, 30, Wc(P, OB.brick, .35)), m = cmix(Wc(P, OB.brick, .35), "#e8dccb", .3);
+    for (var row = 0; row < 4; row++) { o += R(x, y + row * 7.5, w, 1.2, m, op(".7")); for (var bx = x + (row % 2 ? 0 : 9); bx < x + w; bx += 18) o += R(bx, y + row * 7.5, 1.2, 7.5, m, op(".6")); }
+    return o + R(x, y, w, 3, Sc(P, OB.brick), op(".6"));
+  }
+  function sodaMachine(P, x, y) {
+    var h = 692 - y, body = "#c63a33", o = "";
+    o += R(x, y, 62, h, Wc(P, body, .4)) + R(x + 46, y, 16, h, Sc(P, body));
+    o += R(x + 6, y + 8, 36, 74, P.lit ? "#fff0d6" : Wc(P, "#e9e2d2", .4));
+    o += Pt("M" + (x + 6) + "," + (y + 54) + " Q" + (x + 24) + "," + (y + 40) + " " + (x + 42) + "," + (y + 56) + " L" + (x + 42) + "," + (y + 64) + " Q" + (x + 24) + "," + (y + 50) + " " + (x + 6) + "," + (y + 62) + "Z", P.lit ? "#e0443a" : Wc(P, body, .4));
+    for (var i = 0; i < 4; i++) o += R(x + 8 + i * 8, y + 14, 6, 9, P.lit ? ["#e0443a", "#2f6fc4", "#f2c13a", "#3c9a5a"][i] : Sc(P, "#888888"));
+    o += R(x + 44, y + 20, 10, 40, Sc(P, "#2a2a30")) + R(x + 8, y + 96, 34, 14, Sc(P, "#2a2224"));
+    return o;
+  }
+  function returnsBox(P, x, by) {
+    var b = "#2f5cad", o = El(x + 22, by, 30, 4, Sc(P, "#1a1820"), op(".4"));
+    o += Pt("M" + x + "," + by + " L" + x + "," + (by - 58) + " Q" + x + "," + (by - 70) + " " + (x + 22) + "," + (by - 70) + " Q" + (x + 44) + "," + (by - 70) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Wc(P, b, .5));
+    o += Pt("M" + (x + 28) + "," + by + " L" + (x + 28) + "," + (by - 69) + " Q" + (x + 44) + "," + (by - 66) + " " + (x + 44) + "," + (by - 58) + " L" + (x + 44) + "," + by + "Z", Sc(P, b));
+    o += R(x + 8, by - 52, 28, 6, "#15131c") + R(x + 6, by - 30, 32, 12, Wc(P, "#f1eee6", .4));
+    return o + snowCap(P, x + 2, by - 70, 40, 6);
+  }
+  function videoFront(P) {
+    var o = "", fr = Sc(P, OB.bronze), frL = Lc(P, OB.bronze);
+    // a drinks machine glowing under the walkway
+    o += sodaMachine(P, 898, 548);
+    // left window
+    o += R(964, 490, 288, 172, fr) + videoInterior(P, 970, 496, 276, 160, 3);
+    o += R(990, 504, 110, 16, Ic(P, "#c4313d")) + R(990, 520, 110, 3, Ic(P, "#8a2230"));
+    o += glassPoster(P, 1172, 512, 52, 78, 0) + glassPoster(P, 980, 566, 50, 74, 2);
+    // a cardboard standee: a space ranger, arms folded
+    var sd = Ic(P, "#5a7fb8"), sdl = Ic(P, "#e8d6b0");
+    o += R(1112, 586, 34, 66, sd) + Ci(1129, 578, 13, sdl) + Pt("M1114,574 a15,15 0 0 1 30,0 l0,-4 a15,13 0 0 0 -30,0z", Ic(P, "#d8d8e0")) + R(1110, 604, 38, 8, Ic(P, "#e2b33c"));
+    o += glassOver(P, 970, 496, 276, 160, 5) + R(1106, 490, 6, 172, fr) + R(964, 490, 288, 3, frL, op(".6"));
+    // the door bay: transom glass over the door opening
+    o += R(1250, 490, 104, 202, fr) + videoInterior(P, 1258, 498, 88, 64, 9) + glassOver(P, 1258, 498, 88, 64, 11) + R(1250, 562, 104, 8, fr);
+    o += R(1258, 570, 88, 122, Ic(P, "#efe0bc")) + R(1258, 570, 88, 10, Ic(P, "#d9c6a0"));
+    for (var sx = 1262; sx < 1344; sx += 5) o += R(sx, 596, 4, 22, Ic(P, SPINES[(sx * 7) % SPINES.length]));
+    o += R(1258, 618, 88, 4, Ic(P, "#8a6440")) + R(1258, 650, 88, 42, Ic(P, "#b4a07a")) + R(1272, 640, 60, 52, Ic(P, "#7a4c34")) + R(1272, 640, 60, 5, Ic(P, "#a8764e"));
+    // right window
+    o += R(1350, 490, 292, 172, fr) + videoInterior(P, 1356, 496, 280, 160, 7);
+    o += glassPoster(P, 1560, 510, 54, 80, 1);
+    // a customer browsing, back to us
+    var cu = Ic(P, "#4a5a7a"), sk = Ic(P, "#c99a78");
+    o += Pt("M1528,656 L1530,606 Q1532,592 1546,590 L1566,590 Q1580,592 1582,606 L1584,656 Z", cu) + Ci(1556, 578, 12, Ic(P, "#5a3a2a")) + R(1550, 588, 12, 4, sk);
+    o += glassOver(P, 1356, 496, 280, 160, 13) + R(1492, 490, 6, 172, fr) + R(1350, 490, 292, 3, frL, op(".6"));
+    o += bulkhead(P, 964, 662, 288) + bulkhead(P, 1350, 662, 292);
+    // the returns box by the door
+    o += returnsBox(P, 1362, 708);
+    return o;
+  }
+  // Friday Night Video's building as seen from its own car park: the master drawing. The Strip and the bar's doorstep
+  // draw this same building, scaled into place, so the store looks the same from every side of the street.
+  function videoBuilding(P) {
+    var o = "", r = rand(19), X0 = 868, X1 = 1666, i, x, y;
+    // rooftop air-conditioners peeking over the mansard
+    o += roofUnit(P, 1064, 306, 80, 36) + roofUnit(P, 1480, 314, 62, 28) + R(1196, 318, 8, 24, Sc(P, OB.steel)) + R(1193, 315, 14, 5, Lc(P, OB.steel));
+    // the left end of the building, turning away from us
+    o += Pg([848, 366, 868, 340, 868, 692, 848, 686], cmul(Sc(P, OB.stucco), "#e2e2ea"));
+    o += Pg([846, 366, 868, 340, 868, 348, 846, 372], Sc(P, OB.cap));
+    // coping, then the shingled mansard
+    o += R(X0 - 8, 338, X1 - X0 + 16, 10, Tc(P, OB.cap)) + R(X0 - 8, 347, X1 - X0 + 16, 3, Sc(P, OB.cap));
+    var mL = Mc(P, OB.mansard), mS = cmix(mL, Sc(P, OB.mansard), .55), mD = Sc(P, OB.mansard), mH = cmix(mL, Tc(P, "#c49a76"), .35);
+    o += R(X0 - 6, 350, X1 - X0 + 12, 101, mL);
+    for (y = 358; y < 450; y += 10) {
+      o += R(X0 - 6, y - 1, X1 - X0 + 12, 3.2, mD, op(".7")) + R(X0 - 6, y + 2.2, X1 - X0 + 12, 1.2, mH, op(".35"));
+      for (x = X0 - 6 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) {
+        o += R(x, y + 2, 1.2, 8, mS, op(".35"));
+        var q = r(); if (q < .12) o += R(x + 2, y + 2, 18, 8, mH, op(".5")); else if (q < .2) o += R(x + 2, y + 2, 18, 8, mD, op(".35"));
+      }
+    }
+    o += R(X0 - 6, 350, X1 - X0 + 12, 7, mD, op(".75"));
+    if (P.snow) o += R(X0 - 8, 330, X1 - X0 + 16, 10, Tc(P, OB.snow)) + snowCap(P, X0 - 6, 352, X1 - X0 + 12, 7);
+    // fascia board and the deep shade under the overhang
+    o += R(X0 - 8, 450, X1 - X0 + 16, 11, Lc(P, OB.trim)) + R(X0 - 8, 459, X1 - X0 + 16, 2.5, Sc(P, OB.trim));
+    o += R(X0, 461, X1 - X0, 19, Sc(P, OB.soffit));
+    var wall = cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .35);
+    o += R(X0, 480, X1 - X0, 212, wall);
+    // recessed cans in the soffit, and the little pools they throw (lit from dusk on)
+    for (x = 960; x < X1; x += 150) {
+      o += El(x, 470, 9, 2.6, P.lit ? "#fff3cf" : Sc(P, "#d8d0c0"));
+      if (P.lit) o += Pg([x - 9, 472, x + 9, 472, x + 34, 692, x - 34, 692], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
+    }
+    o += videoFront(P);
+    [868, 1640].forEach(function (cx) { o += column(P, cx); });
+    return o;
+  }
+  function waterTower(P, cx, cy) {
+    var dist = .32, body = "#d9dee4", lit = Hz(P, Lc(P, body), dist), shd = Hz(P, Sc(P, body), dist), leg = Hz(P, Sc(P, "#8a909c"), dist), o = "";
+    o += Ln(cx - 46, cy + 22, cx - 62, 360, leg, 5) + Ln(cx + 46, cy + 22, cx + 62, 360, leg, 5) + Ln(cx - 16, cy + 30, cx - 20, 360, leg, 4) + Ln(cx + 16, cy + 30, cx + 20, 360, leg, 4);
+    o += Ln(cx - 56, cy + 62, cx + 56, cy + 62, leg, 2.4) + Ln(cx - 58, cy + 62, cx + 18, cy + 92, leg, 1.6) + Ln(cx + 58, cy + 62, cx - 18, cy + 92, leg, 1.6);
+    o += Ln(cx, cy + 30, cx, 360, leg, 6);
+    var tank = "M" + (cx - 64) + "," + cy + " Q" + (cx - 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + 64) + "," + (cy - 34) + " " + (cx + 64) + "," + cy + " Q" + (cx + 60) + "," + (cy + 32) + " " + cx + "," + (cy + 34) + " Q" + (cx - 60) + "," + (cy + 32) + " " + (cx - 64) + "," + cy + "Z";
+    o += Pt(tank, shd);
+    var lx = P.lx < 0 ? -1 : 1;
+    o += Pt("M" + (cx + lx * 64) + "," + cy + " Q" + (cx + lx * 64) + "," + (cy - 34) + " " + cx + "," + (cy - 36) + " Q" + (cx + lx * 14) + "," + cy + " " + cx + "," + (cy + 34) + " Q" + (cx + lx * 60) + "," + (cy + 32) + " " + (cx + lx * 64) + "," + cy + "Z", lit);
+    o += Pg([cx - 54, cy - 22, cx, cy - 58, cx + 54, cy - 22], shd) + Pg([cx + 54 * lx, cy - 22, cx, cy - 58, cx + 4 * lx, cy - 22], lit, op(".85"));
+    o += R(cx - 1.5, cy - 70, 3, 14, leg);
+    o += Ln(cx - 66, cy + 4, cx + 66, cy + 4, leg, 2) + Ln(cx - 66, cy - 6, cx + 66, cy - 6, leg, 1);
+    return o + snowCap(P, cx - 44, cy - 30, 88, 8);
+  }
+  // the edge of town behind the shops, as the store's car park sees it: a far line of trees, a few roofs, no towers
+  function suburbBand(P, base) {
+    var r = rand(7), o = "", x, w, hh, d;
+    var far = Hz(P, Sc(P, "#4f6a48"), .7), far2 = Hz(P, Sc(P, "#486642"), .52), roofc = Hz(P, Sc(P, OB.roof), .45), wall = Hz(P, Sc(P, OB.siding), .4);
+    d = "M-10," + base + " L-10," + (base - 70); x = -10;
+    while (x < 1930) { w = 40 + r() * 70; hh = 14 + r() * 30; d += " Q" + n1(x + w * .5) + "," + n1(base - 70 - hh) + " " + n1(x + w) + "," + n1(base - 70 + (r() - .5) * 10); x += w; }
+    o += Pt(d + " L1930," + base + " Z", far);
+    // a few houses at the edge of town, their windows lit after dark
+    [[20, 150, 120], [180, 110, 86], [1010, 130, 96], [1620, 150, 110]].forEach(function (h) {
+      var hx0 = h[0], hw = h[1], top = base - h[2];
+      o += R(hx0, top, hw, h[2], wall) + Pg([hx0 - 10, top + 4, hx0 + hw * .5, top - hw * .32, hx0 + hw + 10, top + 4], roofc);
+      if (P.lit) [.25, .62].forEach(function (f) { if (r() < .75) o += R(hx0 + hw * f, top + 22, 16, 20, "#ffd88a", op(".75")); });
+    });
+    d = "M-10," + base + " L-10," + (base - 30); x = -10;
+    while (x < 1930) { w = 60 + r() * 90; hh = 10 + r() * 26; d += " Q" + n1(x + w * .5) + "," + n1(base - 30 - hh) + " " + n1(x + w) + "," + n1(base - 30 + (r() - .5) * 8); x += w; }
+    o += Pt(d + " L1930," + base + " Z", far2);
+    return o;
+  }
 
 // ===== shared street (time of day, weather) and chrome =====
   // ---------- the shared street: one time of day and one sky for the Strip, the video store and the bar ----------
@@ -3189,7 +3377,8 @@ var qrcode = function() {
     function clock(d) {
       d = d || new Date();
       var h = d.getHours(), m = d.getMinutes();
-      return DAYS[d.getDay()] + " · " + ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
+      // just the time: the shops are named for Friday and Saturday night, so a clock saying "Sunday" argues with them
+      return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
     }
     function e(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     // parts: [key, label]. key is the button as printed ("OK", "BACK", "◄ ►"), or r / g / y / b for a coloured button,
@@ -3239,40 +3428,6 @@ var qrcode = function() {
   // =================== outside: the footpath in front of the bar, the video store's sign next door ===================
   // the same light and weather as the Strip and the video store (see shared/world.js)
   function outLookNow() { return WORLD.look(); }
-  function farCity(P) {
-    var r = rand(23), o = "", x = -20, w, h, wx, wy;
-    var c1 = Hz(P, Sc(P, "#5a5878"), .5), c2 = Hz(P, Sc(P, "#4a4868"), .22);
-    while (x < 1940) {
-      w = 50 + r() * 90; h = 170 + r() * 210;
-      o += R(x, 760 - h, w, h, c1);
-      if (r() < .3) o += R(x + w * .4, 760 - h - 34, 4, 34, c1);
-      for (wy = 760 - h + 10; wy < 700; wy += 16) for (wx = x + 6; wx < x + w - 8; wx += 12) if (r() < .2) o += R(wx, wy, 5, 7, r() < .75 ? "#ffd98c" : "#9fe0ff", op(".7"));
-      x += w + 2 + r() * 14;
-    }
-    x = -30;
-    while (x < 1940) {
-      w = 90 + r() * 140; h = 60 + r() * 130;
-      o += R(x, 760 - h, w, h, c2);
-      for (wy = 760 - h + 10; wy < 740; wy += 20) for (wx = x + 8; wx < x + w - 12; wx += 18) if (r() < .3) o += R(wx, wy, 8, 10, r() < .8 ? "#ffcf7a" : "#bfe9ff", op(".85"));
-      x += w + r() * 30;
-    }
-    return o;
-  }
-  // the end of Friday Night Video's building: same mansard, same stucco, tapes in the window
-  function videoNeighbour(P) {
-    var o = "", r = rand(19), x, y, X1 = 430;
-    o += R(-10, 418, X1 + 18, 10, Tc(P, OB.cap));
-    var mL = Mc(P, OB.mansard), mD = Sc(P, OB.mansard);
-    o += R(-10, 428, X1 + 14, 92, mL);
-    for (y = 436; y < 518; y += 10) { o += R(-10, y - 1, X1 + 14, 3, mD, op(".7")); for (x = -6 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) o += R(x, y + 2, 1.2, 8, mD, op(".35")); }
-    o += R(-10, 520, X1 + 18, 11, Lc(P, OB.trim)) + R(-10, 531, X1 + 10, 16, Sc(P, OB.soffit));
-    o += R(-10, 547, X1 + 10, 213, cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .35));
-    o += R(40, 590, 330, 140, Sc(P, OB.bronze)) + R(48, 598, 314, 124, "#f3d489");
-    for (y = 602; y < 716; y += 30) { o += R(48, y + 24, 314, 4, "#8a6a3c"); for (x = 54; x < 356; x += 9 + r() * 3) o += R(x, y + 2, 7, 22, SPINES[Math.floor(r() * SPINES.length)], op(".9")); }
-    o += R(202, 598, 6, 124, Sc(P, OB.bronze)) + Pg([48, 598, 150, 598, 48, 690], "#ffffff", op(".12"));
-    o += R(X1 - 16, 540, 24, 222, Lc(P, OB.column)) + R(X1 - 16, 540, 8, 222, Sc(P, OB.column));
-    return o;
-  }
   function alley(P) {
     var o = R(436, 470, 130, 290, Hz(P, Sc(P, "#3a3648"), .15)), x;
     for (x = 440; x < 562; x += 14) o += R(x, 640, 12, 120, Sc(P, OB.fence)) + R(x, 640, 3, 120, Lc(P, OB.fence), op(".5"));
@@ -3282,7 +3437,9 @@ var qrcode = function() {
   function sideShop(P) {
     var o = "", y;
     o += R(1500, 400, 430, 12, Tc(P, OB.cap)) + R(1500, 412, 430, 348, cmix(Wc(P, OB.siding, .3), Sc(P, OB.siding), .5));
-    o += R(1540, 440, 340, 70, Sc(P, "#2c2832"));
+    // the takeaway next door, shut for the night: painted letters on its fascia, the roller door down
+    o += R(1540, 440, 340, 70, Sc(P, "#2c2832"), ink(2.5));
+    o += Tx(1594, 484, 20, "LUCKY STAR", Lc(P, "#e9d3a0"), ' font-weight="600" letter-spacing="2" fill-opacity=".82"', OSW) + Tx(1784, 484, 22, "TAKEAWAY", Lc(P, "#e9d3a0"), ' font-weight="600" letter-spacing="2" fill-opacity=".82"', OSW);
     o += R(1560, 560, 300, 200, Sc(P, "#8e96a4"));
     for (y = 566; y < 760; y += 9) o += R(1560, y, 300, 1.8, Sc(P, "#5c6474"));
     return o;
@@ -3355,20 +3512,27 @@ var qrcode = function() {
     return R(1668, 250, 12, 520, c) + R(1668, 250, 4, 520, Lc(P, "#6a6c78")) + Pt("M1680,258 Q1680,212 1620,208 L1556,208 L1556,220 L1618,220 Q1664,224 1668,258 Z", c) +
       Pt("M1536,204 L1604,204 L1594,226 L1546,226 Z", Sc(P, "#3a3c46")) + R(1660, 760, 28, 12, c);
   }
+  // where the video store's building (drawn in its own car park's coordinates: x 868..1666, ground at 692) sits here
+  var NS = .91, NT = "translate(" + (430 - 1666 * NS).toFixed(1) + "," + (760 - 692 * NS).toFixed(1) + ") scale(" + NS + ")";
   function outPlateSVG(P) {
     clipN = 0;
-    return svgWrap(farCity(P) + videoNeighbour(P) + alley(P) + sideShop(P) + barBuilding(P) + outGround(P) + streetLamp(P));
+    // the edge of town and the water tower behind, then the video store's own building (the shared master drawing,
+    // scaled so its right-hand end is all that's in the picture), the alley, the takeaway and the bar
+    return svgWrap(suburbBand(P, 760) + waterTower(P, 1790, 262) + '<g transform="' + NT + '">' + videoBuilding(P) + "</g>" + alley(P) + sideShop(P) + barBuilding(P) + outGround(P) + streetLamp(P));
   }
   function outCelsSVG(P, barName, fnvName) {
     var o = "", r = rand(149), i;
     // --- next door: the end of the video store's mansard, its red channel letters running in from the left ---
     // (its pole sign stands at the far end of its car park, out of this picture; see the store's own doorstep)
     var lit = P.lit, vn = String(fnvName || "Friday Night Video"), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9");
-    var va = ' x="404" y="496" text-anchor="end" font-family="' + YT + '" font-size="62"';
-    if (lit) o += "<text" + va + ' fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(vn) + "</text>";
-    o += '<text x="408" y="502" text-anchor="end" font-family="' + YT + '" font-size="62" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(vn) + "</text>";
-    o += "<text" + va + ' fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(vn) + "</text>";
-    if (lit) o += halo(200, 660, 200, 70, "#fff0c8", .3);
+    var va = ' x="1262" y="430" text-anchor="middle" font-family="' + YT + '" font-size="62"', g = '<g transform="' + NT + '">';
+    if (lit) g += "<text" + va + ' fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(vn) + "</text>";
+    g += '<text x="1266" y="436" text-anchor="middle" font-family="' + YT + '" font-size="62" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(vn) + "</text>";
+    g += "<text" + va + ' fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(vn) + "</text>";
+    // its OPEN sign in the right-hand window
+    g += '<g class="n-flick">' + (lit ? halo(1430, 532, 110, 52, "#ff4f86", .5) : "") + '<rect x="1378" y="512" width="104" height="38" rx="12" fill="none" stroke="#ff3d7a" stroke-width="4"/>' +
+      '<text x="1430" y="541" text-anchor="middle" font-family="' + YT + '" font-size="25" fill="#ffd3e2" stroke="#ff2d6f" stroke-width="2.2" paint-order="stroke" letter-spacing="1">OPEN</text></g>';
+    o += g + "</g>";
     // --- the bar's neon ---
     var bn = splitName(barName);
     o += '<g class="n-buzz">' + neonNote(668, 548, 1.05, NEON.amber) + "</g>" + neonNote(1410, 548, 1.05, NEON.amber);
@@ -3432,19 +3596,13 @@ var qrcode = function() {
     });
     o += R(0, 990, 1920, 90, "#090b22");
     // lights gone soft through the wet glass
-    for (var i = 0; i < 36; i++) o += Ci(r() * 1920, 420 + r() * 560, 14 + r() * 42, [NEON.amber, "#ffd58a", NEON.pink, NEON.teal, "#aee6ff"][Math.floor(r() * 5)], op((.07 + r() * .12).toFixed(2)));
+    // (no lens blur: it's a painted backdrop, not a view through glass)
     return o;
   }
   function windowPlateSVG() {
-    var r = rand(303), o = cityView(), i, wd = "#2a170f", wl = "#5a3520";
-    o += R(0, 0, 1920, 1080, "#7f9bd8", op(".06"));
-    for (i = 0; i < 150; i++) { var x = r() * 1920, y = r() * 1000, s = 2.5 + r() * 6; o += El(x, y, s, s * 1.25, "#cfe0ff", op(".16")) + El(x - s * .3, y - s * .4, s * .3, s * .4, "#ffffff", op(".5")); }
-    for (i = 0; i < 16; i++) {
-      var rx = r() * 1920, ry = r() * 500, len = 200 + r() * 420;
-      o += '<path d="M' + n1(rx) + "," + n1(ry) + " q" + n1((r() - .5) * 24) + "," + n1(len * .5) + " " + n1((r() - .5) * 18) + "," + n1(len) + '" fill="none" stroke="#cfe0ff" stroke-opacity=".13" stroke-width="' + n1(2 + r() * 3) + '" stroke-linecap="round"/>';
-    }
+    // the stage's painted city backdrop, filling the screen behind the lyrics, in a dark proscenium frame
+    var o = cityView(), wd = "#2a170f", wl = "#5a3520";
     o += R(0, 0, 1920, 34, wd) + R(0, 34, 1920, 6, wl) + R(0, 0, 34, 1080, wd) + R(34, 0, 6, 1080, wl) + R(1886, 0, 34, 1080, wd) + R(1880, 0, 6, 1080, wl);
-    o += R(634, 0, 16, 1010, wd) + R(650, 0, 4, 1010, wl, op(".6")) + R(1270, 0, 16, 1010, wd) + R(1286, 0, 4, 1010, wl, op(".6")) + R(0, 300, 1920, 14, wd) + R(0, 314, 1920, 4, wl, op(".6"));
     o += R(0, 1004, 1920, 76, "#3a2014") + R(0, 1000, 1920, 10, "#6b4226") + R(0, 1000, 1920, 3, "#a8743e");
     return svgWrap(o);
   }
@@ -3462,9 +3620,6 @@ var qrcode = function() {
   }
   function windowCelsSVG(barName) {
     var o = "", word = (splitName(barName)[1] || "Karaoke").toUpperCase();
-    // the bar's own neon, hanging in the window and read from behind
-    o += '<g class="n-flick" transform="translate(340,200) scale(-1,1)">' + neonText(0, 0, fitSize(word, 520, 96, .78), word, NEON.teal, OSW, ' font-weight="600" letter-spacing="10"') + "</g>";
-    o += '<g class="n-buzz">' + neonNote(1600, 220, 1.5, NEON.pink) + "</g>";
     // a mast with its warning light, and the last train
     o += R(1128, 236, 4, 150, "#0d1132") + '<g class="beacon">' + Ci(1130, 232, 16, NEON.red, op(".3")) + Ci(1130, 232, 6, "#ffd0c8") + "</g>";
     o += '<g class="train">' + R(0, 764, 560, 26, "#141a44");
@@ -3508,7 +3663,8 @@ var qrcode = function() {
     // ---- the stage ----
     o += R(624, 134, 572, 442, "#2a170f");
     o += '<svg x="640" y="150" width="540" height="410" viewBox="0 120 1920 900" preserveAspectRatio="xMidYMid slice">' + cityView() + "</svg>";
-    o += R(640, 150, 540, 410, "#7f9bd8", op(".08")) + R(905, 150, 10, 410, "#2a170f") + R(640, 348, 540, 10, "#2a170f") + Pg([640, 150, 800, 150, 640, 330], "#ffffff", op(".05"));
+    // a painted city backdrop hung behind the stage (the bar's on the ground floor; there's no skyline out the back)
+    o += R(640, 150, 540, 410, "none", ' stroke="#d9a441" stroke-width="4"') + R(646, 156, 528, 398, "none", ' stroke="#2a170f" stroke-width="2" stroke-opacity=".6"');
     o += curtain(510, 640, 110, 650) + curtain(1180, 1310, 110, 650);
     o += R(496, 92, 828, 60, "#7d1a29");
     for (x = 496; x < 1324; x += 46) o += El(x + 23, 152, 23, 14, "#7d1a29") + Ci(x + 23, 168, 5, "#d9a441");
@@ -3564,7 +3720,7 @@ var qrcode = function() {
     o += fairyLights(-10, 60, 500, 108, 18, 9, 31) + fairyLights(1320, 108, 1930, 60, 18, 10, 47);
     // EXIT, and the regulars' wall
     o += R(30, 250, 72, 34, "#1a0c12", ink(2.5)) + '<g class="n-flick">' + neonText(66, 276, 24, "EXIT", NEON.red, OSW, ' font-weight="600" letter-spacing="2"') + "</g>";
-    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 140, 32, "THE REGULARS", "#2a1c18");
+    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 138, 25, "THE REGULARS", "#2a1c18", ' letter-spacing="1"');
     var wall = S.wall.slice(0, 6);
     for (i = 0; i < 6; i++) {
       var px = 168 + (i % 3) * 96, py = 176 + Math.floor(i / 3) * 112, rot = (r() - .5) * 12, w = wall[i];
@@ -3586,17 +3742,14 @@ var qrcode = function() {
         R(px + 7, py + 7, 62, 56, w ? POL_BG[w.s % POL_BG.length] : "#6e2e3e", w ? ink(1.5) : ' fill-opacity=".5"') +
         (w ? Ci(px + 38, py + 30, 10, "#f0b891", ink(1.5)) + Pt("M" + (px + 20) + "," + (py + 63) + " Q" + (px + 38) + "," + (py + 36) + " " + (px + 56) + "," + (py + 63) + " Z", "#2a1c18") + Tx(px + 38, py + 82, 12, esc(clip(w.who, 9)), "#2a1c18", ' font-weight="600"', OSW) : "") + "</g>";
     }
-    if (!wall.length) o += '<g transform="rotate(2 300 330)">' + R(176, 300, 250, 76, "#fff6c9", ink(2.5)) + Ci(301, 306, 5, "#e2364a", ink(1.5)) +
-      Tx(301, 332, 19, "Sing tonight and", "#2a1c18") + Tx(301, 358, 19, "your photo goes up", "#2a1c18") + "</g>";
     o += candle(268, 622);
     // the window behind the stage keeps a light or two blinking
     o += '<g class="beacon">' + Ci(1010, 232, 5, NEON.red) + "</g>" + '<g class="n-flick">' + R(742, 330, 14, 54, NEON.pink, op(".8")) + "</g>" + '<g class="n-buzz">' + R(1090, 300, 16, 60, NEON.teal, op(".7")) + "</g>";
     // the request board
     o += Pt("M1560,84 L1800,84 L1784,106 L1800,128 L1560,128 L1576,106 Z", "#f4ead2", ink(3)) + Tx(1680, 118, 28, "UP NEXT", "#7d1a29");
     // nobody waiting: a blank slip pinned up, asking for the first song
-    if (!S.queue.length) o += '<g transform="rotate(-3 1680 230)">' + R(1562, 172, 236, 112, "#fff6c9", ink(2.5)) + Ci(1680, 180, 6, "#e2364a", ink(1.5)) +
-      Tx(1680, 216, 24, "Be the first", "#7d1a29") + Tx(1680, 244, 19, "on stage tonight", "#2a1c18", ' font-weight="600" letter-spacing="1"', OSW) +
-      Tx(1680, 270, 15, "THE SONGBOOK'S ON THE COUNTER", "#6a5d4e", ' font-weight="600" letter-spacing=".5"', OSW) + "</g>";
+    if (!S.queue.length) o += '<g transform="rotate(-3 1680 230)">' + R(1572, 180, 216, 90, "#fff6c9", ink(2.5)) + Ci(1680, 188, 6, "#e2364a", ink(1.5)) +
+      Tx(1680, 226, 26, "Be the first", "#7d1a29") + Tx(1680, 255, 21, "on stage tonight", "#2a1c18", ' font-weight="600" letter-spacing="1"', OSW) + "</g>";
     S.queue.slice(0, 6).forEach(function (q, k) {
       var sx = 1512 + (k % 3) * 118, sy = 162 + Math.floor(k / 3) * 86, rot = ((k * 37) % 9) - 4;
       o += '<g transform="rotate(' + rot + " " + (sx + 52) + " " + (sy + 34) + ')">' + R(sx, sy, 104, 68, "#fff6c9", ink(2.5)) + Ci(sx + 52, sy + 6, 5, "#e2364a", ink(1.5)) +
@@ -3834,10 +3987,12 @@ var qrcode = function() {
         fctx.fillStyle = "rgb(" + PIXCOL.line + ")"; fctx.fillRect(x - 1, 1, 10, 9);
         fctx.fillStyle = "rgb(" + (i < lit ? PIXCOL.lit : PIXCOL.unlit) + ")"; fctx.fillRect(x, 2, 8, 7);
       }
+      // the display canvas holds the dots at 1:1 (CSS scales it up, pixelated); older builds used a 1920-wide canvas
+      var s = display.width / PIX.W;
       if (shown) dctx.clearRect(0, shown[0], display.width, shown[1]);
       noSmooth(dctx);
-      dctx.drawImage(frame, 0, 0, PIX.W, h, 0, top * PIX.P, PIX.W * PIX.P, h * PIX.P);
-      shown = [top * PIX.P, h * PIX.P];
+      dctx.drawImage(frame, 0, 0, PIX.W, h, 0, top * s, PIX.W * s, h * s);
+      shown = [top * s, h * s];
     };
   }
 
@@ -3872,9 +4027,10 @@ var qrcode = function() {
         t.fillStyle = "rgb(" + (on ? PIXCOL.lit : PIXCOL.unlit) + ")"; t.fillRect(x, yy2, 4, 4);
       }
     }
+    var s = display.width / PIX.W;
     ctx.clearRect(0, 0, display.width, display.height);
     ctx.imageSmoothingEnabled = false; ctx.webkitImageSmoothingEnabled = false;
-    ctx.drawImage(tmp, 0, 0, PIX.W, PIX.H, 0, 0, PIX.W * PIX.P, PIX.H * PIX.P);
+    ctx.drawImage(tmp, 0, 0, PIX.W, PIX.H, 0, 0, PIX.W * s, PIX.H * s);
     return rows.map(function (r) { return { y: r.y * PIX.P, h: r.h * PIX.P }; });
   }
 
@@ -4242,7 +4398,7 @@ var qrcode = function() {
   }
 
 // ===== the bar =====
-  var APP_VERSION = "0.6.2", APP_DATE = "22 Nov 2026";
+  var APP_VERSION = "0.6.4", APP_DATE = "22 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -4382,7 +4538,8 @@ var qrcode = function() {
     var w = window.innerWidth || 1920, h = window.innerHeight || 1080, s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
-  function go(sc) { SC = sc; $("stage").setAttribute("data-sc", sc); }
+  // a line Rhonda was saying belongs to the room she said it in: it doesn't follow you into the songbook
+  function go(sc) { if (sc !== SC) { clearTimeout(sayT); $("say").hidden = true; } SC = sc; $("stage").setAttribute("data-sc", sc); }
   function fadeThen(fn, ms) { $("fade").classList.add("on"); setTimeout(function () { fn(); requestAnimationFrame(function () { requestAnimationFrame(function () { $("fade").classList.remove("on"); }); }); }, ms || 480); }
   function yes() { return true; }
   var sayT = null;
@@ -4519,7 +4676,8 @@ var qrcode = function() {
 
   // ---------- inside ----------
   var SPOTS = [
-    { id: "book", x: 961, y: 882, t: "The songbook", s: function () { return "Pick a song"; } },
+    // the book has SONGBOOK printed on it, so its tag says only what it's for
+    { id: "book", x: 961, y: 882, t: "Pick a song", s: function () { return ""; } },
     { id: "stage", x: 910, y: 396, t: "The stage", s: function () { return queue.length ? queue[0].singer + " is up — take the stage" : "Nobody's up yet"; } },
     { id: "board", x: 1680, y: 134, t: "Up next", s: function () { return queue.length ? queue.length + (queue.length === 1 ? " slip" : " slips") + " on the board" : "The request board"; } },
     { id: "bell", x: 1320, y: 914, t: "Ring the bell", s: function () { return "Bar name, sounds and set-up"; } },
@@ -4533,7 +4691,7 @@ var qrcode = function() {
     $("bCels").innerHTML = barCelsSVG({ queue: queue, wall: wall });
     var on = (cur() && SC === "bar" && cur().getAttribute("data-id")) || (queue.length ? "stage" : "book");
     $("bSpots").innerHTML = SPOTS.map(function (s) {
-      return '<div class="spot-dot" data-for="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y + 16) + 'px"></div><div class="spot f' + (s.id === on ? " on" : "") + '" data-act="spot" data-id="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y - 14) + 'px">' + esc(s.t) + "<small>" + esc(s.s()) + "</small></div>";
+      return '<div class="spot-dot" data-for="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y + 16) + 'px"></div><div class="spot f' + (s.id === on ? " on" : "") + '" data-act="spot" data-id="' + s.id + '" style="left:' + s.x + "px;top:" + (s.y - 14) + 'px">' + esc(s.t) + (s.s() ? "<small>" + esc(s.s()) + "</small>" : "") + "</div>";
     }).join("");
     spotDots();
     hint("bHint", [["", "◄ ► ▲ ▼  look around"], ["", "OK  choose"], ["y", "Up next"], ["b", "Sounds " + (prefs.sound ? "on" : "off")]]);
@@ -4835,7 +4993,7 @@ var qrcode = function() {
     h += '<div class="opt f" data-act="d-name">The name on the sign<span>' + esc(prefs.barName) + "</span></div>";
     h += '<div class="opt f" data-act="d-sound">Bar sounds<span>' + (prefs.sound ? "On" : "Off") + "</span></div>";
     h += '<div class="opt f" data-act="d-lights">Lights<span>' + LIGHTS[prefs.lights].n + "</span></div>";
-    h += '<div class="opt f" data-act="d-screen">Stage screen<span>' + (prefs.screen === "classic" ? "Classic blue" : "Rainy window") + "</span></div>";
+    h += '<div class="opt f" data-act="d-screen">Stage screen<span>' + (prefs.screen === "classic" ? "Classic blue" : "City backdrop") + "</span></div>";
     h += '<div class="opt f" data-act="d-big">Words on the stage screen<span>' + (prefs.big ? "Extra big" : "Big") + "</span></div>";
     h += '<div class="opt f" data-act="d-fair">Turns<span>' + (prefs.fair ? "Fair: everyone gets a go first" : "In the order slips arrive") + "</span></div>";
     h += '<div class="opt f" data-act="d-check">Sound check<span>' + lagText() + "</span></div>";
@@ -5200,7 +5358,7 @@ var qrcode = function() {
       var c = $("cue"); c.hidden = false; c.classList.remove("open");
       cue(who(q) + " — you're up", q.song.t, HOST + " is finding the words…");
       hint("sgHint", [["", "OK  pause"], ["", "◄ ►  words earlier / later"], ["", "INFO  timing"], ["r", "Stop the song"]]);
-      $("sgProg").firstChild.style.width = "0"; $("sgProg").hidden = false;
+      $("sgProg").firstChild.style.transform = "scaleX(0)"; $("sgProg").hidden = false;
       S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
       var mine = S.id, load = prepare(q);
       load.then(function (d) { if (S && S.id === mine) beginSong(d); }, function (e) { if (S && S.id === mine) songFailed(e && e.kind || "net"); });
@@ -5456,7 +5614,7 @@ var qrcode = function() {
     if (lit !== S.glowLit) { S.glowLit = lit; if (lit > 0) stageGlow("tick"); }
     pix.draw(tl, lit, !!now && wait <= 4.5);
     var total = p.dur || S.dur || 0, pct = total > 0 ? Math.max(0, Math.min(100, t / total * 100)) : 0;
-    if (Math.abs(pct - (S.progPct || 0)) >= .1) { S.progPct = pct; $("sgProg").firstChild.style.width = pct.toFixed(1) + "%"; }
+    if (Math.abs(pct - (S.progPct || 0)) >= .2) { S.progPct = pct; $("sgProg").firstChild.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")"; }
     var osd = (S.flash ? S.flash + "\n" : "") + (p.playing() ? "▶ PLAY   " : "❚❚ PAUSE  ") + mmss(t) + (S.dur ? " / " + mmss(p.dur || S.dur) : "");
     if (S.osd !== osd) { S.osd = osd; $("osd").textContent = osd; }
     if (S.showHud) {
@@ -5714,7 +5872,7 @@ var qrcode = function() {
     var el = e.target.closest ? e.target.closest(".f") : null;
     if (el && scope().contains(el)) { var was = cur() === el; setFocus(el, true); if (was || !el.classList.contains("tab")) activate(el); return; }
     if (osk || !$("modal").hidden) return;
-    if (SC === "out" && !entering) { if (e.target && e.target.id === "goVideo") FSN.go("video"); else enterBar(); }
+    if (SC === "out" && !entering) { var gv = $("goVideo"); if (gv && e.target && gv.contains(e.target)) FSN.go("video"); else enterBar(); }
     else if (SC === "sing" && CHK) endCheck(true);
     else if (SC === "sing" && INT) endIntermission(true);
     else if (SC === "sing" && S && !S.loading) { if (S.player.playing()) S.player.pause(); else S.player.resume(); }

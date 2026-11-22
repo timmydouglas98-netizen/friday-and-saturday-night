@@ -25,40 +25,6 @@
   // =================== outside: the footpath in front of the bar, the video store's sign next door ===================
   // the same light and weather as the Strip and the video store (see shared/world.js)
   function outLookNow() { return WORLD.look(); }
-  function farCity(P) {
-    var r = rand(23), o = "", x = -20, w, h, wx, wy;
-    var c1 = Hz(P, Sc(P, "#5a5878"), .5), c2 = Hz(P, Sc(P, "#4a4868"), .22);
-    while (x < 1940) {
-      w = 50 + r() * 90; h = 170 + r() * 210;
-      o += R(x, 760 - h, w, h, c1);
-      if (r() < .3) o += R(x + w * .4, 760 - h - 34, 4, 34, c1);
-      for (wy = 760 - h + 10; wy < 700; wy += 16) for (wx = x + 6; wx < x + w - 8; wx += 12) if (r() < .2) o += R(wx, wy, 5, 7, r() < .75 ? "#ffd98c" : "#9fe0ff", op(".7"));
-      x += w + 2 + r() * 14;
-    }
-    x = -30;
-    while (x < 1940) {
-      w = 90 + r() * 140; h = 60 + r() * 130;
-      o += R(x, 760 - h, w, h, c2);
-      for (wy = 760 - h + 10; wy < 740; wy += 20) for (wx = x + 8; wx < x + w - 12; wx += 18) if (r() < .3) o += R(wx, wy, 8, 10, r() < .8 ? "#ffcf7a" : "#bfe9ff", op(".85"));
-      x += w + r() * 30;
-    }
-    return o;
-  }
-  // the end of Friday Night Video's building: same mansard, same stucco, tapes in the window
-  function videoNeighbour(P) {
-    var o = "", r = rand(19), x, y, X1 = 430;
-    o += R(-10, 418, X1 + 18, 10, Tc(P, OB.cap));
-    var mL = Mc(P, OB.mansard), mD = Sc(P, OB.mansard);
-    o += R(-10, 428, X1 + 14, 92, mL);
-    for (y = 436; y < 518; y += 10) { o += R(-10, y - 1, X1 + 14, 3, mD, op(".7")); for (x = -6 + ((y / 10) % 2 ? 0 : 14); x < X1; x += 26 + r() * 10) o += R(x, y + 2, 1.2, 8, mD, op(".35")); }
-    o += R(-10, 520, X1 + 18, 11, Lc(P, OB.trim)) + R(-10, 531, X1 + 10, 16, Sc(P, OB.soffit));
-    o += R(-10, 547, X1 + 10, 213, cmix(Wc(P, OB.stucco, .5), Sc(P, OB.stucco), .35));
-    o += R(40, 590, 330, 140, Sc(P, OB.bronze)) + R(48, 598, 314, 124, "#f3d489");
-    for (y = 602; y < 716; y += 30) { o += R(48, y + 24, 314, 4, "#8a6a3c"); for (x = 54; x < 356; x += 9 + r() * 3) o += R(x, y + 2, 7, 22, SPINES[Math.floor(r() * SPINES.length)], op(".9")); }
-    o += R(202, 598, 6, 124, Sc(P, OB.bronze)) + Pg([48, 598, 150, 598, 48, 690], "#ffffff", op(".12"));
-    o += R(X1 - 16, 540, 24, 222, Lc(P, OB.column)) + R(X1 - 16, 540, 8, 222, Sc(P, OB.column));
-    return o;
-  }
   function alley(P) {
     var o = R(436, 470, 130, 290, Hz(P, Sc(P, "#3a3648"), .15)), x;
     for (x = 440; x < 562; x += 14) o += R(x, 640, 12, 120, Sc(P, OB.fence)) + R(x, 640, 3, 120, Lc(P, OB.fence), op(".5"));
@@ -68,7 +34,9 @@
   function sideShop(P) {
     var o = "", y;
     o += R(1500, 400, 430, 12, Tc(P, OB.cap)) + R(1500, 412, 430, 348, cmix(Wc(P, OB.siding, .3), Sc(P, OB.siding), .5));
-    o += R(1540, 440, 340, 70, Sc(P, "#2c2832"));
+    // the takeaway next door, shut for the night: painted letters on its fascia, the roller door down
+    o += R(1540, 440, 340, 70, Sc(P, "#2c2832"), ink(2.5));
+    o += Tx(1594, 484, 20, "LUCKY STAR", Lc(P, "#e9d3a0"), ' font-weight="600" letter-spacing="2" fill-opacity=".82"', OSW) + Tx(1784, 484, 22, "TAKEAWAY", Lc(P, "#e9d3a0"), ' font-weight="600" letter-spacing="2" fill-opacity=".82"', OSW);
     o += R(1560, 560, 300, 200, Sc(P, "#8e96a4"));
     for (y = 566; y < 760; y += 9) o += R(1560, y, 300, 1.8, Sc(P, "#5c6474"));
     return o;
@@ -141,20 +109,27 @@
     return R(1668, 250, 12, 520, c) + R(1668, 250, 4, 520, Lc(P, "#6a6c78")) + Pt("M1680,258 Q1680,212 1620,208 L1556,208 L1556,220 L1618,220 Q1664,224 1668,258 Z", c) +
       Pt("M1536,204 L1604,204 L1594,226 L1546,226 Z", Sc(P, "#3a3c46")) + R(1660, 760, 28, 12, c);
   }
+  // where the video store's building (drawn in its own car park's coordinates: x 868..1666, ground at 692) sits here
+  var NS = .91, NT = "translate(" + (430 - 1666 * NS).toFixed(1) + "," + (760 - 692 * NS).toFixed(1) + ") scale(" + NS + ")";
   function outPlateSVG(P) {
     clipN = 0;
-    return svgWrap(farCity(P) + videoNeighbour(P) + alley(P) + sideShop(P) + barBuilding(P) + outGround(P) + streetLamp(P));
+    // the edge of town and the water tower behind, then the video store's own building (the shared master drawing,
+    // scaled so its right-hand end is all that's in the picture), the alley, the takeaway and the bar
+    return svgWrap(suburbBand(P, 760) + waterTower(P, 1790, 262) + '<g transform="' + NT + '">' + videoBuilding(P) + "</g>" + alley(P) + sideShop(P) + barBuilding(P) + outGround(P) + streetLamp(P));
   }
   function outCelsSVG(P, barName, fnvName) {
     var o = "", r = rand(149), i;
     // --- next door: the end of the video store's mansard, its red channel letters running in from the left ---
     // (its pole sign stands at the far end of its car park, out of this picture; see the store's own doorstep)
     var lit = P.lit, vn = String(fnvName || "Friday Night Video"), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9");
-    var va = ' x="404" y="496" text-anchor="end" font-family="' + YT + '" font-size="62"';
-    if (lit) o += "<text" + va + ' fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(vn) + "</text>";
-    o += '<text x="408" y="502" text-anchor="end" font-family="' + YT + '" font-size="62" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(vn) + "</text>";
-    o += "<text" + va + ' fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(vn) + "</text>";
-    if (lit) o += halo(200, 660, 200, 70, "#fff0c8", .3);
+    var va = ' x="1262" y="430" text-anchor="middle" font-family="' + YT + '" font-size="62"', g = '<g transform="' + NT + '">';
+    if (lit) g += "<text" + va + ' fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(vn) + "</text>";
+    g += '<text x="1266" y="436" text-anchor="middle" font-family="' + YT + '" font-size="62" fill="' + Sc(P, "#3a2418") + '" fill-opacity=".55">' + esc(vn) + "</text>";
+    g += "<text" + va + ' fill="' + letter + '" stroke="' + rim + '" stroke-width="3" paint-order="stroke">' + esc(vn) + "</text>";
+    // its OPEN sign in the right-hand window
+    g += '<g class="n-flick">' + (lit ? halo(1430, 532, 110, 52, "#ff4f86", .5) : "") + '<rect x="1378" y="512" width="104" height="38" rx="12" fill="none" stroke="#ff3d7a" stroke-width="4"/>' +
+      '<text x="1430" y="541" text-anchor="middle" font-family="' + YT + '" font-size="25" fill="#ffd3e2" stroke="#ff2d6f" stroke-width="2.2" paint-order="stroke" letter-spacing="1">OPEN</text></g>';
+    o += g + "</g>";
     // --- the bar's neon ---
     var bn = splitName(barName);
     o += '<g class="n-buzz">' + neonNote(668, 548, 1.05, NEON.amber) + "</g>" + neonNote(1410, 548, 1.05, NEON.amber);
@@ -218,19 +193,13 @@
     });
     o += R(0, 990, 1920, 90, "#090b22");
     // lights gone soft through the wet glass
-    for (var i = 0; i < 36; i++) o += Ci(r() * 1920, 420 + r() * 560, 14 + r() * 42, [NEON.amber, "#ffd58a", NEON.pink, NEON.teal, "#aee6ff"][Math.floor(r() * 5)], op((.07 + r() * .12).toFixed(2)));
+    // (no lens blur: it's a painted backdrop, not a view through glass)
     return o;
   }
   function windowPlateSVG() {
-    var r = rand(303), o = cityView(), i, wd = "#2a170f", wl = "#5a3520";
-    o += R(0, 0, 1920, 1080, "#7f9bd8", op(".06"));
-    for (i = 0; i < 150; i++) { var x = r() * 1920, y = r() * 1000, s = 2.5 + r() * 6; o += El(x, y, s, s * 1.25, "#cfe0ff", op(".16")) + El(x - s * .3, y - s * .4, s * .3, s * .4, "#ffffff", op(".5")); }
-    for (i = 0; i < 16; i++) {
-      var rx = r() * 1920, ry = r() * 500, len = 200 + r() * 420;
-      o += '<path d="M' + n1(rx) + "," + n1(ry) + " q" + n1((r() - .5) * 24) + "," + n1(len * .5) + " " + n1((r() - .5) * 18) + "," + n1(len) + '" fill="none" stroke="#cfe0ff" stroke-opacity=".13" stroke-width="' + n1(2 + r() * 3) + '" stroke-linecap="round"/>';
-    }
+    // the stage's painted city backdrop, filling the screen behind the lyrics, in a dark proscenium frame
+    var o = cityView(), wd = "#2a170f", wl = "#5a3520";
     o += R(0, 0, 1920, 34, wd) + R(0, 34, 1920, 6, wl) + R(0, 0, 34, 1080, wd) + R(34, 0, 6, 1080, wl) + R(1886, 0, 34, 1080, wd) + R(1880, 0, 6, 1080, wl);
-    o += R(634, 0, 16, 1010, wd) + R(650, 0, 4, 1010, wl, op(".6")) + R(1270, 0, 16, 1010, wd) + R(1286, 0, 4, 1010, wl, op(".6")) + R(0, 300, 1920, 14, wd) + R(0, 314, 1920, 4, wl, op(".6"));
     o += R(0, 1004, 1920, 76, "#3a2014") + R(0, 1000, 1920, 10, "#6b4226") + R(0, 1000, 1920, 3, "#a8743e");
     return svgWrap(o);
   }
@@ -248,9 +217,6 @@
   }
   function windowCelsSVG(barName) {
     var o = "", word = (splitName(barName)[1] || "Karaoke").toUpperCase();
-    // the bar's own neon, hanging in the window and read from behind
-    o += '<g class="n-flick" transform="translate(340,200) scale(-1,1)">' + neonText(0, 0, fitSize(word, 520, 96, .78), word, NEON.teal, OSW, ' font-weight="600" letter-spacing="10"') + "</g>";
-    o += '<g class="n-buzz">' + neonNote(1600, 220, 1.5, NEON.pink) + "</g>";
     // a mast with its warning light, and the last train
     o += R(1128, 236, 4, 150, "#0d1132") + '<g class="beacon">' + Ci(1130, 232, 16, NEON.red, op(".3")) + Ci(1130, 232, 6, "#ffd0c8") + "</g>";
     o += '<g class="train">' + R(0, 764, 560, 26, "#141a44");
@@ -294,7 +260,8 @@
     // ---- the stage ----
     o += R(624, 134, 572, 442, "#2a170f");
     o += '<svg x="640" y="150" width="540" height="410" viewBox="0 120 1920 900" preserveAspectRatio="xMidYMid slice">' + cityView() + "</svg>";
-    o += R(640, 150, 540, 410, "#7f9bd8", op(".08")) + R(905, 150, 10, 410, "#2a170f") + R(640, 348, 540, 10, "#2a170f") + Pg([640, 150, 800, 150, 640, 330], "#ffffff", op(".05"));
+    // a painted city backdrop hung behind the stage (the bar's on the ground floor; there's no skyline out the back)
+    o += R(640, 150, 540, 410, "none", ' stroke="#d9a441" stroke-width="4"') + R(646, 156, 528, 398, "none", ' stroke="#2a170f" stroke-width="2" stroke-opacity=".6"');
     o += curtain(510, 640, 110, 650) + curtain(1180, 1310, 110, 650);
     o += R(496, 92, 828, 60, "#7d1a29");
     for (x = 496; x < 1324; x += 46) o += El(x + 23, 152, 23, 14, "#7d1a29") + Ci(x + 23, 168, 5, "#d9a441");
@@ -350,7 +317,7 @@
     o += fairyLights(-10, 60, 500, 108, 18, 9, 31) + fairyLights(1320, 108, 1930, 60, 18, 10, 47);
     // EXIT, and the regulars' wall
     o += R(30, 250, 72, 34, "#1a0c12", ink(2.5)) + '<g class="n-flick">' + neonText(66, 276, 24, "EXIT", NEON.red, OSW, ' font-weight="600" letter-spacing="2"') + "</g>";
-    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 140, 32, "THE REGULARS", "#2a1c18");
+    o += Pt("M150,104 L450,104 L430,128 L450,152 L150,152 L170,128 Z", "#d9a441", ink(3)) + Tx(300, 138, 25, "THE REGULARS", "#2a1c18", ' letter-spacing="1"');
     var wall = S.wall.slice(0, 6);
     for (i = 0; i < 6; i++) {
       var px = 168 + (i % 3) * 96, py = 176 + Math.floor(i / 3) * 112, rot = (r() - .5) * 12, w = wall[i];
@@ -372,17 +339,14 @@
         R(px + 7, py + 7, 62, 56, w ? POL_BG[w.s % POL_BG.length] : "#6e2e3e", w ? ink(1.5) : ' fill-opacity=".5"') +
         (w ? Ci(px + 38, py + 30, 10, "#f0b891", ink(1.5)) + Pt("M" + (px + 20) + "," + (py + 63) + " Q" + (px + 38) + "," + (py + 36) + " " + (px + 56) + "," + (py + 63) + " Z", "#2a1c18") + Tx(px + 38, py + 82, 12, esc(clip(w.who, 9)), "#2a1c18", ' font-weight="600"', OSW) : "") + "</g>";
     }
-    if (!wall.length) o += '<g transform="rotate(2 300 330)">' + R(176, 300, 250, 76, "#fff6c9", ink(2.5)) + Ci(301, 306, 5, "#e2364a", ink(1.5)) +
-      Tx(301, 332, 19, "Sing tonight and", "#2a1c18") + Tx(301, 358, 19, "your photo goes up", "#2a1c18") + "</g>";
     o += candle(268, 622);
     // the window behind the stage keeps a light or two blinking
     o += '<g class="beacon">' + Ci(1010, 232, 5, NEON.red) + "</g>" + '<g class="n-flick">' + R(742, 330, 14, 54, NEON.pink, op(".8")) + "</g>" + '<g class="n-buzz">' + R(1090, 300, 16, 60, NEON.teal, op(".7")) + "</g>";
     // the request board
     o += Pt("M1560,84 L1800,84 L1784,106 L1800,128 L1560,128 L1576,106 Z", "#f4ead2", ink(3)) + Tx(1680, 118, 28, "UP NEXT", "#7d1a29");
     // nobody waiting: a blank slip pinned up, asking for the first song
-    if (!S.queue.length) o += '<g transform="rotate(-3 1680 230)">' + R(1562, 172, 236, 112, "#fff6c9", ink(2.5)) + Ci(1680, 180, 6, "#e2364a", ink(1.5)) +
-      Tx(1680, 216, 24, "Be the first", "#7d1a29") + Tx(1680, 244, 19, "on stage tonight", "#2a1c18", ' font-weight="600" letter-spacing="1"', OSW) +
-      Tx(1680, 270, 15, "THE SONGBOOK'S ON THE COUNTER", "#6a5d4e", ' font-weight="600" letter-spacing=".5"', OSW) + "</g>";
+    if (!S.queue.length) o += '<g transform="rotate(-3 1680 230)">' + R(1572, 180, 216, 90, "#fff6c9", ink(2.5)) + Ci(1680, 188, 6, "#e2364a", ink(1.5)) +
+      Tx(1680, 226, 26, "Be the first", "#7d1a29") + Tx(1680, 255, 21, "on stage tonight", "#2a1c18", ' font-weight="600" letter-spacing="1"', OSW) + "</g>";
     S.queue.slice(0, 6).forEach(function (q, k) {
       var sx = 1512 + (k % 3) * 118, sy = 162 + Math.floor(k / 3) * 86, rot = ((k * 37) % 9) - 4;
       o += '<g transform="rotate(' + rot + " " + (sx + 52) + " " + (sy + 34) + ')">' + R(sx, sy, 104, 68, "#fff6c9", ink(2.5)) + Ci(sx + 52, sy + 6, 5, "#e2364a", ink(1.5)) +

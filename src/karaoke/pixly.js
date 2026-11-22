@@ -127,10 +127,12 @@
         fctx.fillStyle = "rgb(" + PIXCOL.line + ")"; fctx.fillRect(x - 1, 1, 10, 9);
         fctx.fillStyle = "rgb(" + (i < lit ? PIXCOL.lit : PIXCOL.unlit) + ")"; fctx.fillRect(x, 2, 8, 7);
       }
+      // the display canvas holds the dots at 1:1 (CSS scales it up, pixelated); older builds used a 1920-wide canvas
+      var s = display.width / PIX.W;
       if (shown) dctx.clearRect(0, shown[0], display.width, shown[1]);
       noSmooth(dctx);
-      dctx.drawImage(frame, 0, 0, PIX.W, h, 0, top * PIX.P, PIX.W * PIX.P, h * PIX.P);
-      shown = [top * PIX.P, h * PIX.P];
+      dctx.drawImage(frame, 0, 0, PIX.W, h, 0, top * s, PIX.W * s, h * s);
+      shown = [top * s, h * s];
     };
   }
 
@@ -165,8 +167,9 @@
         t.fillStyle = "rgb(" + (on ? PIXCOL.lit : PIXCOL.unlit) + ")"; t.fillRect(x, yy2, 4, 4);
       }
     }
+    var s = display.width / PIX.W;
     ctx.clearRect(0, 0, display.width, display.height);
     ctx.imageSmoothingEnabled = false; ctx.webkitImageSmoothingEnabled = false;
-    ctx.drawImage(tmp, 0, 0, PIX.W, PIX.H, 0, 0, PIX.W * PIX.P, PIX.H * PIX.P);
+    ctx.drawImage(tmp, 0, 0, PIX.W, PIX.H, 0, 0, PIX.W * s, PIX.H * s);
     return rows.map(function (r) { return { y: r.y * PIX.P, h: r.h * PIX.P }; });
   }

@@ -5,7 +5,8 @@
     function clock(d) {
       d = d || new Date();
       var h = d.getHours(), m = d.getMinutes();
-      return DAYS[d.getDay()] + " · " + ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
+      // just the time: the shops are named for Friday and Saturday night, so a clock saying "Sunday" argues with them
+      return ((h + 11) % 12 + 1) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
     }
     function e(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     // parts: [key, label]. key is the button as printed ("OK", "BACK", "◄ ►"), or r / g / y / b for a coloured button,
