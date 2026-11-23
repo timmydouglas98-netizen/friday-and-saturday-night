@@ -1,21 +1,21 @@
 {
-  "ref": "v5",
-  "version": "1.0.4",
+  "ref": "v6",
+  "version": "1.0.5",
   "venues": {
     "street": {
-      "ref": "v5",
-      "version": "1.0.4",
-      "sha256": "07ea41104368c792ad5283947ed00d78fca47a7eee5cb17e8fc301d90e9476ed"
+      "ref": "v6",
+      "version": "1.0.5",
+      "sha256": "5d0b971bd612d35cd8a9e6535b73bf54e88996486d51242c69ae9f325ebb4b1e"
     },
     "video": {
-      "ref": "v5",
-      "version": "0.22.1",
-      "sha256": "675f340d5109f817f3422d7a3b24b2c6b80fe027040f3b140b162b35e8a1c1a4"
+      "ref": "v6",
+      "version": "0.22.2",
+      "sha256": "b63f7310bc950ba7c9faf67474b6afe67776e9c0a2102ed0b0691b07090ebc3e"
     },
     "karaoke": {
-      "ref": "v5",
-      "version": "0.6.5",
-      "sha256": "6ddefdc168d37b81a38c1ac74deebacf27b04ebe2e84cbf403636007e45d1a5f"
+      "ref": "v6",
+      "version": "0.6.6",
+      "sha256": "7941810f4d837a9a2e23886dc85ee741e1e4db64d4624be4744f2aeb7465a35c"
     }
   },
   "note": "Per-venue release manifest. Run python3 src/build.py (optionally with --ref-video / --ref-karaoke / --ref-street / --ref-all) to rebuild and refresh versions & sha256 hashes."

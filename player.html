@@ -15,10 +15,14 @@
 // timing ticks to the TV; falls back automatically to a plain iframe message relay if the API script stalls.
 (function () {
   "use strict";
-  var m = /[#&]v=([A-Za-z0-9_\-]{11})(?:&|$)/.exec(location.hash || "");
+  var hash = location.hash || "";
+  var m = /[#&]v=([A-Za-z0-9_\-]{11})(?:&|$)/.exec(hash);
   if (!m || window.parent === window) return;
   var vid = m[1], here = location.href.split("#")[0];
+  var wantMute = /[#&]mute=1(?:&|$)/.test(hash);
+  var wantLoop = /[#&]loop=1(?:&|$)/.test(hash);
   var mode = "init", player = null, fallbackFrame = null, pollT = null, pendingCmds = [];
+  var lastState = null, lastT = NaN;
 
   function toTV(obj) {
     try { window.parent.postMessage(typeof obj === "string" ? obj : JSON.stringify(obj), "*"); } catch (x) {}
@@ -31,7 +35,10 @@
         else if (func === "pauseVideo") player.pauseVideo();
         else if (func === "seekTo" && args && args.length) player.seekTo(args[0], args[1] !== false);
         else if (func === "setVolume" && args && args.length) player.setVolume(args[0]);
+        else if (func === "mute" && player.mute) player.mute();
+        else if (func === "unMute" && player.unMute) player.unMute();
         else if (func === "unloadModule" && player.unloadModule && args && args.length) player.unloadModule(args[0]);
+        else if (func === "setOption" && player.setOption && args && args.length >= 3) player.setOption(args[0], args[1], args[2]);
       } catch (x) {}
     } else if (mode === "raw" && fallbackFrame && fallbackFrame.contentWindow) {
       try { fallbackFrame.contentWindow.postMessage(JSON.stringify({ event: "command", func: func, args: args || [] }), "https://www.youtube-nocookie.com"); } catch (x) {}
@@ -53,6 +60,8 @@
         var t = player.getCurrentTime();
         var dur = typeof player.getDuration === "function" ? player.getDuration() : 0;
         if (typeof t === "number" && !isNaN(t)) {
+          if (st !== 1 && st === lastState && Math.abs(t - lastT) < 0.01) return;
+          lastState = st; lastT = t;
           toTV({ event: "snk-tick", t: t, dur: dur || 0, state: st, wall: Date.now() });
         }
       } catch (x) {}
@@ -69,11 +78,15 @@
     f.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
     f.setAttribute("title", "Music");
     f.src = "https://www.youtube-nocookie.com/embed/" + vid + "?autoplay=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" +
+      (wantMute ? "&mute=1" : "") + (wantLoop ? "&loop=1&playlist=" + vid : "") +
       "&origin=" + encodeURIComponent(location.origin) + "&widget_referrer=" + encodeURIComponent(here);
+    f.addEventListener("load", function () {
+      try { f.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "https://www.youtube-nocookie.com"); } catch (x) {}
+      flushCmds();
+    });
     mount.appendChild(f);
     fallbackFrame = f;
     toTV({ event: "snk-wrap-ready", api: false });
-    flushCmds();
   }
 
   window.addEventListener("message", function (e) {
@@ -96,18 +109,22 @@
     clearTimeout(apiGuard);
     try {
       mode = "api";
+      var pVars = {
+        autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0,
+        modestbranding: 1, playsinline: 1, iv_load_policy: 3,
+        origin: location.origin, widget_referrer: here
+      };
+      if (wantMute) pVars.mute = 1;
+      if (wantLoop) { pVars.loop = 1; pVars.playlist = vid; }
       player = new YT.Player("ytMount", {
         host: "https://www.youtube-nocookie.com",
         videoId: vid,
-        playerVars: {
-          autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0,
-          modestbranding: 1, playsinline: 1, iv_load_policy: 3,
-          origin: location.origin, widget_referrer: here
-        },
+        playerVars: pVars,
         events: {
           onReady: function () {
             toTV({ event: "snk-wrap-ready", api: true });
             toTV({ event: "onReady" });
+            if (wantMute) { try { player.mute(); } catch (x) {} }
             flushCmds();
             try { player.playVideo(); } catch (x) {}
             startPoll();
@@ -116,6 +133,7 @@
             var st = ev && typeof ev.data === "number" ? ev.data : -1;
             var t = 0, dur = 0;
             try { t = player.getCurrentTime() || 0; dur = player.getDuration() || 0; } catch (x) {}
+            lastState = st; lastT = t;
             toTV({ event: "snk-tick", t: t, dur: dur, state: st, wall: Date.now() });
             toTV({ event: "onStateChange", info: st });
           },

@@ -16,6 +16,67 @@ function storage() {
   const m = new Map();
   return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), _m: m };
 }
+function makeIDB() {
+  const stores = new Map();
+  let initialized = false;
+  return {
+    open() {
+      const req = {};
+      const db = {
+        objectStoreNames: { contains: (n) => stores.has(n) },
+        createObjectStore: (n) => { if (!stores.has(n)) stores.set(n, new Map()); },
+        transaction(storeName) {
+          const tx = {};
+          let scheduled = false;
+          const finishTx = () => {
+            if (scheduled) return;
+            scheduled = true;
+            setImmediate(() => { if (tx.oncomplete) tx.oncomplete(); });
+          };
+          tx.objectStore = (n) => {
+            const m = stores.get(n || storeName);
+            if (!m) throw new Error("missing store: " + n);
+            return {
+              get(k) {
+                const g = {};
+                setImmediate(() => {
+                  g.result = m.has(k) ? m.get(k) : undefined;
+                  if (g.onsuccess) g.onsuccess();
+                });
+                return g;
+              },
+              put(v, k) {
+                m.set(k, v);
+                finishTx();
+                return {};
+              },
+              delete(k) {
+                m.delete(k);
+                finishTx();
+                return {};
+              }
+            };
+          };
+          return tx;
+        },
+        close() {}
+      };
+      setImmediate(() => {
+        req.result = db;
+        if (!initialized) {
+          initialized = true;
+          if (req.onupgradeneeded) req.onupgradeneeded();
+        }
+        if (req.onsuccess) req.onsuccess();
+      });
+      return req;
+    },
+    _get(k) {
+      const m = stores.get("venues");
+      return m && m.has(k) ? m.get(k) : undefined;
+    }
+  };
+}
 // a page the loader will accept as the video store at a given version
 function storePage(ver) { return "<html><script>var p='fnv-prefs'; var APP_VERSION = \"" + ver + "\";" + "x".repeat(60000) + "</script>"; }
 function sha(t) { return crypto.createHash("sha256").update(t, "utf8").digest("hex"); }
@@ -28,8 +89,8 @@ function release(ref, ver, html, opts) {
 function boot(tv, github) {
   return new Promise((resolve) => {
     const fetched = [];
-    let shown = null, settled = false;
-    const finish = () => { if (!settled) { settled = true; resolve({ shown, fetched }); } };
+    let shown = null, settled = false, safety = null;
+    const finish = () => { if (!settled) { settled = true; clearTimeout(safety); resolve({ shown, fetched }); } };
     function XMLHttpRequest() {}
     XMLHttpRequest.prototype.open = function (m, url) { this.url = url; };
     XMLHttpRequest.prototype.send = function () {
@@ -45,12 +106,13 @@ function boot(tv, github) {
     const document = { getElementById: el, createElement: el, createTextNode: () => ({}), open() {}, write(h) { shown = h; }, close() { finish(); } };
     const ctx = {
       localStorage: tv.local, sessionStorage: tv.session, document, location: { protocol: "https:", replace() {} },
-      XMLHttpRequest, setTimeout: (f) => setImmediate(f), setInterval: () => 0, clearInterval() {}, clearTimeout() {},
+      XMLHttpRequest, setTimeout: (f, ms) => setTimeout(f, Math.min(ms || 0, 30)), setInterval: () => 0, clearInterval() {}, clearTimeout,
       crypto: crypto.webcrypto, TextEncoder, JSON, Math, Date, parseInt, Uint8Array
     };
+    if (tv.idb) ctx.indexedDB = tv.idb;
     ctx.window = ctx;
     vm.runInNewContext(loaderJs, ctx);
-    setTimeout(finish, 400);
+    safety = setTimeout(finish, 400);
   });
 }
 // The venue that just opened tells the bridge it started fine (what every venue does once it has painted).
@@ -60,6 +122,7 @@ function ackBoot(tv, venue, version) {
       localStorage: tv.local, sessionStorage: tv.session, location: { reload() {} }, document: {},
       setTimeout: (f, ms) => setTimeout(f, Math.min(ms || 0, 20)), clearTimeout, JSON, Date
     };
+    if (tv.idb) ctx.indexedDB = tv.idb;
     ctx.window = ctx;
     vm.runInNewContext(bridgeJs + "\nFSN.ackBoot(" + JSON.stringify(venue) + ", " + JSON.stringify(version) + ");", ctx);
     setTimeout(resolve, 120);
@@ -142,6 +205,60 @@ const asked = (r, ref) => r.fetched.some((u) => u.indexOf("/" + ref + "/app/stor
   github.files["HEAD/release.json"] = JSON.stringify({ venues: { video: { ref: "../../evil", version: "5.0" } } });
   r = await boot(tv, github);
   check("a strange ref is ignored", ver(r.shown), "3.0");
+
+  // --- IndexedDB path (staging in next-video, promotion on ackBoot, warm hit, two-strike rollback) ---
+  const idbTv = { local: storage(), session: storage(), idb: makeIDB() };
+  publish("v1", v1);
+  r = await boot(idbTv, github);
+  check("idb: v1 opens", ver(r.shown), "1.0");
+  check("idb: v1 staged into next-video", ver(idbTv.idb._get("next-video")), "1.0");
+  check("idb: sessionStorage staging not used when IDB succeeds", idbTv.session.getItem("fsn-next-html-video"), null);
+  check("idb: video slot stays empty until confirmed", idbTv.idb._get("video"), undefined);
+  check("idb: v1 is pending until confirmed", idbTv.local.getItem("fsn-boot-pending-video"), "v1");
+
+  await ackBoot(idbTv, "video", "1.0");
+  check("idb: promoted to video slot on ackBoot", ver(idbTv.idb._get("video")), "1.0");
+  check("idb: next-video cleaned up on ackBoot", idbTv.idb._get("next-video"), undefined);
+  check("idb: localStorage fallback cache not written", idbTv.local.getItem("fsn-cache-video"), null);
+  check("idb: pending cleared on ackBoot", idbTv.local.getItem("fsn-boot-pending-video"), null);
+  check("idb: v1 remembered as good", JSON.parse(idbTv.local.getItem("fsn-good-video")).ref, "v1");
+
+  // warm cache hit reads directly from IDB without re-downloading
+  r = await boot(idbTv, github);
+  check("idb: warm cache hit opens v1", ver(r.shown), "1.0");
+  check("idb: warm cache hit does not re-download v1", asked(r, "v1"), false);
+
+  // two-strike rollback keeps last good v1 intact in IDB
+  publish("v2", v2);
+  r = await boot(idbTv, github);
+  check("idb: broken v2, first try", ver(r.shown), "2.0");
+  check("idb: v2 staged in next-video without overwriting video", ver(idbTv.idb._get("video")), "1.0");
+  r = await boot(idbTv, github);
+  check("idb: broken v2, second try", ver(r.shown), "2.0");
+  r = await boot(idbTv, github);
+  check("idb: after two failed starts, rolls back to v1 from IDB", ver(r.shown), "1.0");
+  check("idb: v2 marked bad", idbTv.local.getItem("fsn-bad-ref-video"), "v2");
+  check("idb: v1 remains intact in IDB video slot", ver(idbTv.idb._get("video")), "1.0");
+  r = await boot(idbTv, github);
+  check("idb: v2 stays skipped and is not re-downloaded", asked(r, "v2"), false);
+
+  // fixed v3 confirms cleanly, promotes in IDB, and clears bad mark
+  publish("v3", v3);
+  r = await boot(idbTv, github);
+  check("idb: fixed v3 opens", ver(r.shown), "3.0");
+  await ackBoot(idbTv, "video", "3.0");
+  check("idb: v3 promoted to video slot", ver(idbTv.idb._get("video")), "3.0");
+  check("idb: next-video cleaned up after v3", idbTv.idb._get("next-video"), undefined);
+  check("idb: bad mark cleared after v3 confirms", idbTv.local.getItem("fsn-bad-ref-video"), null);
+  check("idb: v3 remembered as good", JSON.parse(idbTv.local.getItem("fsn-good-video")).ref, "v3");
+
+  // storage glitch: pending ref with no staged HTML and mismatched cached version must not overwrite fsn-good
+  idbTv.local.setItem("fsn-boot-pending-video", "v9");
+  idbTv.local.setItem("fsn-boot-fails-video", "v9|1");
+  await ackBoot(idbTv, "video", "9.0");
+  check("idb: glitch still clears pending key", idbTv.local.getItem("fsn-boot-pending-video"), null);
+  check("idb: glitch still clears fails key", idbTv.local.getItem("fsn-boot-fails-video"), null);
+  check("idb: glitch does not point fsn-good at uncached ref", JSON.parse(idbTv.local.getItem("fsn-good-video")).ref, "v3");
 
   console.log("Loader tests: " + passed + " passed, " + failed + " failed.");
   if (failed) process.exit(1);

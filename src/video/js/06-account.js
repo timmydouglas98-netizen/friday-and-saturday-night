@@ -555,7 +555,7 @@
       ["Streaming server", prefs.server ? (lanHost((parseUrl(prefs.server) || {}).hostname) ? "set (home network)" : "set") : "not set"],
       ["Atmosphere", prefs.atmos + " · sound " + (!prefs.sound ? "off" : prefs.quiet ? "quiet" : "on")],
       ["Saved on this TV", storageUse()],
-      ["Loader", (function () { try { var g = JSON.parse(localStorage.getItem("fnv-good") || "null"); return g && g.ref ? "release " + g.ref + (localStorage.getItem("fnv-bad-ref") ? " · skipped broken " + localStorage.getItem("fnv-bad-ref") : "") : "not using releases yet"; } catch (e) { return "unknown"; } })()]
+      ["Loader", (function () { try { var g = JSON.parse(localStorage.getItem("fsn-good-video") || "null"), b = localStorage.getItem("fsn-bad-ref-video"); return g && g.ref ? "release " + g.ref + (b ? " · skipped broken " + b : "") : "not using releases yet"; } catch (e) { return "unknown"; } })()]
     ];
     var errs = diag.errors.length ? diag.errors.map(function (e) { return "<li><b>" + esc(ago(e.t)) + "</b> " + esc(e.msg) + "</li>"; }).join("") : "<li>Nothing has gone wrong since the store opened.</li>";
     openModal('<div class="panel diag" role="dialog" aria-label="Diagnostics"><div class="clerk-head"><div class="clerk-face" aria-hidden="true">i</div><p>How the store is doing. If something\'s not right, take a photo of this screen.</p></div>' +
@@ -763,8 +763,11 @@
   window.addEventListener("keydown", noteInput, true);
   window.addEventListener("click", noteInput, true);
   window.addEventListener("touchstart", function () { lastInput = Date.now(); }, true);
+  var lastLightAt = Date.now();
   setInterval(function () {
-    if (!demoOn && !modal && !P && !landingOn && !sleepHold && Date.now() - lastInput > IDLE_MS) startDemo();
-    updateLighting();
+    var now = Date.now();
+    if (!demoOn && !modal && !P && !landingOn && !sleepHold && now - lastInput > IDLE_MS) startDemo();
+    if (P) return;
+    if (now - lastLightAt >= 30000) { lastLightAt = now; updateLighting(); }
   }, 5000);
 

@@ -466,12 +466,22 @@
       for (var se = 1; se <= 2; se++) for (var ep = 1; ep <= 6; ep++)
         base.videos.push({ id: it.id + ":" + se + ":" + ep, season: se, episode: ep, title: "Episode " + ep, overview: "" });
     }
-    if (!live || !/^tt\d+$/.test(it.id)) { metaCache[it.id] = base; return Promise.resolve(base); }
+    if (!live) { metaCache[it.id] = base; return Promise.resolve(base); }
     if (metaFlights[it.id]) return metaFlights[it.id];
+    var isImdb = /^tt\d+$/.test(it.id), type = it.type === "series" ? "series" : "movie", url;
+    if (isImdb) {
+      url = CINEMETA + "/meta/" + type + "/" + idPath(it.id) + ".json";
+    } else {
+      var ad = (installedAddons || []).filter(function (a) {
+        return a && addonOK(a.transportUrl) && addonHas(a, "meta", type, it.id);
+      })[0];
+      if (!ad) { if (installedAddons && installedAddons.length) metaCache[it.id] = base; return Promise.resolve(base); }
+      url = addonBase(ad.transportUrl) + "/meta/" + type + "/" + idPath(it.id) + ".json";
+    }
     var id0 = it.id;
-    return metaFlights[id0] = getJSON(CINEMETA + "/meta/" + (it.type === "series" ? "series" : "movie") + "/" + idPath(it.id) + ".json", 6000).then(function (j) {
+    return metaFlights[id0] = getJSON(url, 6000).then(function (j) {
       delete metaFlights[id0];
-      var m = j.meta || {};
+      var m = (j && j.meta) || {};
       var yt = [];
       arr(m.trailers).forEach(function (t) { if (t && t.source) yt.push(t.source); });
       arr(m.trailerStreams).forEach(function (t) { if (t && t.ytId) yt.push(t.ytId); });
@@ -482,7 +492,7 @@
         imdbRating: m.imdbRating || "",
         runtime: m.runtime || base.runtime,
         trailers: yt,
-        background: webUrl(m.background) || ("https://images.metahub.space/background/medium/" + encodeURIComponent(it.id) + "/img"),
+        background: webUrl(m.background) || (isImdb ? "https://images.metahub.space/background/medium/" + encodeURIComponent(it.id) + "/img" : ""),
         videos: arr(m.videos).map(function (v) {
           return { id: String(v.id || ""), season: intIn(v.season, 0, 9999), episode: intIn(v.episode != null ? v.episode : v.number, 0, 99999), title: v.title || v.name || "", overview: v.overview || v.description || "", released: v.released, thumbnail: webUrl(v.thumbnail) };
         })

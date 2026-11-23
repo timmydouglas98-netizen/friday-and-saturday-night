@@ -64,15 +64,8 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 #caption { position: absolute; left: 0; right: 0; bottom: 104px; z-index: 25; text-align: center; pointer-events: none; }
 #caption .slip { display: inline-block; max-width: 1200px; padding: 12px 30px 14px; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 10px;
   box-shadow: 8px 10px 0 rgba(10,4,18,.55); pointer-events: auto; cursor: pointer; }
-#caption .lft, #caption .arrow { display: none; }
-#caption .lft { -webkit-box-flex: 0; flex: 0 0 auto; padding-right: 34px; margin-right: 34px; border-right: 3px solid rgba(42,28,24,.18); }
-#caption .k { font-weight: 600; font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
-#caption h2 { margin: 2px 0 0; font-family: var(--f-toon); font-weight: 400; font-size: 46px; line-height: 1.05; color: var(--navy); white-space: nowrap; }
-#caption.karaoke h2 { color: #7d1a29; }
 #caption p { margin: 0; font-size: 30px; color: #3d3127; line-height: 1.3; }
-#caption .arrow { position: absolute; top: 50%; margin-top: -24px; width: 48px; height: 48px; line-height: 44px; text-align: center; font-size: 26px; color: var(--cream);
-  background: var(--ink); border-radius: 50%; }
-#caption .arrow.l { left: -74px; } #caption .arrow.r { right: -74px; }
+html.calm .weave, html.calm .grain, html.calm .pan, html.calm .rain, html.calm .rain i, html.calm .n-flick, html.calm .n-buzz, html.calm .disco { animation-play-state: paused; }
 .hint { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; z-index: 25; font-size: 27px; font-weight: 500; letter-spacing: .04em;
   color: var(--cream); text-shadow: 2px 2px 0 var(--ink), 0 0 12px rgba(10,4,14,.9); }
 #toast { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); padding: 14px 30px; background: var(--paper); color: var(--ink);
@@ -94,7 +87,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   <div class="clock" id="oClock"></div>
   <div class="hit" id="hitVideo" style="left:0;width:960px"></div>
   <div class="hit" id="hitKaraoke" style="left:960px;width:960px"></div>
-  <div id="caption"><div class="slip"><div class="lft"><div class="k" id="cK"></div><h2 id="cTitle"></h2></div><p id="cSub"></p></div></div>
+  <div id="caption"><div class="slip"><p id="cSub"></p></div></div>
   <div class="hint" id="hint"></div>
   <div id="toast" hidden></div>
   <div class="grain" id="grain"></div>
@@ -104,7 +97,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "1.0.4";
+  var APP_VERSION = "1.0.5";
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function ljson(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
@@ -131,6 +124,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   }
 
   var fnvPrefs = ljson("fnv-prefs", {}) || {};
+  if (fnvPrefs.atmos === "calm" || fnvPrefs.atmos === "light") document.documentElement.classList.add("calm");
   var snkPrefs = ljson("snk-prefs", {}) || {};
   var videoName = (typeof fnvPrefs.storeName === "string" && fnvPrefs.storeName.trim()) ? fnvPrefs.storeName.trim().slice(0, 40) : "Friday Night Video";
   var barName = (typeof snkPrefs.barName === "string" && snkPrefs.barName.trim()) ? snkPrefs.barName.trim().slice(0, 40) : "Saturday Night Karaoke";
@@ -139,10 +133,8 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   var cwCount = Object.keys(fnvProg).filter(function (k) { return k.indexOf("ep:") !== 0; }).length;
 
   var SHOPS = {
-    video: { k: "Left door · Movies & TV", t: videoName,
-      s: cwCount ? cwCount + (cwCount === 1 ? " tape" : " tapes") + " in Continue Watching — step in to pick up where you left off." : "Browse the shelves, rent a tape, or ask the clerk." },
-    karaoke: { k: "Right door · Open mic", t: barName,
-      s: Array.isArray(snkWall) && snkWall.length ? snkWall.length + (snkWall.length === 1 ? " polaroid" : " polaroids") + " on the regulars' wall — the songbook's ready." : "Pick a song, hand Rhonda a slip, and sing." }
+    video: { s: cwCount ? cwCount + (cwCount === 1 ? " tape" : " tapes") + " in Continue Watching — step in to pick up where you left off." : "Browse the shelves, rent a tape, or ask the clerk." },
+    karaoke: { s: Array.isArray(snkWall) && snkWall.length ? snkWall.length + (snkWall.length === 1 ? " polaroid" : " polaroids") + " on the regulars' wall — the songbook's ready." : "Pick a song, hand Rhonda a slip, and sing." }
   };
 
   // The Strip is the same block you see from each shop's own doorstep: the video store under its shingled mansard with
@@ -260,8 +252,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
     var s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
-  [100, 400, 1000, 2500, 5000].forEach(function (ms) { setTimeout(fit, ms); });
-  setInterval(fit, 3000);
+  [100, 400, 1000, 2500, 5000, 10000].forEach(function (ms) { setTimeout(fit, ms); });
   window.addEventListener("load", fit);
   window.addEventListener("pageshow", fit);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) fit(); });
@@ -278,7 +269,7 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
   }
   function renderSel() {
     var s = SHOPS[sel], cap = $("caption");
-    $("cK").textContent = s.k; $("cTitle").textContent = s.t; $("cSub").textContent = s.s;
+    $("cSub").textContent = s.s;
     cap.className = sel;
     function tog(id, on) { var el = document.getElementById(id); if (el) el.setAttribute("class", el.getAttribute("class").replace(/\s*\bon\b/g, "") + (on ? " on" : "")); }
     tog("shadeVideo", sel !== "video"); tog("shadeKaraoke", sel !== "karaoke");

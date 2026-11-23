@@ -6,8 +6,16 @@
     function viaLoader() {
       try { return sessionStorage.getItem("fsn-via-loader") === "1"; } catch (e) { return false; }
     }
-    function idbPut(venue, html, cb) {
-      if (!window.indexedDB) { if (cb) cb(false); return; }
+    function idbRead(venue, cb) {
+      var fin = false, guard = null;
+      function out(nextHtml, curHtml) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        cb(nextHtml || null, curHtml || null);
+      }
+      if (!window.indexedDB) { out(null, null); return; }
+      guard = setTimeout(function () { out(null, null); }, 800);
       try {
         var req = indexedDB.open("fsn-cache", 1);
         req.onupgradeneeded = function () {
@@ -16,14 +24,54 @@
         };
         req.onsuccess = function () {
           try {
-            var db = req.result, tx = db.transaction("venues", "readwrite");
-            tx.objectStore("venues").put(html, venue);
-            tx.oncomplete = function () { try { db.close(); } catch (e) {} if (cb) cb(true); };
-            tx.onerror = function () { try { db.close(); } catch (e) {} if (cb) cb(false); };
-          } catch (e) { if (cb) cb(false); }
+            var db = req.result, tx = db.transaction("venues", "readonly"), st = tx.objectStore("venues");
+            var gNext = st.get("next-" + venue), gCur = st.get(venue);
+            var nextVal = null, curVal = null, left = 2;
+            function step() {
+              if (--left === 0) {
+                try { db.close(); } catch (e) {}
+                out(nextVal, curVal);
+              }
+            }
+            gNext.onsuccess = function () { nextVal = gNext.result || null; step(); };
+            gNext.onerror = step;
+            gCur.onsuccess = function () { curVal = gCur.result || null; step(); };
+            gCur.onerror = step;
+          } catch (e) { try { req.result.close(); } catch (x) {} out(null, null); }
         };
-        req.onerror = function () { if (cb) cb(false); };
-      } catch (e) { if (cb) cb(false); }
+        req.onerror = function () { out(null, null); };
+        req.onblocked = function () { out(null, null); };
+      } catch (e) { out(null, null); }
+    }
+    function idbPromote(venue, html, cb) {
+      var fin = false, guard = null;
+      function out(ok) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        if (cb) cb(ok);
+      }
+      if (!window.indexedDB) { out(false); return; }
+      guard = setTimeout(function () { out(false); }, 800);
+      try {
+        var req = indexedDB.open("fsn-cache", 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains("venues")) db.createObjectStore("venues");
+        };
+        req.onsuccess = function () {
+          try {
+            var db = req.result, tx = db.transaction("venues", "readwrite"), st = tx.objectStore("venues");
+            st.put(html, venue);
+            st["delete"]("next-" + venue);
+            tx.oncomplete = function () { try { db.close(); } catch (e) {} out(true); };
+            tx.onerror = function () { try { db.close(); } catch (e) {} out(false); };
+            tx.onabort = function () { try { db.close(); } catch (e) {} out(false); };
+          } catch (e) { try { req.result.close(); } catch (x) {} out(false); }
+        };
+        req.onerror = function () { out(false); };
+        req.onblocked = function () { out(false); };
+      } catch (e) { out(false); }
     }
 
     function commitBoot(venue, version, cb) {
@@ -36,32 +84,44 @@
         var pendKey = "fsn-boot-pending-" + venue;
         var pend = localStorage.getItem(pendKey);
         if (!pend) return done();
-        var html = null;
-        try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
-        function finish() {
-          try {
-            localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
-            localStorage.removeItem(pendKey);
-            localStorage.removeItem("fsn-boot-fails-" + venue);
-            if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
-              localStorage.removeItem("fsn-bad-ref-" + venue);
-            }
-            sessionStorage.removeItem("fsn-next-html-" + venue);
-          } catch (e) {}
+        function finish(cached) {
+          if (cached) {
+            try {
+              localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
+              if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
+                localStorage.removeItem("fsn-bad-ref-" + venue);
+              }
+            } catch (e) {}
+          }
+          try { localStorage.removeItem(pendKey); } catch (e) {}
+          try { localStorage.removeItem("fsn-boot-fails-" + venue); } catch (e) {}
+          try { sessionStorage.removeItem("fsn-next-html-" + venue); } catch (e) {}
           done();
         }
-        if (html) {
-          var guard = setTimeout(finish, 800);
-          idbPut(venue, html, function (ok) {
-            clearTimeout(guard);
-            if (!ok) {
-              try { localStorage.setItem("fsn-cache-" + venue, html); } catch (e) {}
+        idbRead(venue, function (nextHtml, curHtml) {
+          var html = nextHtml;
+          if (!html) {
+            try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
+          }
+          if (html) {
+            idbPromote(venue, html, function (ok) {
+              if (ok) {
+                finish(true);
+              } else {
+                var lsOk = false;
+                try { localStorage.setItem("fsn-cache-" + venue, html); lsOk = true; } catch (e) {}
+                finish(lsOk);
+              }
+            });
+          } else {
+            var existing = curHtml;
+            if (!existing) {
+              try { existing = localStorage.getItem("fsn-cache-" + venue); } catch (e) {}
             }
-            finish();
-          });
-        } else {
-          finish();
-        }
+            var alreadyCached = !!(existing && (!version || existing.indexOf('APP_VERSION = "' + version + '"') !== -1));
+            finish(alreadyCached);
+          }
+        });
       } catch (e) { done(); }
     }
 

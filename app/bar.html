@@ -33,10 +33,12 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 @keyframes weave { 0% { transform: translate(-.37px,-.44px); } 8% { transform: translate(-.61px,-.11px); } 17% { transform: translate(.37px,-.31px); } 25% { transform: translate(-.46px,-.43px); } 33% { transform: translate(.46px,.34px); } 42% { transform: translate(-.27px,.14px); } 50% { transform: translate(.53px,-.45px); } 58% { transform: translate(.01px,-.35px); } 67% { transform: translate(.61px,.4px); } 75% { transform: translate(.57px,.08px); } 83% { transform: translate(.01px,-.09px); } 92% { transform: translate(-.47px,-.21px); } }
 
 /* ---------- the film transfer, over everything ---------- */
-.grain { position: absolute; top: -128px; left: -128px; right: -128px; bottom: -128px; pointer-events: none; opacity: .14; background-size: 256px 256px; animation: grain .5s steps(1) infinite; z-index: 90; }
+.grain { position: absolute; top: -128px; left: -128px; right: -128px; bottom: -128px; pointer-events: none; opacity: .14; background-size: 256px 256px; animation: grain .5s steps(1) infinite; z-index: 90; will-change: transform; }
 @keyframes grain { 0% { transform: translate(0,0); } 17% { transform: translate(-61px,37px); } 33% { transform: translate(43px,-89px); } 50% { transform: translate(-97px,-21px); } 67% { transform: translate(23px,71px); } 83% { transform: translate(79px,-49px); } }
-.flick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #140c06; opacity: 0; pointer-events: none; animation: filmFlick 1.75s steps(1) infinite; z-index: 91; }
+.flick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #140c06; opacity: 0; pointer-events: none; animation: filmFlick 1.75s steps(1) infinite; z-index: 91; will-change: opacity; }
 @keyframes filmFlick { 0% { opacity: .02; } 14% { opacity: 0; } 29% { opacity: .035; } 43% { opacity: .01; } 57% { opacity: .03; } 71% { opacity: 0; } 86% { opacity: .025; } }
+#stage[data-sc="sing"] .grain, #stage[data-sc="sing"] .flick { display: none; }
+html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm .rain, html.calm .rain i { animation-play-state: paused !important; }
 .vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 92; background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0,0,0,0) 66%, rgba(24,10,30,.18) 100%); }
 #fade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #08060c; pointer-events: none; opacity: 0; transition: opacity .5s; z-index: 95; }
 #fade.on { opacity: 1; }
@@ -170,12 +172,19 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 #stageGlow .l { left: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 0 30%, rgba(255,95,162,.45), rgba(255,95,162,0) 70%); }
 #stageGlow .r { right: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 100% 30%, rgba(98,232,222,.4), rgba(98,232,222,0) 70%); }
 #stageGlow.line .w { -webkit-animation: glowLine .9s ease-out; animation: glowLine .9s ease-out; }
+#stageGlow.line.alt .w { -webkit-animation: glowLine2 .9s ease-out; animation: glowLine2 .9s ease-out; }
 #stageGlow.line.a .l, #stageGlow.line.b .r { -webkit-animation: glowLine 1.1s ease-out; animation: glowLine 1.1s ease-out; }
+#stageGlow.line.alt.a .l, #stageGlow.line.alt.b .r { -webkit-animation: glowLine2 1.1s ease-out; animation: glowLine2 1.1s ease-out; }
 #stageGlow.tick .w { -webkit-animation: glowTick .45s ease-out; animation: glowTick .45s ease-out; }
+#stageGlow.tick.alt .w { -webkit-animation: glowTick2 .45s ease-out; animation: glowTick2 .45s ease-out; }
 @-webkit-keyframes glowLine { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
 @keyframes glowLine { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
+@-webkit-keyframes glowLine2 { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes glowLine2 { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
 @-webkit-keyframes glowTick { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 @keyframes glowTick { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
+@-webkit-keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
+@keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 /* how far through the song: a thin tape-counter line along the bottom edge */
 #sgProg { position: absolute; left: 60px; right: 60px; bottom: 58px; height: 6px; border-radius: 3px; background: rgba(255,243,214,.16); pointer-events: none; }
 #sgProg i { display: block; height: 100%; width: 100%; border-radius: 3px; background: #ffc857; transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
@@ -202,7 +211,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 
 /* ---------- cards, slips and panels ---------- */
 #modal { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(14,6,10,.66); z-index: 50; }
-.card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1060px; max-height: 980px; padding: 40px 54px 44px; background: var(--paper); border: 5px solid var(--ink); border-radius: 12px; box-shadow: 10px 12px 0 rgba(8,4,16,.6); animation: cardIn .25s steps(3); }
+.card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1060px; max-height: 980px; overflow-y: auto; overflow-x: hidden; padding: 40px 54px 44px; background: var(--paper); border: 5px solid var(--ink); border-radius: 12px; box-shadow: 10px 12px 0 rgba(8,4,16,.6); animation: cardIn .25s steps(3); }
 .card.wide { width: 1400px; }
 @keyframes cardIn { from { transform: translate(-50%, -44%) rotate(1.5deg); opacity: .4; } to { transform: translate(-50%, -50%); opacity: 1; } }
 .card h3 { margin: 0 0 8px; font-family: var(--f-toon); font-weight: 400; font-size: 54px; line-height: 1.1; color: #7d1a29; }
@@ -2658,8 +2667,16 @@ var qrcode = function() {
     function viaLoader() {
       try { return sessionStorage.getItem("fsn-via-loader") === "1"; } catch (e) { return false; }
     }
-    function idbPut(venue, html, cb) {
-      if (!window.indexedDB) { if (cb) cb(false); return; }
+    function idbRead(venue, cb) {
+      var fin = false, guard = null;
+      function out(nextHtml, curHtml) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        cb(nextHtml || null, curHtml || null);
+      }
+      if (!window.indexedDB) { out(null, null); return; }
+      guard = setTimeout(function () { out(null, null); }, 800);
       try {
         var req = indexedDB.open("fsn-cache", 1);
         req.onupgradeneeded = function () {
@@ -2668,14 +2685,54 @@ var qrcode = function() {
         };
         req.onsuccess = function () {
           try {
-            var db = req.result, tx = db.transaction("venues", "readwrite");
-            tx.objectStore("venues").put(html, venue);
-            tx.oncomplete = function () { try { db.close(); } catch (e) {} if (cb) cb(true); };
-            tx.onerror = function () { try { db.close(); } catch (e) {} if (cb) cb(false); };
-          } catch (e) { if (cb) cb(false); }
+            var db = req.result, tx = db.transaction("venues", "readonly"), st = tx.objectStore("venues");
+            var gNext = st.get("next-" + venue), gCur = st.get(venue);
+            var nextVal = null, curVal = null, left = 2;
+            function step() {
+              if (--left === 0) {
+                try { db.close(); } catch (e) {}
+                out(nextVal, curVal);
+              }
+            }
+            gNext.onsuccess = function () { nextVal = gNext.result || null; step(); };
+            gNext.onerror = step;
+            gCur.onsuccess = function () { curVal = gCur.result || null; step(); };
+            gCur.onerror = step;
+          } catch (e) { try { req.result.close(); } catch (x) {} out(null, null); }
         };
-        req.onerror = function () { if (cb) cb(false); };
-      } catch (e) { if (cb) cb(false); }
+        req.onerror = function () { out(null, null); };
+        req.onblocked = function () { out(null, null); };
+      } catch (e) { out(null, null); }
+    }
+    function idbPromote(venue, html, cb) {
+      var fin = false, guard = null;
+      function out(ok) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        if (cb) cb(ok);
+      }
+      if (!window.indexedDB) { out(false); return; }
+      guard = setTimeout(function () { out(false); }, 800);
+      try {
+        var req = indexedDB.open("fsn-cache", 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains("venues")) db.createObjectStore("venues");
+        };
+        req.onsuccess = function () {
+          try {
+            var db = req.result, tx = db.transaction("venues", "readwrite"), st = tx.objectStore("venues");
+            st.put(html, venue);
+            st["delete"]("next-" + venue);
+            tx.oncomplete = function () { try { db.close(); } catch (e) {} out(true); };
+            tx.onerror = function () { try { db.close(); } catch (e) {} out(false); };
+            tx.onabort = function () { try { db.close(); } catch (e) {} out(false); };
+          } catch (e) { try { req.result.close(); } catch (x) {} out(false); }
+        };
+        req.onerror = function () { out(false); };
+        req.onblocked = function () { out(false); };
+      } catch (e) { out(false); }
     }
 
     function commitBoot(venue, version, cb) {
@@ -2688,32 +2745,44 @@ var qrcode = function() {
         var pendKey = "fsn-boot-pending-" + venue;
         var pend = localStorage.getItem(pendKey);
         if (!pend) return done();
-        var html = null;
-        try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
-        function finish() {
-          try {
-            localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
-            localStorage.removeItem(pendKey);
-            localStorage.removeItem("fsn-boot-fails-" + venue);
-            if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
-              localStorage.removeItem("fsn-bad-ref-" + venue);
-            }
-            sessionStorage.removeItem("fsn-next-html-" + venue);
-          } catch (e) {}
+        function finish(cached) {
+          if (cached) {
+            try {
+              localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
+              if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
+                localStorage.removeItem("fsn-bad-ref-" + venue);
+              }
+            } catch (e) {}
+          }
+          try { localStorage.removeItem(pendKey); } catch (e) {}
+          try { localStorage.removeItem("fsn-boot-fails-" + venue); } catch (e) {}
+          try { sessionStorage.removeItem("fsn-next-html-" + venue); } catch (e) {}
           done();
         }
-        if (html) {
-          var guard = setTimeout(finish, 800);
-          idbPut(venue, html, function (ok) {
-            clearTimeout(guard);
-            if (!ok) {
-              try { localStorage.setItem("fsn-cache-" + venue, html); } catch (e) {}
+        idbRead(venue, function (nextHtml, curHtml) {
+          var html = nextHtml;
+          if (!html) {
+            try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
+          }
+          if (html) {
+            idbPromote(venue, html, function (ok) {
+              if (ok) {
+                finish(true);
+              } else {
+                var lsOk = false;
+                try { localStorage.setItem("fsn-cache-" + venue, html); lsOk = true; } catch (e) {}
+                finish(lsOk);
+              }
+            });
+          } else {
+            var existing = curHtml;
+            if (!existing) {
+              try { existing = localStorage.getItem("fsn-cache-" + venue); } catch (e) {}
             }
-            finish();
-          });
-        } else {
-          finish();
-        }
+            var alreadyCached = !!(existing && (!version || existing.indexOf('APP_VERSION = "' + version + '"') !== -1));
+            finish(alreadyCached);
+          }
+        });
       } catch (e) { done(); }
     }
 
@@ -3384,7 +3453,6 @@ var qrcode = function() {
   // ---------- shared chrome: the clock and the remote-button hints look the same in every venue ----------
   // (the video store's own hint bar is the model: cream key caps with an inked edge, coloured dots for the coloured buttons)
   var UI = (function () {
-    var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     function clock(d) {
       d = d || new Date();
       var h = d.getHours(), m = d.getMinutes();
@@ -4409,7 +4477,7 @@ var qrcode = function() {
   }
 
 // ===== the bar =====
-  var APP_VERSION = "0.6.5", APP_DATE = "22 Nov 2026";
+  var APP_VERSION = "0.6.6", APP_DATE = "23 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -4448,17 +4516,37 @@ var qrcode = function() {
   function savePrefs() { store.set("snk-prefs", prefs); }
   function fnvName() { var p = store.get("fnv-prefs", null); return p && typeof p.storeName === "string" && p.storeName.trim() ? p.storeName.trim().slice(0, 40) : "Friday Night Video"; }
   var wall = store.get("snk-wall", []), songMemo = store.get("snk-songs", {}), songShifts = store.get("snk-shifts", {}), slipNo = store.get("snk-slipno", 141);
+  function pruneObj(obj, max) {
+    if (!obj || typeof obj !== "object") return;
+    var keys = Object.keys(obj);
+    if (keys.length <= max) return;
+    keys.sort(function (a, b) { return ((obj[b] && obj[b].t) || 0) - ((obj[a] && obj[a].t) || 0); });
+    for (var i = max; i < keys.length; i++) delete obj[keys[i]];
+  }
   var queue = [], SC = "out", S = null;   // S: the song on stage
 
   // ---------- IndexedDB lyrics cache (snk-lyrics) ----------
+  var lrcDb = null, lrcDbWait = null;
   function lrcCacheOpen(cb) {
     if (!window.indexedDB) { cb(null); return; }
+    if (lrcDb) { cb(lrcDb); return; }
+    if (lrcDbWait) { lrcDbWait.push(cb); return; }
+    lrcDbWait = [cb];
+    function done(db) {
+      var list = lrcDbWait || []; lrcDbWait = null;
+      for (var i = 0; i < list.length; i++) list[i](db);
+    }
     try {
       var req = indexedDB.open("snk-lyrics", 1);
       req.onupgradeneeded = function () { var db = req.result; if (!db.objectStoreNames.contains("lrc")) db.createObjectStore("lrc"); };
-      req.onsuccess = function () { cb(req.result); };
-      req.onerror = function () { cb(null); };
-    } catch (e) { cb(null); }
+      req.onsuccess = function () {
+        lrcDb = req.result;
+        lrcDb.onclose = lrcDb.onerror = function () { lrcDb = null; };
+        lrcDb.onversionchange = function () { try { lrcDb.close(); } catch (e) {} lrcDb = null; };
+        done(lrcDb);
+      };
+      req.onerror = function () { lrcDb = null; done(null); };
+    } catch (e) { lrcDb = null; done(null); }
   }
   function lrcCacheGet(id) {
     return new Promise(function (res) {
@@ -4467,9 +4555,9 @@ var qrcode = function() {
         if (!db) return res(null);
         try {
           var tx = db.transaction("lrc", "readonly"), r = tx.objectStore("lrc").get(String(id));
-          r.onsuccess = function () { try { db.close(); } catch (e) {} res(r.result || null); };
-          r.onerror = function () { try { db.close(); } catch (e) {} res(null); };
-        } catch (e) { try { db.close(); } catch (x) {} res(null); }
+          r.onsuccess = function () { res(r.result || null); };
+          r.onerror = function () { res(null); };
+        } catch (e) { lrcDb = null; res(null); }
       });
     });
   }
@@ -4480,16 +4568,16 @@ var qrcode = function() {
       try {
         var tx = db.transaction("lrc", "readwrite");
         tx.objectStore("lrc").put(cand, String(id));
-        tx.oncomplete = tx.onerror = function () { try { db.close(); } catch (e) {} };
-      } catch (e) { try { db.close(); } catch (x) {} }
+      } catch (e) { lrcDb = null; }
     });
   }
 
   // ---------- sound ----------
   var ac = null, noiseBuf = null, ambNode = null;
+  function housePaused() { return !!(S && S.player && S.player.kind === "house" && !S.player.playing()); }
   function audioReady() {
     if (!ac) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false; try { ac = new AC(); } catch (e) { return false; } }
-    if (ac.state === "suspended") { try { ac.resume(); } catch (e) {} }
+    if (ac.state === "suspended" && !housePaused()) { try { ac.resume(); } catch (e) {} }
     return true;
   }
   function noise(ctx) {
@@ -4558,11 +4646,35 @@ var qrcode = function() {
     var s = Math.min(w / 1920, h / 1080);
     $("stage").style.transform = "translate(" + ((w - 1920 * s) / 2).toFixed(1) + "px," + ((h - 1080 * s) / 2).toFixed(1) + "px) scale(" + s.toFixed(5) + ")";
   }
-  [100, 400, 1000, 2500, 5000].forEach(function (ms) { setTimeout(fit, ms); });
-  setInterval(fit, 3000);
+  [100, 400, 1000, 2500, 5000, 10000].forEach(function (ms) { setTimeout(fit, ms); });
   window.addEventListener("load", fit);
   window.addEventListener("pageshow", fit);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) fit(); });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (CHK) endCheck(false);
+      if (INT && INT.t) { clearInterval(INT.t); INT.t = null; INT.bgPaused = true; }
+      if (S && !S.loading && S.player && S.player.playing()) {
+        S.player.pause();
+        S.bgPaused = true;
+        cancelAnimationFrame(tickRaf); tickRaf = null;
+      }
+      if (ac && ac.state === "running") { try { ac.suspend(); } catch (e) {} }
+      return;
+    }
+    fit();
+    if (ac && ac.state === "suspended" && prefs.sound && !housePaused()) { try { ac.resume(); } catch (e) {} }
+    if (INT && INT.bgPaused) {
+      INT.bgPaused = false;
+      clearInterval(INT.t);
+      INT.t = setInterval(intTick, 1000);
+    }
+    if (S && S.bgPaused) {
+      S.bgPaused = false;
+      flashOsd("PAUSED — OK TO RESUME", 6000);
+      cancelAnimationFrame(tickRaf); tickRaf = null;
+      if (!S.loading) tickLoop();
+    }
+  });
   // a line Rhonda was saying belongs to the room she said it in: it doesn't follow you into the songbook
   function go(sc) { if (sc !== SC) { clearTimeout(sayT); $("say").hidden = true; } SC = sc; $("stage").setAttribute("data-sc", sc); }
   function fadeThen(fn, ms) { $("fade").classList.add("on"); setTimeout(function () { fn(); requestAnimationFrame(function () { requestAnimationFrame(function () { $("fade").classList.remove("on"); }); }); }, ms || 480); }
@@ -4589,19 +4701,34 @@ var qrcode = function() {
     return $({ bar: "scBar", book: "scBook" }[SC] || "scOut");
   }
   function cur() { return scope().querySelector(".f.on"); }
+  function scrollIntoModal(el) {
+    if (!el || $("modal").hidden || !$("modal").contains(el)) return;
+    try { el.scrollIntoView({ block: "nearest" }); } catch (e) {}
+    var card = $("modal").querySelector(".card");
+    if (card && card.scrollHeight > card.clientHeight) {
+      var y = 0, n = el;
+      while (n && n !== card) { y += n.offsetTop + (n !== el ? n.clientTop : 0); n = n.offsetParent; }
+      if (n === card) {
+        var pad = 16;
+        if (y - pad < card.scrollTop) card.scrollTop = Math.max(0, y - pad);
+        else if (y + el.offsetHeight + pad > card.scrollTop + card.clientHeight) card.scrollTop = y + el.offsetHeight + pad - card.clientHeight;
+      }
+    }
+  }
   function setFocus(el, quiet) {
-    var c = cur(); if (c === el) return;
+    var c = cur(); if (c === el) { scrollIntoModal(el); return; }
     if (c) c.classList.remove("on");
     if (!el) return;
     el.classList.add("on"); if (!quiet) sfx("tick");
     if (el.classList.contains("tab")) pickTab(+el.getAttribute("data-i"));
     if (el.classList.contains("spot")) spotDots();
+    scrollIntoModal(el);
   }
   // inside the bar the things you can walk up to have fixed neighbours, so the remote never surprises you
   var BAR_NAV = { wall: { r: "stage", d: "exit" }, stage: { l: "wall", r: "board", d: "book" }, board: { l: "stage", d: "bell" }, exit: { u: "wall", r: "book", d: "book" }, book: { u: "stage", l: "exit", r: "bell" }, bell: { l: "book", u: "board", r: "phone" }, phone: { l: "bell", u: "board" } };
   function move(dx, dy) {
     if (SC === "bar" && $("modal").hidden && $("osk").hidden) {
-      var b0 = cur(), to = b0 && BAR_NAV[b0.getAttribute("data-id")][dx < 0 ? "l" : dx > 0 ? "r" : dy < 0 ? "u" : "d"];
+      var b0 = cur(), nav = b0 && BAR_NAV[b0.getAttribute("data-id")], to = nav && nav[dx < 0 ? "l" : dx > 0 ? "r" : dy < 0 ? "u" : "d"];
       if (to) setFocus($("bSpots").querySelector('[data-id="' + to + '"]'));
       return !!to;
     }
@@ -4888,7 +5015,7 @@ var qrcode = function() {
       var els = $("modal").querySelectorAll("[data-act]");
       for (var fi = 0; fi < els.length; fi++) if (els[fi].getAttribute("data-act") === focus.act && els[fi].getAttribute(focus.attr) === focus.val) { f = els[fi]; break; }
     } else if (typeof focus === "string") f = $("modal").querySelector(focus);
-    if (f) { var c = cur(); if (c) c.classList.remove("on"); f.classList.add("on"); }
+    if (f) setFocus(f, true);
   }
   ACT.duet = function (el) { draft.duet = el.getAttribute("data-d") === "1"; drawSlip({ act: "duet", attr: "data-d", val: draft.duet ? "1" : "0" }); };
   ACT.partner = function (el) { draft.singer2 = el.getAttribute("data-n"); drawSlip({ act: "partner", attr: "data-n", val: draft.singer2 }); };
@@ -4914,14 +5041,14 @@ var qrcode = function() {
     queue.forEach(function (q, i) { h += '<div class="qrow f" data-act="qrow" data-i="' + i + '"><b>' + (i + 1) + "</b>" + esc(who(q)) + "<small>" + esc(q.song.t) + " — " + esc(q.song.a) + "</small></div>"; });
     h += '<div class="btns">' + (queue.length ? '<span class="btn f" data-act="takestage">Start with ' + esc(clip(who(queue[0]), 18)) + "</span>" : "") + '<span class="btn plain f" data-act="close">Back</span></div>' + (queue.length ? '<p class="sm">OK on a slip takes it off the board.</p>' : "");
     openModal(h, refresh);
-    if (focusI != null) { var rows = $("modal").querySelectorAll(".qrow"), el = rows[Math.min(focusI, rows.length - 1)]; if (el) { var c = cur(); if (c) c.classList.remove("on"); el.classList.add("on"); } }
+    if (focusI != null) { var rows = $("modal").querySelectorAll(".qrow"), el = rows[Math.min(focusI, rows.length - 1)]; if (el) setFocus(el, true); }
   }
   ACT.qrow = function (el) { var i = +el.getAttribute("data-i"); queue.splice(i, 1); sfx("flip"); openBoardList(i); };
 
   // ---------- phone requests ----------
   var REPO = "timmydouglas98-netizen/friday-and-saturday-night";
   function phoneBase() { return store.get("snk-phone-url", "") || "https://" + REPO.split("/")[0] + ".github.io/" + REPO.split("/")[1] + "/"; }
-  var line = null, lineUp = false, phones = {}, seenReq = {}, lastState = "", pkeyBytes = null, helloT = null;
+  var line = null, lineUp = false, phones = {}, seenReq = {}, seenReqOrder = [], lastState = "", pkeyBytes = null, helloT = null;
   function canPhone() { return typeof nacl !== "undefined" && typeof qrcode !== "undefined" && !!window.EventSource && !!window.fetch; }
   function pairing() {
     if (!/^[a-z0-9]{16}$/.test(prefs.room || "") || !/^[A-Za-z0-9_\-]{43}$/.test(prefs.pkey || "")) { prefs.room = randomId(16); prefs.pkey = b64(nacl.randomBytes(32)); savePrefs(); }
@@ -4952,10 +5079,13 @@ var qrcode = function() {
   function str(v, n) { return typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, n) : ""; }
   function onPhone(m) {
     var from = str(m.from, 24); if (!from) return;
-    phones[from] = Date.now();
+    var now = Date.now();
+    phones[from] = now;
+    for (var pk in phones) if (now - phones[pk] >= 4 * 3600000) delete phones[pk];
     if (m.t === "hello") { clearTimeout(helloT); helloT = setTimeout(function () { sendState(true); }, 800); }
     else if (m.t === "req") {
-      var id = str(m.id, 24); if (!id || seenReq[id]) return; seenReq[id] = 1;
+      var id = str(m.id, 24); if (!id || seenReq[id]) return;
+      seenReq[id] = 1; seenReqOrder.push(id); if (seenReqOrder.length > 500) { delete seenReq[seenReqOrder.shift()]; }
       var sg = m.song && typeof m.song === "object" ? m.song : {}, t = str(sg.t, 120), a = str(sg.a, 120), singer = str(m.singer, 18) || "Guest";
       if (!t || queue.length >= 40) { toPhones({ t: "ack", id: id, ok: false, why: t ? "full" : "bad" }); return; }
       var song = sg.house === true ? HOUSE_SONG : { t: t, a: a || "Unknown", y: +sg.y > 1900 && +sg.y < 2100 ? Math.floor(+sg.y) : 0, f: sg.d === true ? "d" : "", code: +sg.code > 999 && +sg.code < 10000 ? Math.floor(+sg.code) : 0 };
@@ -4986,7 +5116,7 @@ var qrcode = function() {
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + (n + 8) + " " + (n + 8) + '" width="' + px + '" height="' + px + '" shape-rendering="crispEdges" role="img" aria-label="Code to scan with a phone"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '" fill="#1b1b22"/></svg>';
   }
-  function refocus(act) { var el = $("modal").querySelector('[data-act="' + act + '"]'); if (el) { var c = cur(); if (c) c.classList.remove("on"); el.classList.add("on"); } }
+  function refocus(act) { var el = $("modal").querySelector('[data-act="' + act + '"]'); if (el) setFocus(el, true); }
   function openPhoneCard(focus) {
     var on = prefs.phone && canPhone(), n = phoneCount();
     var h = '<div class="k">On the table tent</div><h3>Phone requests</h3><div class="qrwrap"><div class="qr">' + (on ? qrSVG(phoneLink(), 430) : '<div class="qroff">Switched off</div>') + '</div><div class="qrside">' +
@@ -5336,16 +5466,14 @@ var qrcode = function() {
     return p;
   }
   function housePlayer(h) {
-    var AC = window.AudioContext || window.webkitAudioContext, ctx = null;
-    try { if (AC) ctx = new AC(); } catch (e) {}
+    var ctx = audioReady() ? ac : null;
     var p = { kind: "house", dur: HOUSE_DUR, dead: false, clockSrc: "WebAudio", reportIntervalMs: 0, lastCorrMs: 0 };
     if (!ctx) { setTimeout(function () { if (!p.dead) h.error("audio"); }, 100); p.time = function () { return 0; }; p.playing = function () { return false; }; p.pause = p.resume = p.seek = function () {}; p.stop = function () { p.dead = true; }; return p; }
-    if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
-    var t0 = ctx.currentTime + 0.15, out = ctx.createGain(); out.gain.value = 0.9; out.connect(ctx.destination);
-    function note(f, at, len, vol, type) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + len + 0.05); }
+    var t0 = ctx.currentTime + 0.15, out = ctx.createGain(), nodes = []; out.gain.value = 0.9; out.connect(ctx.destination);
+    function note(f, at, len, vol, type) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + len + 0.05); nodes.push(o); }
     var nb = noise(ctx);
-    function hit(at, len, vol, type, fq) { var s = ctx.createBufferSource(); s.buffer = nb; var f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = fq; var g = ctx.createGain(); g.gain.setValueAtTime(vol, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); s.connect(f); f.connect(g); g.connect(out); s.start(t0 + at, Math.random() * 2); s.stop(t0 + at + len + 0.05); }
-    function kick(at) { var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t0 + at); o.frequency.exponentialRampToValueAtTime(45, t0 + at + 0.16); g.gain.setValueAtTime(0.5, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.22); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + 0.25); }
+    function hit(at, len, vol, type, fq) { var s = ctx.createBufferSource(); s.buffer = nb; var f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = fq; var g = ctx.createGain(); g.gain.setValueAtTime(vol, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); s.connect(f); f.connect(g); g.connect(out); s.start(t0 + at, Math.random() * 2); s.stop(t0 + at + len + 0.05); nodes.push(s); }
+    function kick(at) { var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(140, t0 + at); o.frequency.exponentialRampToValueAtTime(45, t0 + at + 0.16); g.gain.setValueAtTime(0.5, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.22); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + 0.25); nodes.push(o); }
     var CH = [[130.81, 261.63, 329.63, 392], [110, 261.63, 329.63, 440], [87.31, 261.63, 349.23, 440], [98, 246.94, 293.66, 392]], beat = BAR_S / 4;
     var MEL = [[392, 392, 440, 392, 329.63, 329.63, 293.66, 261.63], [440, 440, 523.25, 440, 392, 329.63, 392, 392], [349.23, 349.23, 440, 523.25, 440, 392, 349.23, 329.63], [392, 493.88, 587.33, 493.88, 440, 392, 329.63, 293.66]];
     for (var b = 0; b < 20; b++) {
@@ -5356,13 +5484,20 @@ var qrcode = function() {
       if (b >= 2 && b < 18 && b % 2 === 0) { var m = MEL[(b / 2 - 1) % 4]; for (var n = 0; n < 8; n++) note(m[n], at + n * 0.45, 0.4, 0.05, "square"); }
     }
     var endT = setTimeout(function () { if (!p.dead) h.ended(); }, (HOUSE_DUR + 0.4) * 1000), paused = false;
-    setTimeout(function () { if (!p.dead) h.playing(); }, 200);
+    var playT = setTimeout(function () { if (!p.dead) h.playing(); }, 200);
     p.time = function () { return ctx.currentTime - t0; };
     p.playing = function () { return !paused; };
-    p.pause = function () { paused = true; clearTimeout(endT); ctx.suspend(); };
-    p.resume = function () { paused = false; ctx.resume(); endT = setTimeout(function () { if (!p.dead) h.ended(); }, Math.max(0, HOUSE_DUR + 0.4 - p.time()) * 1000); };
+    p.pause = function () { if (p.dead || paused) return; paused = true; clearTimeout(endT); try { ctx.suspend(); } catch (e) {} };
+    p.resume = function () { if (p.dead || !paused) return; paused = false; try { ctx.resume(); } catch (e) {} endT = setTimeout(function () { if (!p.dead) h.ended(); }, Math.max(0, HOUSE_DUR + 0.4 - p.time()) * 1000); };
     p.seek = function () {};
-    p.stop = function () { p.dead = true; clearTimeout(endT); try { ctx.close(); } catch (e) {} };
+    p.stop = function () {
+      if (p.dead) return;
+      p.dead = true; clearTimeout(endT); clearTimeout(playT);
+      for (var i = 0; i < nodes.length; i++) { try { nodes[i].stop(); } catch (e) {} }
+      nodes.length = 0;
+      try { out.disconnect(); } catch (e) {}
+      if (paused) { paused = false; try { ctx.resume(); } catch (e) {} }
+    };
     return p;
   }
 
@@ -5480,7 +5615,8 @@ var qrcode = function() {
     if (S.player.kind === "yt") {
       var v = S.vids[S.vi];
       var liveDur = S.player.dur || v.dur || 0;
-      songMemo[memoKey()] = { v: v.id, dur: liveDur, d: S.drift, lrcId: S.lrcId, off: S.off, rv: 3 };
+      songMemo[memoKey()] = { v: v.id, dur: liveDur, d: S.drift, lrcId: S.lrcId, off: S.off, rv: 3, t: Date.now() };
+      pruneObj(songMemo, 250);
       store.set("snk-songs", songMemo);
       // Cache winning lyric candidate in IndexedDB for instant future loads
       if (S.lrcId != null && S.candidates && S.candidates.length) {
@@ -5502,8 +5638,13 @@ var qrcode = function() {
     } else if (S.drift > 2) {
       flashOsd("TIMING MAY WANDER — ◄ ► TO NUDGE", 7000);
     }
-    cancelAnimationFrame(tickRaf);
-    tickLoop();
+    cancelAnimationFrame(tickRaf); tickRaf = null;
+    if (document.hidden) {
+      if (S.player && S.player.playing()) S.player.pause();
+      S.bgPaused = true;
+    } else {
+      tickLoop();
+    }
   }
   function whyText(code) {
     var c = String(code), how = /[!?]$/.test(c) ? c.slice(-1) : ""; c = how ? c.slice(0, -1) : c;
@@ -5589,10 +5730,11 @@ var qrcode = function() {
       var v = S.vids[S.vi];
       if (v) {
         songShifts[shiftKey(v.id, S.lrcId)] = { a: S.driftA, b: S.driftB, t: Date.now() };
+        pruneObj(songShifts, 250);
         store.set("snk-shifts", songShifts);
       }
       var m = songMemo[memoKey()];
-      if (m) { m.off = S.driftA; store.set("snk-songs", songMemo); }
+      if (m) { m.off = S.driftA; m.t = Date.now(); pruneObj(songMemo, 250); store.set("snk-songs", songMemo); }
     }
   }
   function toggleTimingHud() {
@@ -5647,9 +5789,10 @@ var qrcode = function() {
       if (perfNow - hudLastAt > 200) { hudLastAt = perfNow; updateTimingHud(t); }
     }
   }
+  var glowAlt = false;
   function stageGlow(cls) {
-    var g = $("stageGlow");
-    g.className = ""; void g.offsetWidth; g.className = cls;
+    glowAlt = !glowAlt;
+    $("stageGlow").className = cls + (glowAlt ? " alt" : "");
   }
   var VERDICTS = [[98, "A star is born."], [96, "The whole bar felt that."], [94, "Rhonda wiped away a tear."], [91, "Somebody get this one an agent."], [89, "Loud, proud and nearly in key."], [87, "The mirror ball approves."], [85, "Full marks for commitment."], [83, "You meant every word."]];
   function finishSong(natural) {
@@ -5700,7 +5843,7 @@ var qrcode = function() {
       drawCheck(); $("chkLamp").hidden = false;
       CHK.player = ytPlayer(checkYtId(), {
         playing: function () {},
-        ended: function () { if (CHK && CHK.player) CHK.player.seek(-999); },
+        ended: function () { if (CHK && CHK.player) { CHK.player.seek(-999); CHK.player.resume(); } },
         error: function () { endCheck(false); say("Couldn't play the YouTube click track."); }
       }, 60);
       CHK.raf = requestAnimationFrame(checkFrame);
@@ -5774,7 +5917,7 @@ var qrcode = function() {
       prefs.lag = prefs.lagYT;
       savePrefs();
     }
-    fadeThen(function () { showBar(); if (keep) say(Math.abs(lag) < 0.005 ? "Sound check done. No delay to make up." : "Sound check done. The words will wait " + lag.toFixed(2) + " s for your speakers.", HOST, 5000); });
+    fadeThen(function () { showBar(); if (keep) say(Math.abs(lag) < 0.005 ? "Sound check done. No delay to make up." : lag > 0 ? "Sound check done. The words will wait " + lag.toFixed(2) + " s for your speakers." : "Sound check done. The words will go " + (-lag).toFixed(2) + " s early.", HOST, 5000); });
   }
 
   // ---------- between singers: the old machine's countdown, fifteen seconds, skippable ----------
@@ -5786,7 +5929,7 @@ var qrcode = function() {
     go("sing"); paintWindow(); clearScreen();
     ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("cue").hidden = true; $("timingHud").hidden = true;
     hint("sgHint", [["", "OK  start now"], ["r", "Skip this slip"], ["", "BACK  to the bar"]]);
-    INT = { left: 15, t: setInterval(intTick, 1000) };
+    INT = { left: 15, t: document.hidden ? null : setInterval(intTick, 1000), bgPaused: !!document.hidden };
     drawInt(); prefetchSoon(); sendState(true);
   }
   function drawInt() {
@@ -5883,7 +6026,9 @@ var qrcode = function() {
       if (k === KEY.RED || k === KEY.STOP || k === KEY.BACK || k === KEY.ESC) { if (S.loading) { stopSong(); fadeThen(showBar); } else finishSong(false); }
       else if (S.loading) return;
       else if (k === KEY.INFO) toggleTimingHud();
-      else if (k === KEY.OK || k === KEY.PP || k === KEY.PLAY || k === KEY.PAUSE) { if (S.player.playing()) S.player.pause(); else S.player.resume(); }
+      else if (k === KEY.OK || k === KEY.PP) { if (S.player.playing()) S.player.pause(); else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
+      else if (k === KEY.PLAY) { if (!S.player.playing()) { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
+      else if (k === KEY.PAUSE) { if (S.player.playing()) S.player.pause(); }
       else if (k === KEY.LEFT) nudge(-1, !!e.repeat);
       else if (k === KEY.RIGHT) nudge(1, !!e.repeat);
       else if (k === KEY.RW) S.player.seek(-10);
@@ -5900,7 +6045,7 @@ var qrcode = function() {
     if (SC === "out" && !entering) { var gv = $("goVideo"); if (gv && e.target && gv.contains(e.target)) FSN.go("video"); else enterBar(); }
     else if (SC === "sing" && CHK) endCheck(true);
     else if (SC === "sing" && INT) endIntermission(true);
-    else if (SC === "sing" && S && !S.loading) { if (S.player.playing()) S.player.pause(); else S.player.resume(); }
+    else if (SC === "sing" && S && !S.loading) { if (S.player.playing()) S.player.pause(); else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
   });
   window.addEventListener("resize", fit);
   pix = new PixLyrics($("lyCv"));
@@ -5909,6 +6054,8 @@ var qrcode = function() {
 
   // ---------- open up ----------
   fit();
+  var fnvAtmos = (store.get("fnv-prefs", {}) || {}).atmos;
+  if (fnvAtmos === "calm" || fnvAtmos === "light") document.documentElement.classList.add("calm");
   $("stage").classList.toggle("bigly", !!prefs.big);
   $("grain").style.backgroundImage = "url(" + grainTexture() + ")";
   Array.prototype.forEach.call(document.querySelectorAll(".rain.near i"), function (i) { i.style.backgroundImage = dropTile(320, 22, 26, 52, 2.2, .3, .6, 31); });

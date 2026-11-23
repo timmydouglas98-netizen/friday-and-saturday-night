@@ -934,7 +934,7 @@
       on.setAttribute("data-w", closed ? "c" : "o");
     }
     // the same clock as the Strip and the bar: "11:21 am" (no weekday: the shops are named for Friday and Saturday)
-    var d = new Date(), h = d.getHours(), m = d.getMinutes(), days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
     $("landClock").textContent = ry ? "8:00 pm · " + ry : ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
     // the same key-cap hints as the Strip and the bar's doorstep
     var tap = ("ontouchstart" in window) && !window.tizen;
@@ -1129,12 +1129,13 @@
       if (ac.createStereoPanner) { var p = ac.createStereoPanner(); p.pan.value = pan; sw.connect(p); p.connect(out); } else sw.connect(out);
       n.start(ac.currentTime, Math.random() * 4); lfo.start(); nodes.push(n, lfo);
       (function swell() {
-        timers.push(setTimeout(function () {
+        timers["cicada" + i] = setTimeout(function () {
           if (!amb) return;
           sw.gain.setTargetAtTime(0.03 + Math.random() * 0.02, ac.currentTime, 1.2);
-          timers.push(setTimeout(function () { if (amb) sw.gain.setTargetAtTime(0.003, ac.currentTime, 1.4); }, 2500 + Math.random() * 3000));
+          clearTimeout(timers["cicadaFade" + i]);
+          timers["cicadaFade" + i] = setTimeout(function () { if (amb) sw.gain.setTargetAtTime(0.003, ac.currentTime, 1.4); }, 2500 + Math.random() * 3000);
           swell();
-        }, 5000 + Math.random() * 6000 + i * 1500));
+        }, 5000 + Math.random() * 6000 + i * 1500);
       })();
     });
   }
@@ -1162,7 +1163,7 @@
       var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1100; bp.Q.value = 3;
       var ng = ac.createGain(); ng.gain.value = 0.004; nb.connect(bp); bp.connect(ng); ng.connect(out); nb.start(); nodes.push(nb);
     }
-    var timers = [], month = new Date().getMonth(), summer = month === 11 || month === 0 || month === 1, hour = new Date().getHours();
+    var timers = {}, month = new Date().getMonth(), summer = month === 11 || month === 0 || month === 1, hour = new Date().getHours();
     var windy = isWindy();
     // summer evenings belong to the cicadas; the crickets take over once it's properly dark
     var cicadaTime = summer && !wet && (mode === "golden" || mode === "sunset");
@@ -1184,18 +1185,27 @@
       }, 14000 + Math.random() * 30000);
     })();
     // trams a few streets over (until about midnight), dogs in the evening, the sign creaking when it's windy
-    (function trams() { timers.push(setTimeout(function () { if (!amb) return; var h = new Date().getHours(); if (h >= 6 || h < 1) tramBell(out); trams(); }, 40000 + Math.random() * 60000)); })();
-    if (mode !== "day" && !wet) (function dogs() { timers.push(setTimeout(function () { if (!amb) return; dogBark(out); dogs(); }, 70000 + Math.random() * 90000)); })();
-    if (windy) (function creaks() { timers.push(setTimeout(function () { if (!amb) return; signCreak(out); creaks(); }, 8000 + Math.random() * 12000)); })();
+    (function trams() { timers.trams = setTimeout(function () { if (!amb) return; var h = new Date().getHours(); if (h >= 6 || h < 1) tramBell(out); trams(); }, 40000 + Math.random() * 60000); })();
+    if (mode !== "day" && !wet) (function dogs() { timers.dogs = setTimeout(function () { if (!amb) return; dogBark(out); dogs(); }, 70000 + Math.random() * 90000); })();
+    if (windy) (function creaks() { timers.creaks = setTimeout(function () { if (!amb) return; signCreak(out); creaks(); }, 8000 + Math.random() * 12000); })();
     // drips off the awning
     var dripIv = wet ? setInterval(function () { if (amb && Math.random() < 0.6) ptone(2200 + Math.random() * 1800, 0, 0.05, 0.012, Math.random() * 1.2 - 0.6, out, 0.7); }, 380) : null;
     amb = { out: out, nodes: nodes, iv: iv, owlT: function () { return owlT; }, dripIv: dripIv, wx: wx, mode: mode, windy: windy, timers: timers };
   }
   function stopAmbience() {
     if (!amb) return;
-    var a = amb; amb = null; clearInterval(a.iv); clearInterval(a.dripIv); clearTimeout(a.owlT()); (a.timers || []).forEach(clearTimeout);
-    try { a.out.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3); } catch (e) {}
-    setTimeout(function () { a.nodes.forEach(function (x) { try { x.stop(); } catch (e) {} }); }, 400);
+    var a = amb; amb = null; clearInterval(a.iv); clearInterval(a.dripIv); clearTimeout(a.owlT());
+    if (a.timers) Object.keys(a.timers).forEach(function (k) { clearTimeout(a.timers[k]); });
+    try {
+      var now = ac.currentTime;
+      a.out.gain.cancelScheduledValues(now);
+      a.out.gain.setValueAtTime(a.out.gain.value, now);
+      a.out.gain.linearRampToValueAtTime(0, now + 0.3);
+    } catch (e) {}
+    setTimeout(function () {
+      a.nodes.forEach(function (x) { try { x.stop(); } catch (e) {} });
+      try { a.out.disconnect(); } catch (e) {}
+    }, 400);
   }
   function showLanding(force) {
     if (prefs.outside === "skip" && !force) return false;
@@ -1276,9 +1286,8 @@
   }
   function goOutside() {
     if (showLanding()) return;
-    // the front door is skipped, so Back from the shelves would close the app: ask for a second press, as outside does
-    if (Date.now() - backArmed < 3000) { try { tizen.application.getCurrentApplication().exit(); } catch (x) {} }
-    else { backArmed = Date.now(); toast("Press Back again to close the store", 3000); }
+    // the front door is skipped, so Back from the shelves steps straight out onto the Strip
+    FSN.go("street");
   }
   $("land").addEventListener("animationend", function (e) { if (e.target && e.target.id === "landCam") $("land").classList.remove("cam-in"); });
   $("land").addEventListener("click", function () { if (prefs.sound && !amb) startAmbience(); enterStore(); });

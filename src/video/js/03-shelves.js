@@ -417,10 +417,20 @@
         rows[nr].forEach(function (el, i) { if (el.getAttribute("data-aisle") === aisle) best = i; });
       } else {
         var cur = rows[focus.r][focus.c].getBoundingClientRect(), cx = cur.left + cur.width / 2, bd = Infinity;
-        rows[nr].forEach(function (el, i) {
-          var b = el.getBoundingClientRect(), d = Math.abs(b.left + b.width / 2 - cx);
+        var row = rows[nr], i0 = 0, i1 = row.length - 1;
+        if (rowKinds[nr] === "shelf" && row.length) {
+          var sh = row[0].parentNode;
+          var shelfIdx = sh && /^shelf([0-2])$/.test(sh.id) ? +sh.id.charAt(5) : -1;
+          var step = shelfIdx >= 0 ? stepCache[shelfIdx] : 0;
+          if (step > 0 && sh.clientWidth > 0) {
+            i0 = Math.min(row.length - 1, Math.max(0, Math.floor(sh.scrollLeft / step) - 2));
+            i1 = Math.min(row.length - 1, Math.ceil((sh.scrollLeft + sh.clientWidth) / step) + 2);
+          }
+        }
+        for (var i = i0; i <= i1; i++) {
+          var b = row[i].getBoundingClientRect(), d = Math.abs(b.left + b.width / 2 - cx);
           if (d < bd) { bd = d; best = i; }
-        });
+        }
       }
       focus = { r: nr, c: best };
       applyFocus();
@@ -531,14 +541,53 @@
     tvTimer = setTimeout(function () { tvShow(it); }, 950);
   }
   // YouTube reports trouble (removed, region-locked, embedding off) through messages; if it does,
-  // the corner TV goes back to the still instead of showing an error card
+  // the corner TV goes back to the still instead of showing an error card.
+  // Like Karaoke, embeds route through player.html on GitHub Pages so YouTube sees a real website
+  // origin on TizenBrew (avoiding Error 152/153), falling back to a direct embed if the wrapper stalls.
+  var YT_DIRECT_ORIGIN = "https://www.youtube-nocookie.com";
+  var YT_WRAP_DEFAULT = "https://timmydouglas98-netizen.github.io/friday-and-saturday-night/player.html";
+  function ytStored(k) {
+    try {
+      var raw = localStorage.getItem(k);
+      if (raw == null || raw === "") return "";
+      try { return JSON.parse(raw); } catch (e) { return raw; }
+    } catch (e) { return ""; }
+  }
+  function ytWrapURL() {
+    var u = ytStored("snk-player-url");
+    if (typeof u === "string" && u) return u;
+    var base = ytStored("snk-phone-url");
+    if (typeof base === "string" && base) return base.replace(/index\.html$/, "") + "player.html";
+    return YT_WRAP_DEFAULT;
+  }
+  function ytUrlOrigin(u) {
+    var m = /^(https?:\/\/[^\/]+)/.exec(String(u || ""));
+    return m ? m[1] : "";
+  }
+  function ytNoWrap() {
+    var v = ytStored("snk-nowrap");
+    return v === true || v === 1 || v === "1" || v === "true";
+  }
+  function ytDirectURL(id, o) {
+    var v = encodeURIComponent(id);
+    var org = /^https?:\/\//.test(location.origin || "") ? "&origin=" + encodeURIComponent(location.origin) : "";
+    return YT_DIRECT_ORIGIN + "/embed/" + v +
+      "?autoplay=1&mute=" + (o.mute ? 1 : 0) + "&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" +
+      (o.loop ? "&loop=1&playlist=" + v : "") + org;
+  }
   var ytFrames = [];
   // Every trailer goes through here: no controls, no keyboard, no related videos, no annotations, and captions are
   // switched off as soon as the player answers.
   function ytHTML(id, o) {
+    o = o || {};
     var v = encodeURIComponent(id);
-    return '<iframe class="yt" tabindex="-1" title="' + esc(o.title || "Trailer") + '" allow="autoplay; encrypted-media" src="https://www.youtube-nocookie.com/embed/' + v +
-      "?autoplay=1&mute=" + (o.mute ? 1 : 0) + "&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" + (o.loop ? "&loop=1&playlist=" + v : "") + '"></iframe>';
+    var direct = ytDirectURL(id, o);
+    var wrapURL = ytWrapURL(), wrapOrigin = ytUrlOrigin(wrapURL);
+    var useWrap = !!wrapOrigin && !ytNoWrap() && /^[A-Za-z0-9_\-]{11}$/.test(String(id || ""));
+    var src = useWrap ? wrapURL + "#v=" + v + (o.mute ? "&mute=1" : "") + (o.loop ? "&loop=1" : "") : direct;
+    return '<iframe class="yt" tabindex="-1" title="' + esc(o.title || "Trailer") + '" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"' +
+      (useWrap ? ' data-yt-wrap="' + esc(wrapOrigin) + '" data-yt-direct="' + esc(direct) + '"' : "") +
+      ' src="' + esc(src) + '"></iframe>';
   }
   // Watch the trailer: full screen, with sound, over the box you're holding. Back or OK stops it; it closes by
   // itself when the trailer ends, and moves on to the next trailer if YouTube won't play one.
@@ -567,13 +616,18 @@
     trailerView = null; clearTimeout(tv.osdT);
     tv.el.innerHTML = ""; if (tv.el.parentNode) tv.el.parentNode.removeChild(tv.el);
     if (modal) modalFocus(true);
+    if (prefs.sound && !P && !landingOn && !sleepHold) startHum(true);
   }
   function trailerKey(k) {
     if (k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || k === KEY.OK || k === MEDIA.STOP || k === MEDIA.PLAYPAUSE) { sfx("close"); closeTrailer(); return; }
     var o = trailerView.el.querySelector(".tv-osd");   // any other key just brings the label back for a moment
     if (o) { o.classList.remove("gone"); clearTimeout(trailerView.osdT); trailerView.osdT = setTimeout(function () { o.classList.add("gone"); }, 3000); }
   }
-  function ytSay(frame, msg) { try { frame.contentWindow.postMessage(JSON.stringify(msg), "https://www.youtube-nocookie.com"); } catch (e) {} }
+  function ytTargetOrigin(frame) {
+    var wo = frame && frame.getAttribute("data-yt-wrap");
+    return wo || YT_DIRECT_ORIGIN;
+  }
+  function ytSay(frame, msg) { try { frame.contentWindow.postMessage(JSON.stringify(msg), ytTargetOrigin(frame)); } catch (e) {} }
   function ytQuiet(frame) {
     ytSay(frame, { event: "command", func: "unloadModule", args: ["captions"] });
     ytSay(frame, { event: "command", func: "unloadModule", args: ["cc"] });
@@ -582,22 +636,47 @@
   // h: { playing, ended, error }, each optional
   function ytWatch(frame, h) {
     if (!frame) return;
-    ytFrames = ytFrames.filter(function (x) { return document.body.contains(x.frame); });
-    ytFrames.push({ frame: frame, h: h || {}, on: false });
+    ytFrames = ytFrames.filter(function (x) {
+      if (document.body.contains(x.frame)) return true;
+      clearTimeout(x.wrapT);
+      return false;
+    });
+    var wrapOrigin = frame.getAttribute("data-yt-wrap") || "";
+    var direct = frame.getAttribute("data-yt-direct") || "";
+    var rec = { frame: frame, h: h || {}, on: false, wrapped: !!wrapOrigin, wrapOrigin: wrapOrigin, wrapOK: false, got: false, wrapT: null };
+    if (rec.wrapped && direct) {
+      rec.wrapT = setTimeout(function () {
+        rec.wrapT = null;
+        if (rec.wrapOK || rec.got || !rec.wrapped || !document.body.contains(frame)) return;
+        rec.wrapped = false; rec.wrapOrigin = "";
+        frame.removeAttribute("data-yt-wrap");
+        frame.src = direct;
+      }, 6000);
+    }
+    ytFrames.push(rec);
     frame.addEventListener("load", function () { ytSay(frame, { event: "listening", id: 1, channel: "widget" }); ytQuiet(frame); });
   }
   window.addEventListener("message", function (e) {
-    if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(String(e.origin))) return;
-    var rec = null; ytFrames.forEach(function (x) { if (x.frame.contentWindow === e.source) rec = x; });
-    if (!rec) return;
+    var rec = null;
+    ytFrames.forEach(function (x) { if (x.frame.contentWindow && x.frame.contentWindow === e.source) rec = x; });
+    if (!rec || !document.body.contains(rec.frame)) return;
+    var from = String(e.origin);
+    if (!(/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(from) || (rec.wrapped && rec.wrapOrigin && from === rec.wrapOrigin))) return;
     var d = e.data; try { d = typeof d === "string" ? JSON.parse(d) : d; } catch (x) { return; }
     if (!d) return;
+    if (d.event === "snk-wrap-ready") {
+      rec.wrapOK = true; clearTimeout(rec.wrapT); rec.wrapT = null;
+      ytQuiet(rec.frame);
+      return;
+    }
+    rec.got = true; clearTimeout(rec.wrapT); rec.wrapT = null;
+    if (d.event === "snk-tick") return;
     var st = d.event === "onStateChange" ? d.info : d.event === "infoDelivery" && d.info ? d.info.playerState : undefined;
     if (d.event === "onReady" || d.event === "initialDelivery") ytQuiet(rec.frame);
     if (d.event === "onError") { if (rec.h.error) rec.h.error(); }
     else if (st === 1) {
       ytQuiet(rec.frame);
-      if (!rec.on) { rec.on = true; setTimeout(function () { ytQuiet(rec.frame); }, 1500); }
+      if (!rec.on) { rec.on = true; setTimeout(function () { if (document.body.contains(rec.frame)) ytQuiet(rec.frame); }, 1500); }
       if (rec.h.playing) rec.h.playing();
     }
     else if (st === 0 && rec.h.ended) rec.h.ended();

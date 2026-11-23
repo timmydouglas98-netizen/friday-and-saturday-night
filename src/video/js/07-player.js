@@ -405,8 +405,9 @@
     var avAudio = -1; // AVPlay never says which audio track is playing, so remember the one we picked
     stage.innerHTML = '<object id="avobj" type="application/avplayer"></object>';
     $("player").classList.add("av");
+    document.body.classList.add("av-active");
     document.documentElement.style.background = "transparent"; document.body.style.background = "transparent";
-    var paused = false, suspended = false, prepT = null;
+    var paused = false, suspended = false, prepT = null, closed = false, audioPicked = false, pendingAudio = -1;
     function avTracks() {
       try {
         return av.getTotalTrackInfo().map(function (t) {
@@ -415,7 +416,7 @@
         });
       } catch (e) { return []; }
     }
-    // the web player picks your language itself; AVPlay has to be told, before the tape starts
+    // the web player picks your language itself; AVPlay has to be told once playback enters PLAYING state
     function pickAudio() {
       try {
         var aud = avTracks().filter(function (t) { return t.type === "AUDIO"; });
@@ -438,38 +439,70 @@
         try { av.setBufferingParam("PLAYER_BUFFER_FOR_RESUME", "PLAYER_BUFFER_SIZE_IN_SECOND", 15); } catch (e) {}
       }
       av.setListener({
-        onbufferingstart: function () { cb.buffering(true); },
-        onbufferingcomplete: function () { cb.buffering(false); },
-        onstreamcompleted: function () { cb.ended(); },
-        onerror: function (e) { cb.error(String(e)); },
+        onbufferingstart: function () { if (closed) return; cb.buffering(true); },
+        onbufferingcomplete: function () { if (closed) return; cb.buffering(false); },
+        onstreamcompleted: function () { if (closed) return; cb.ended(); },
+        onerror: function (e) { if (closed) return; cb.error(String(e)); },
         oncurrentplaytime: function () {}
       });
-      prepT = setTimeout(function () { try { av.stop(); } catch (e) {} cb.error("prepare timeout"); }, 25000);
+      prepT = setTimeout(function () {
+        if (closed) return;
+        closed = true;
+        try { av.stop(); } catch (e) {}
+        cb.error("prepare timeout");
+      }, 25000);
       av.prepareAsync(function () {
-        clearTimeout(prepT);
-        pickAudio();
-        function rdy() { cb.ready(); }
+        clearTimeout(prepT); prepT = null;
+        if (closed) return;
+        function rdy() { if (closed) return; cb.ready(); }
         if (startMs) { try { av.seekTo(startMs, rdy, rdy); } catch (e) { rdy(); } } else rdy();
-      }, function (e) { clearTimeout(prepT); cb.error(String(e && e.name || e)); });
-    } catch (e) { setTimeout(function () { cb.error(String(e && e.message || e)); }, 0); }
+      }, function (e) {
+        clearTimeout(prepT); prepT = null;
+        if (closed) return;
+        cb.error(String(e && e.name || e));
+      });
+    } catch (e) { setTimeout(function () { if (closed) return; cb.error(String(e && e.message || e)); }, 0); }
     return {
       kind: "av",
-      start: function () { try { av.play(); paused = false; } catch (e) {} cb.playing(); },
-      play: function () { try { av.play(); paused = false; } catch (e) {} },
-      pause: function () { try { av.pause(); paused = true; } catch (e) {} },
+      start: function () {
+        if (closed) return;
+        var started = false;
+        try { av.play(); paused = false; started = true; } catch (e) {}
+        cb.playing();
+        if (started && !audioPicked && !closed) { audioPicked = true; pickAudio(); }
+      },
+      play: function () {
+        if (closed) return;
+        try {
+          av.play(); paused = false;
+          if (pendingAudio !== -1) {
+            var idx = pendingAudio; pendingAudio = -1;
+            try { av.setSelectTrack("AUDIO", idx); } catch (e) {}
+          }
+        } catch (e) {}
+      },
+      pause: function () { if (closed) return; try { av.pause(); paused = true; } catch (e) {} },
       paused: function () { return paused; },
       time: function () { try { return av.getCurrentTime(); } catch (e) { return 0; } },
       duration: function () { try { return av.getDuration(); } catch (e) { return 0; } },
-      seek: function (ms) { try { av.seekTo(Math.max(0, Math.round(ms))); } catch (e) {} },
+      seek: function (ms) { if (closed) return; try { av.seekTo(Math.max(0, Math.round(ms))); } catch (e) {} },
       // Samsung's player has to be put away when the TV leaves the app (Home, Source) and brought back after
-      suspend: function () { try { av.pause(); paused = true; } catch (e) {} try { av.suspend(); suspended = true; } catch (e) {} },
+      suspend: function () { if (closed) return; try { av.pause(); paused = true; } catch (e) {} try { av.suspend(); suspended = true; } catch (e) {} },
       restore: function () {
+        if (closed) return false;
         if (suspended) { suspended = false; try { av.restore(); } catch (e) { return false; } }
         try { av.pause(); paused = true; } catch (e) {}
         return true;
       },
       tracks: avTracks,
-      setTrack: function (type, index) { try { av.setSelectTrack(type, index); if (type === "AUDIO") avAudio = index; } catch (e) {} },
+      setTrack: function (type, index) {
+        if (closed) return;
+        if (type === "AUDIO" && paused) { pendingAudio = index; avAudio = index; return; }
+        try {
+          av.setSelectTrack(type, index);
+          if (type === "AUDIO") { avAudio = index; pendingAudio = -1; }
+        } catch (e) {}
+      },
       info: function () {
         var out = {};
         try {
@@ -482,9 +515,11 @@
         return out;
       },
       close: function () {
+        closed = true;
         clearTimeout(prepT); prepT = null;
         try { av.stop(); } catch (e) {} try { av.close(); } catch (e) {}
         stage.innerHTML = ""; $("player").classList.remove("av");
+        document.body.classList.remove("av-active");
         document.documentElement.style.background = ""; document.body.style.background = "";
       }
     };
@@ -494,10 +529,10 @@
     // load muted and paused; the tape only starts once the picture is ready
     v.autoplay = false; v.preload = "auto"; v.muted = true; v.setAttribute("playsinline", "");
     stage.innerHTML = ""; stage.appendChild(v);
-    var phase = "load", warmFrom = 0, warmT = null, seekT = null, buffering = false, lastT = -1;
+    var phase = "load", warmFrom = 0, warmT = null, seekT = null, loadT = null, buffering = false, lastT = -1;
     function readyNow() {
-      if (phase === "ready" || phase === "live") return;
-      phase = "ready"; clearTimeout(warmT);
+      if (phase === "ready" || phase === "live" || phase === "closed") return;
+      phase = "ready"; clearTimeout(warmT); clearTimeout(loadT);
       try { v.pause(); } catch (e) {}
       cb.ready();
     }
@@ -531,7 +566,7 @@
       if (buffering && lastT >= 0 && v.currentTime > lastT + 0.2) { buffering = false; cb.buffering(false); }
       lastT = v.currentTime;
     });
-    setTimeout(function () { if (phase === "load") cb.error("timed out loading"); }, 45000);
+    loadT = setTimeout(function () { if (phase === "load") cb.error("timed out loading"); }, 45000);
     function audioList() {
       var at = v.audioTracks, out = [];
       if (!at || typeof at.length !== "number") return out;
@@ -564,7 +599,7 @@
       try { v.audioTracks.addEventListener("addtrack", function () { setTimeout(pickAudio, 50); }); } catch (e) {}
     }
     v.addEventListener("ended", function () { if (phase === "live") cb.ended(); });
-    v.addEventListener("error", function () { clearTimeout(warmT); cb.error("code " + (v.error ? v.error.code : "?")); });
+    v.addEventListener("error", function () { clearTimeout(warmT); clearTimeout(loadT); if (phase !== "closed") cb.error("code " + (v.error ? v.error.code : "?")); });
     v.src = url;
     try { v.load(); } catch (e) {}
     return {
@@ -590,7 +625,7 @@
       tracks: audioList,
       canSwitchAudio: function () { return !!v.audioTracks; },
       setTrack: function (type, index) { if (type === "AUDIO") setAudio(index); },
-      close: function () { clearTimeout(warmT); clearTimeout(seekT); phase = "closed"; try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} stage.innerHTML = ""; }
+      close: function () { clearTimeout(warmT); clearTimeout(seekT); clearTimeout(loadT); phase = "closed"; try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} stage.innerHTML = ""; }
     };
   }
   // The sample tape you get in a browser preview (on the TV the real copy plays): colour bars with the store's
@@ -625,7 +660,6 @@
     cv.width = 960; cv.height = 540; stage.innerHTML = ""; stage.appendChild(cv);
     var ctx = cv.getContext("2d"), t = startMs || 0, playing = false;
     var dur = ((it.type === "series" ? 22 : it.runtime) || 100) * 60000;
-    var bars = ["#c0c0c0", "#c0c000", "#00c0c0", "#00c000", "#c000c0", "#c00000", "#0000c0"];
     var last = Date.now();
     var iv = setInterval(function () {
       var now = Date.now();
@@ -661,6 +695,7 @@
     P = { seq: ++playSeq, it: co.it, vid: co.vid, copies: co.copies, idx: co.idx || 0, start: resumeMs || 0, eng: null, menu: null, intro: null,
           lastSave: 0, lastSync: Date.now(), watched: 0, pend: 0, seekT: null, osdT: null, barT: null, subs: [], cues: null, cueLabel: "Off", ended: false,
           autoTries: 0, lastAt: 0, nextPre: false };
+    startPlayerLoops();
     var pl = $("player"); pl.hidden = false; pl.classList.toggle("vhs", !!prefs.vhs);
     $("pTitle").textContent = P.it.name + (P.it.type === "series" ? " · " + epLabel(P.vid) : "");
     $("pSubs").innerHTML = ""; $("pCenter").innerHTML = ""; $("pMenu").hidden = true;
@@ -1001,33 +1036,40 @@
     $("pEnd").textContent = endTxt;
     renderSubs(t);
   }
-  setInterval(function () {
-    if (!P || !P.eng || P.intro || !P.started) return;
-    tickPlayer();
-    var now = Date.now();
-    if (!P.eng.paused()) { P.watched += 500; if (P.eng.kind !== "fake") stats.ms += 500; }
-    if (now - P.lastSave > 10000) { P.lastSave = now; saveLocalProgress(false); save("fnv-stats", stats); }
-    if (now - P.lastSync > 60000) { P.lastSync = now; syncStremio(false); }
-    if (P.sleep && P.sleep.mode === "mins" && now >= P.sleep.at) goToSleep();
-    // the last few minutes of an episode: find the next one's copies now, so it starts straight after the countdown
-    if (!P.nextPre && P.it.type === "series" && nextEpMode() !== "off" && live && account) {
-      var pd = P.eng.duration(), pt = P.eng.time();
-      if (pd > 120000 && pt > 60000 && pd - pt < 240000) {
-        P.nextPre = true;
-        var preIt = P.it, preSeq = P.seq;
-        nextEpisode(function (nx) { if (nx && samePlay(preSeq)) streamCopies(preIt, nx.id, function () {}); });
+  var playerTickIv = null, playerSubIv = null;
+  function stopPlayerLoops() {
+    if (playerTickIv) { clearInterval(playerTickIv); playerTickIv = null; }
+    if (playerSubIv) { clearInterval(playerSubIv); playerSubIv = null; }
+  }
+  function startPlayerLoops() {
+    stopPlayerLoops();
+    playerTickIv = setInterval(function () {
+      if (!P || !P.eng || P.intro || !P.started) return;
+      tickPlayer();
+      var now = Date.now();
+      if (!P.eng.paused()) { P.watched += 500; if (P.eng.kind !== "fake") stats.ms += 500; }
+      if (now - P.lastSave > 10000) { P.lastSave = now; saveLocalProgress(false); save("fnv-stats", stats); }
+      if (now - P.lastSync > 60000) { P.lastSync = now; syncStremio(false); }
+      if (P.sleep && P.sleep.mode === "mins" && now >= P.sleep.at) goToSleep();
+      // the last few minutes of an episode: find the next one's copies now, so it starts straight after the countdown
+      if (!P.nextPre && P.it.type === "series" && nextEpMode() !== "off" && live && account) {
+        var pd = P.eng.duration(), pt = P.eng.time();
+        if (pd > 120000 && pt > 60000 && pd - pt < 240000) {
+          P.nextPre = true;
+          var preIt = P.it, preSeq = P.seq;
+          nextEpisode(function (nx) { if (nx && samePlay(preSeq)) streamCopies(preIt, nx.id, function () {}); });
+        }
       }
-    }
-    if (P.menu && P.menu.info && now - (P.infoT || 0) > 1000) {
-      P.infoT = now;
-      infoLines().forEach(function (l, i) { if (P.menu.els[i]) P.menu.els[i].textContent = l; });
-    }
-  }, 500);
-
-  // subtitles get their own quicker clock, so lines come and go on time rather than up to half a second late
-  setInterval(function () {
-    if (P && P.eng && P.cues && P.started && !P.intro) renderSubs(P.eng.time());
-  }, 100);
+      if (P.menu && P.menu.info && now - (P.infoT || 0) > 1000) {
+        P.infoT = now;
+        infoLines().forEach(function (l, i) { if (P.menu.els[i]) P.menu.els[i].textContent = l; });
+      }
+    }, 500);
+    // subtitles get their own quicker clock, so lines come and go on time rather than up to half a second late
+    playerSubIv = setInterval(function () {
+      if (P && P.eng && P.cues && P.started && !P.intro) renderSubs(P.eng.time());
+    }, 100);
+  }
   // never skip past the end of the tape: stop a few seconds short and let it finish properly
   function seekLimit(ms) { var d = P.eng.duration(); return Math.max(0, d ? Math.min(ms, d - 5000) : ms); }
   function queueSeek(delta) {
@@ -1271,7 +1313,7 @@
     fetchSubtitles(P.it, P.vid, copy).then(function (list) {
       if (!P || P.subsKey !== key) return;
       P.subs = list;
-      var m = prefs.subLang && list.filter(function (x) { return x.lang === prefs.subLang; })[0];
+      var m = prefs.subLang && list.filter(function (x) { return normLang(x.lang) === normLang(prefs.subLang); })[0];
       if (m) loadSubs(m); else P.cueLabel = "Off";
     });
   }
@@ -1476,11 +1518,14 @@
   }
   function closePlayer() {
     if (!P) return;
+    stopPlayerLoops();
     if (P.eng) { try { P.eng.close(); } catch (e) {} }
     clearTimeout(P.seekT); clearTimeout(P.osdT); clearTimeout(P.barT); clearTimeout(P.endT);
     clearInterval(P.fadeT); clearInterval(P.introIv);
     P = null;
     var pl = $("player"); pl.hidden = true; pl.classList.remove("bar-on", "vhs", "av", "sleeping");
+    document.body.classList.remove("av-active");
+    document.documentElement.style.background = ""; document.body.style.background = "";
     $("pIntro").hidden = true; $("pIntro").innerHTML = ""; $("pMenu").hidden = true; $("pSubs").innerHTML = ""; lastCue = "";
     lastInput = Date.now(); tvCurrent = null;
     if (prefs.sound && !sleepHold) startHum(true);

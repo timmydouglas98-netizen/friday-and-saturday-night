@@ -410,6 +410,7 @@ body.night .logo { z-index: 6; box-shadow: 0 4px 0 #8f1424, 0 0 18px #ff3b52, 0 
 /* ---------- the player ---------- */
 .player { position: fixed; z-index: 60; top: 0; left: 0; right: 0; bottom: 0; background: #000; color: #fff; overflow: hidden; }
 .player.av { background: transparent; }
+body.av-active .store, body.av-active .mood, body.av-active .night-veil { display: none !important; }
 .p-stage, .p-stage > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .p-stage video, .p-stage canvas { object-fit: contain; background: #000; }
 .p-vhs { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: none; overflow: hidden;

@@ -17,10 +17,12 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 @keyframes weave { 0% { transform: translate(-.37px,-.44px); } 8% { transform: translate(-.61px,-.11px); } 17% { transform: translate(.37px,-.31px); } 25% { transform: translate(-.46px,-.43px); } 33% { transform: translate(.46px,.34px); } 42% { transform: translate(-.27px,.14px); } 50% { transform: translate(.53px,-.45px); } 58% { transform: translate(.01px,-.35px); } 67% { transform: translate(.61px,.4px); } 75% { transform: translate(.57px,.08px); } 83% { transform: translate(.01px,-.09px); } 92% { transform: translate(-.47px,-.21px); } }
 
 /* ---------- the film transfer, over everything ---------- */
-.grain { position: absolute; top: -128px; left: -128px; right: -128px; bottom: -128px; pointer-events: none; opacity: .14; background-size: 256px 256px; animation: grain .5s steps(1) infinite; z-index: 90; }
+.grain { position: absolute; top: -128px; left: -128px; right: -128px; bottom: -128px; pointer-events: none; opacity: .14; background-size: 256px 256px; animation: grain .5s steps(1) infinite; z-index: 90; will-change: transform; }
 @keyframes grain { 0% { transform: translate(0,0); } 17% { transform: translate(-61px,37px); } 33% { transform: translate(43px,-89px); } 50% { transform: translate(-97px,-21px); } 67% { transform: translate(23px,71px); } 83% { transform: translate(79px,-49px); } }
-.flick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #140c06; opacity: 0; pointer-events: none; animation: filmFlick 1.75s steps(1) infinite; z-index: 91; }
+.flick { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #140c06; opacity: 0; pointer-events: none; animation: filmFlick 1.75s steps(1) infinite; z-index: 91; will-change: opacity; }
 @keyframes filmFlick { 0% { opacity: .02; } 14% { opacity: 0; } 29% { opacity: .035; } 43% { opacity: .01; } 57% { opacity: .03; } 71% { opacity: 0; } 86% { opacity: .025; } }
+#stage[data-sc="sing"] .grain, #stage[data-sc="sing"] .flick { display: none; }
+html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm .rain, html.calm .rain i { animation-play-state: paused !important; }
 .vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 92; background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0,0,0,0) 66%, rgba(24,10,30,.18) 100%); }
 #fade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #08060c; pointer-events: none; opacity: 0; transition: opacity .5s; z-index: 95; }
 #fade.on { opacity: 1; }
@@ -154,12 +156,19 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 #stageGlow .l { left: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 0 30%, rgba(255,95,162,.45), rgba(255,95,162,0) 70%); }
 #stageGlow .r { right: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 100% 30%, rgba(98,232,222,.4), rgba(98,232,222,0) 70%); }
 #stageGlow.line .w { -webkit-animation: glowLine .9s ease-out; animation: glowLine .9s ease-out; }
+#stageGlow.line.alt .w { -webkit-animation: glowLine2 .9s ease-out; animation: glowLine2 .9s ease-out; }
 #stageGlow.line.a .l, #stageGlow.line.b .r { -webkit-animation: glowLine 1.1s ease-out; animation: glowLine 1.1s ease-out; }
+#stageGlow.line.alt.a .l, #stageGlow.line.alt.b .r { -webkit-animation: glowLine2 1.1s ease-out; animation: glowLine2 1.1s ease-out; }
 #stageGlow.tick .w { -webkit-animation: glowTick .45s ease-out; animation: glowTick .45s ease-out; }
+#stageGlow.tick.alt .w { -webkit-animation: glowTick2 .45s ease-out; animation: glowTick2 .45s ease-out; }
 @-webkit-keyframes glowLine { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
 @keyframes glowLine { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
+@-webkit-keyframes glowLine2 { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes glowLine2 { 0% { opacity: 0; } 18% { opacity: .9; } 100% { opacity: 0; } }
 @-webkit-keyframes glowTick { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 @keyframes glowTick { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
+@-webkit-keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
+@keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 /* how far through the song: a thin tape-counter line along the bottom edge */
 #sgProg { position: absolute; left: 60px; right: 60px; bottom: 58px; height: 6px; border-radius: 3px; background: rgba(255,243,214,.16); pointer-events: none; }
 #sgProg i { display: block; height: 100%; width: 100%; border-radius: 3px; background: #ffc857; transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
@@ -186,7 +195,7 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 
 /* ---------- cards, slips and panels ---------- */
 #modal { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(14,6,10,.66); z-index: 50; }
-.card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1060px; max-height: 980px; padding: 40px 54px 44px; background: var(--paper); border: 5px solid var(--ink); border-radius: 12px; box-shadow: 10px 12px 0 rgba(8,4,16,.6); animation: cardIn .25s steps(3); }
+.card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1060px; max-height: 980px; overflow-y: auto; overflow-x: hidden; padding: 40px 54px 44px; background: var(--paper); border: 5px solid var(--ink); border-radius: 12px; box-shadow: 10px 12px 0 rgba(8,4,16,.6); animation: cardIn .25s steps(3); }
 .card.wide { width: 1400px; }
 @keyframes cardIn { from { transform: translate(-50%, -44%) rotate(1.5deg); opacity: .4; } to { transform: translate(-50%, -50%); opacity: 1; } }
 .card h3 { margin: 0 0 8px; font-family: var(--f-toon); font-weight: 400; font-size: 54px; line-height: 1.1; color: #7d1a29; }

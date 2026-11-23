@@ -1,7 +1,6 @@
   // ---------- shared chrome: the clock and the remote-button hints look the same in every venue ----------
   // (the video store's own hint bar is the model: cream key caps with an inked edge, coloured dots for the coloured buttons)
   var UI = (function () {
-    var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     function clock(d) {
       d = d || new Date();
       var h = d.getHours(), m = d.getMinutes();

@@ -268,7 +268,14 @@
 
 
   function pickOne(list) { return list[Math.floor(Math.random() * list.length)]; }
-  function shuffled(list) { return list.slice().sort(function () { return Math.random() - 0.5; }); }
+  function shuffled(list) {
+    var a = list.slice(), i, j, t;
+    for (i = a.length - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
   var moveClock = 0, moveStreak = 0, clerkReroll = false;
   // Two clerks share the counter. Their own picks come from the Letterboxd lists you give them (Front desk > Clerks & back room).
   var CLERKS = {

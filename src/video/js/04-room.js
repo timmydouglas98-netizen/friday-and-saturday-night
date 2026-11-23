@@ -1,6 +1,6 @@
   // ---------- painted store: ceiling, side aisles, carpet ----------
   function prep(cv) {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = window.tizen ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     var w = cv.clientWidth, h = cv.clientHeight;
     cv.width = Math.max(1, Math.round(w * dpr)); cv.height = Math.max(1, Math.round(h * dpr));
     var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -210,7 +210,7 @@
     var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 5200; bp.Q.value = 0.8;
     var g3 = ac.createGain(); g3.gain.value = 0.006; n.connect(bp); bp.connect(g3); g3.connect(tubes);
     o1.start(); o2.start(); n.start();
-    var nodes = [o1, o2, n], timers = [];
+    var nodes = [o1, o2, n], timers = {};
     // rain on the roof, muffled through the ceiling
     if (wx === "drizzle" || wx === "rain" || wx === "storm") {
       var rn = ac.createBufferSource(); rn.buffer = noiseBuffer(3); rn.loop = true;
@@ -219,10 +219,10 @@
       rn.connect(rl); rl.connect(rg); rg.connect(out); rn.start(); nodes.push(rn);
     }
     if (wx === "storm") (function rumble() {
-      timers.push(setTimeout(function () { if (!hum) return; roomNoise(out, 3.5, "lowpass", 90, 0.22, 0, Math.random() - 0.5); rumble(); }, 15000 + Math.random() * 25000));
+      timers.rumble = setTimeout(function () { if (!hum) return; roomNoise(out, 3.5, "lowpass", 90, 0.22, 0, Math.random() - 0.5); rumble(); }, 15000 + Math.random() * 25000);
     })();
     (function customer() {
-      timers.push(setTimeout(function () { if (!hum) return; pickOne(CUSTOMERS)(out); customer(); }, 150000 + Math.random() * 210000));
+      timers.customer = setTimeout(function () { if (!hum) return; pickOne(CUSTOMERS)(out); customer(); }, 150000 + Math.random() * 210000);
     })();
     hum = { out: out, tubes: tubes, nodes: nodes, timers: timers, wx: wx, level: level };
     if (!quietStart) chime();
@@ -235,9 +235,17 @@
   function stopHum() {
     if (!hum) return;
     var h = hum; hum = null;
-    (h.timers || []).forEach(clearTimeout);
-    h.out.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
-    setTimeout(function () { h.nodes.forEach(function (n) { try { n.stop(); } catch (e) {} }); }, 400);
+    if (h.timers) Object.keys(h.timers).forEach(function (k) { clearTimeout(h.timers[k]); });
+    try {
+      var now = ac.currentTime;
+      h.out.gain.cancelScheduledValues(now);
+      h.out.gain.setValueAtTime(h.out.gain.value, now);
+      h.out.gain.linearRampToValueAtTime(0, now + 0.3);
+    } catch (e) {}
+    setTimeout(function () {
+      h.nodes.forEach(function (n) { try { n.stop(); } catch (e) {} });
+      try { h.out.disconnect(); } catch (e) {}
+    }, 400);
   }
   function tone(freq, start, dur, vol, type) {
     var o = ac.createOscillator(), g = ac.createGain();

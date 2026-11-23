@@ -76,7 +76,7 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
 
   var card = document.getElementById("card");
   if (instant) card.className = "instant";
-  var MIN_CARD_MS = instant ? 0 : 1200, started = Date.now(), done = false;
+  var MIN_CARD_MS = instant ? 0 : 900, started = Date.now(), done = false;
 
   // Show the right store/bar name on the cold-start title card
   function setCardTitle(name, kicker, loading) {
@@ -115,9 +115,10 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
   var dotT = setInterval(function () { dn = (dn + 1) % 4; dots.textContent = ["", ".", "..", "..."][dn]; }, 420);
 
   function msg(t) { document.getElementById("msg").textContent = t; }
-  function show(html) {
+  function show(html, warm) {
     if (done) return; done = true;
-    var wait = Math.max(0, MIN_CARD_MS - (Date.now() - started));
+    var minMs = instant ? 0 : (warm ? Math.min(MIN_CARD_MS, 350) : MIN_CARD_MS);
+    var wait = Math.max(0, minMs - (Date.now() - started));
     setTimeout(function () { clearInterval(dotT); document.open(); document.write(html); document.close(); }, wait);
   }
   function looksRight(venue, html) {
@@ -141,7 +142,9 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
     } catch (e) { cb(true); }
   }
   function idbGet(venue, cb) {
-    if (!window.indexedDB) return cb(lget("fsn-cache-" + venue));
+    var fin = false;
+    function out(v) { if (!fin) { fin = true; cb(v); } }
+    if (!window.indexedDB) return out(lget("fsn-cache-" + venue));
     try {
       var req = indexedDB.open("fsn-cache", 1);
       req.onupgradeneeded = function () {
@@ -151,12 +154,36 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
       req.onsuccess = function () {
         try {
           var db = req.result, tx = db.transaction("venues", "readonly"), g = tx.objectStore("venues").get(venue);
-          g.onsuccess = function () { try { db.close(); } catch (e) {} cb(g.result || lget("fsn-cache-" + venue)); };
-          g.onerror = function () { try { db.close(); } catch (e) {} cb(lget("fsn-cache-" + venue)); };
-        } catch (e) { cb(lget("fsn-cache-" + venue)); }
+          g.onsuccess = function () { try { db.close(); } catch (e) {} out(g.result || lget("fsn-cache-" + venue)); };
+          g.onerror = function () { try { db.close(); } catch (e) {} out(lget("fsn-cache-" + venue)); };
+        } catch (e) { try { req.result.close(); } catch (x) {} out(lget("fsn-cache-" + venue)); }
       };
-      req.onerror = function () { cb(lget("fsn-cache-" + venue)); };
-    } catch (e) { cb(lget("fsn-cache-" + venue)); }
+      req.onerror = function () { out(lget("fsn-cache-" + venue)); };
+      req.onblocked = function () { out(lget("fsn-cache-" + venue)); };
+    } catch (e) { out(lget("fsn-cache-" + venue)); }
+  }
+  function idbPut(key, val, cb) {
+    var fin = false;
+    function out(ok) { if (!fin) { fin = true; if (cb) cb(ok); } }
+    if (!window.indexedDB) { out(false); return; }
+    try {
+      var req = indexedDB.open("fsn-cache", 1);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains("venues")) db.createObjectStore("venues");
+      };
+      req.onsuccess = function () {
+        try {
+          var db = req.result, tx = db.transaction("venues", "readwrite");
+          tx.objectStore("venues").put(val, key);
+          tx.oncomplete = function () { try { db.close(); } catch (e) {} out(true); };
+          tx.onerror = function () { try { db.close(); } catch (e) {} out(false); };
+          tx.onabort = function () { try { db.close(); } catch (e) {} out(false); };
+        } catch (e) { try { req.result.close(); } catch (x) {} out(false); }
+      };
+      req.onerror = function () { out(false); };
+      req.onblocked = function () { out(false); };
+    } catch (e) { out(false); }
   }
   function get(url, ms, ok, bad) {
     var fin = false;
@@ -176,7 +203,7 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
     msg("Couldn't open the strip. Check the TV's internet connection, then reopen the app.");
   }
   function fallback(cached) {
-    if (looksRight(target, cached)) return show(cached);
+    if (looksRight(target, cached)) return show(cached, true);
     get(FILES[target], 15000, function (t) {
       if (looksRight(target, t)) show(t);
       else fail();
@@ -199,16 +226,28 @@ html, body { margin: 0; height: 100%; background: #141226; overflow: hidden; }
     if (!vrel || typeof vrel.ref !== "string" || !/^[A-Za-z0-9._\-\/]{1,80}$/.test(vrel.ref)) return fallback(cached);
     if (vrel.ref === bad) return fallback(cached);
     // Cache hit: matching ref + matching APP_VERSION -> open immediately (zero network wait)
-    if (good && good.ref === vrel.ref && looksRight(target, cached) && versionMatches(cached, vrel.version)) return show(cached);
+    if (good && good.ref === vrel.ref && looksRight(target, cached) && versionMatches(cached, vrel.version)) return show(cached, true);
     // Update needed (or first time visiting this venue): show loading card if it was hidden for an instant switch
     if (instant) card.className = "";
     get(RAW + vrel.ref + "/app/" + FILES[target], 20000, function (html) {
       if (!looksRight(target, html) || !versionMatches(html, vrel.version)) return fallback(cached);
       verifyHash(html, vrel.sha256, function (ok) {
         if (!ok) return fallback(cached);
-        try { sessionStorage.setItem("fsn-next-html-" + target, html); } catch (e) {}
-        lset(pendKey, vrel.ref);
-        show(html);
+        var staged = false, guard = null;
+        function proceed(idbOk) {
+          if (staged) return;
+          staged = true;
+          if (guard) clearTimeout(guard);
+          if (idbOk) {
+            try { sessionStorage.removeItem("fsn-next-html-" + target); } catch (e) {}
+          } else {
+            try { sessionStorage.setItem("fsn-next-html-" + target, html); } catch (e) {}
+          }
+          lset(pendKey, vrel.ref);
+          show(html);
+        }
+        guard = setTimeout(function () { proceed(false); }, 800);
+        idbPut("next-" + target, html, proceed);
       });
     }, function () { fallback(cached); });
   }

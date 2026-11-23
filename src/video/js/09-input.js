@@ -30,7 +30,6 @@
   });
 
   // ---------- input: TV remote, keyboard, touch ----------
-  var backArmed = 0;
   var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, CHUP: 427, CHDOWN: 428, INFO: 457, CAPTION: 10221 };
   document.addEventListener("keydown", function (e) {
     var k = e.keyCode;
@@ -196,24 +195,3 @@
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { applyFocus(true); });
   FSN.ackBoot("video", APP_VERSION);
-  // The loader (app/index.html) tries a new release once. If the store gets this far and stays up for a few seconds,
-  // that release is kept as the known-good copy; if it never gets here, the loader goes back to the last good one.
-  setTimeout(function () {
-    try {
-      var pend = localStorage.getItem("fnv-boot-pending");
-      if (!pend) return;
-      var html = null, kept = false; try { html = sessionStorage.getItem("fnv-next-html"); } catch (e) {}
-      if (html) {
-        try { localStorage.setItem("fnv-store-cache", html); kept = true; }
-        catch (e) { try { localStorage.removeItem(SNAP_KEY); localStorage.setItem("fnv-store-cache", html); kept = true; } catch (x) {} }
-      }
-      // couldn't save this version: drop the older saved copy too, or the loader would keep opening that one for this release
-      if (!kept) { try { localStorage.removeItem("fnv-store-cache"); } catch (e) {} }
-      localStorage.setItem("fnv-good", JSON.stringify({ ref: pend, version: APP_VERSION, t: Date.now() }));
-      localStorage.removeItem("fnv-boot-pending");
-      localStorage.removeItem("fnv-boot-fails");
-      // a newer release has opened fine: forget the one that was skipped, so it can be tried again if it's ever re-issued
-      if (localStorage.getItem("fnv-bad-ref") && localStorage.getItem("fnv-bad-ref") !== pend) localStorage.removeItem("fnv-bad-ref");
-      try { sessionStorage.removeItem("fnv-next-html"); } catch (e) {}
-    } catch (e) {}
-  }, 4000);

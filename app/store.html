@@ -425,6 +425,7 @@ body.night .logo { z-index: 6; box-shadow: 0 4px 0 #8f1424, 0 0 18px #ff3b52, 0 
 /* ---------- the player ---------- */
 .player { position: fixed; z-index: 60; top: 0; left: 0; right: 0; bottom: 0; background: #000; color: #fff; overflow: hidden; }
 .player.av { background: transparent; }
+body.av-active .store, body.av-active .mood, body.av-active .night-veil { display: none !important; }
 .p-stage, .p-stage > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .p-stage video, .p-stage canvas { object-fit: contain; background: #000; }
 .p-vhs { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: none; overflow: hidden;
@@ -2020,7 +2021,7 @@ body.night .logo { z-index: 6; }
   var extraAisles = [];      // catalogs from the person's installed addons
   var pager = {};            // aisle key -> { base, extras, type, skip, done, loading }
   var MAX_PER_AISLE = 600;
-  var APP_VERSION = "0.22.1", APP_UPDATED = "22 Nov 2026";
+  var APP_VERSION = "0.22.2", APP_UPDATED = "23 Nov 2026";
     // ---------- shared venue bridge (Friday Night Video <-> Saturday Night Karaoke <-> Strip Mall) ----------
   var FSN = (function () {
     var MAP = { street: "street.html", video: "store.html", karaoke: "bar.html" };
@@ -2029,8 +2030,16 @@ body.night .logo { z-index: 6; }
     function viaLoader() {
       try { return sessionStorage.getItem("fsn-via-loader") === "1"; } catch (e) { return false; }
     }
-    function idbPut(venue, html, cb) {
-      if (!window.indexedDB) { if (cb) cb(false); return; }
+    function idbRead(venue, cb) {
+      var fin = false, guard = null;
+      function out(nextHtml, curHtml) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        cb(nextHtml || null, curHtml || null);
+      }
+      if (!window.indexedDB) { out(null, null); return; }
+      guard = setTimeout(function () { out(null, null); }, 800);
       try {
         var req = indexedDB.open("fsn-cache", 1);
         req.onupgradeneeded = function () {
@@ -2039,14 +2048,54 @@ body.night .logo { z-index: 6; }
         };
         req.onsuccess = function () {
           try {
-            var db = req.result, tx = db.transaction("venues", "readwrite");
-            tx.objectStore("venues").put(html, venue);
-            tx.oncomplete = function () { try { db.close(); } catch (e) {} if (cb) cb(true); };
-            tx.onerror = function () { try { db.close(); } catch (e) {} if (cb) cb(false); };
-          } catch (e) { if (cb) cb(false); }
+            var db = req.result, tx = db.transaction("venues", "readonly"), st = tx.objectStore("venues");
+            var gNext = st.get("next-" + venue), gCur = st.get(venue);
+            var nextVal = null, curVal = null, left = 2;
+            function step() {
+              if (--left === 0) {
+                try { db.close(); } catch (e) {}
+                out(nextVal, curVal);
+              }
+            }
+            gNext.onsuccess = function () { nextVal = gNext.result || null; step(); };
+            gNext.onerror = step;
+            gCur.onsuccess = function () { curVal = gCur.result || null; step(); };
+            gCur.onerror = step;
+          } catch (e) { try { req.result.close(); } catch (x) {} out(null, null); }
         };
-        req.onerror = function () { if (cb) cb(false); };
-      } catch (e) { if (cb) cb(false); }
+        req.onerror = function () { out(null, null); };
+        req.onblocked = function () { out(null, null); };
+      } catch (e) { out(null, null); }
+    }
+    function idbPromote(venue, html, cb) {
+      var fin = false, guard = null;
+      function out(ok) {
+        if (fin) return;
+        fin = true;
+        if (guard) clearTimeout(guard);
+        if (cb) cb(ok);
+      }
+      if (!window.indexedDB) { out(false); return; }
+      guard = setTimeout(function () { out(false); }, 800);
+      try {
+        var req = indexedDB.open("fsn-cache", 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains("venues")) db.createObjectStore("venues");
+        };
+        req.onsuccess = function () {
+          try {
+            var db = req.result, tx = db.transaction("venues", "readwrite"), st = tx.objectStore("venues");
+            st.put(html, venue);
+            st["delete"]("next-" + venue);
+            tx.oncomplete = function () { try { db.close(); } catch (e) {} out(true); };
+            tx.onerror = function () { try { db.close(); } catch (e) {} out(false); };
+            tx.onabort = function () { try { db.close(); } catch (e) {} out(false); };
+          } catch (e) { try { req.result.close(); } catch (x) {} out(false); }
+        };
+        req.onerror = function () { out(false); };
+        req.onblocked = function () { out(false); };
+      } catch (e) { out(false); }
     }
 
     function commitBoot(venue, version, cb) {
@@ -2059,32 +2108,44 @@ body.night .logo { z-index: 6; }
         var pendKey = "fsn-boot-pending-" + venue;
         var pend = localStorage.getItem(pendKey);
         if (!pend) return done();
-        var html = null;
-        try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
-        function finish() {
-          try {
-            localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
-            localStorage.removeItem(pendKey);
-            localStorage.removeItem("fsn-boot-fails-" + venue);
-            if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
-              localStorage.removeItem("fsn-bad-ref-" + venue);
-            }
-            sessionStorage.removeItem("fsn-next-html-" + venue);
-          } catch (e) {}
+        function finish(cached) {
+          if (cached) {
+            try {
+              localStorage.setItem("fsn-good-" + venue, JSON.stringify({ ref: pend, version: version, t: Date.now() }));
+              if (localStorage.getItem("fsn-bad-ref-" + venue) && localStorage.getItem("fsn-bad-ref-" + venue) !== pend) {
+                localStorage.removeItem("fsn-bad-ref-" + venue);
+              }
+            } catch (e) {}
+          }
+          try { localStorage.removeItem(pendKey); } catch (e) {}
+          try { localStorage.removeItem("fsn-boot-fails-" + venue); } catch (e) {}
+          try { sessionStorage.removeItem("fsn-next-html-" + venue); } catch (e) {}
           done();
         }
-        if (html) {
-          var guard = setTimeout(finish, 800);
-          idbPut(venue, html, function (ok) {
-            clearTimeout(guard);
-            if (!ok) {
-              try { localStorage.setItem("fsn-cache-" + venue, html); } catch (e) {}
+        idbRead(venue, function (nextHtml, curHtml) {
+          var html = nextHtml;
+          if (!html) {
+            try { html = sessionStorage.getItem("fsn-next-html-" + venue); } catch (e) {}
+          }
+          if (html) {
+            idbPromote(venue, html, function (ok) {
+              if (ok) {
+                finish(true);
+              } else {
+                var lsOk = false;
+                try { localStorage.setItem("fsn-cache-" + venue, html); lsOk = true; } catch (e) {}
+                finish(lsOk);
+              }
+            });
+          } else {
+            var existing = curHtml;
+            if (!existing) {
+              try { existing = localStorage.getItem("fsn-cache-" + venue); } catch (e) {}
             }
-            finish();
-          });
-        } else {
-          finish();
-        }
+            var alreadyCached = !!(existing && (!version || existing.indexOf('APP_VERSION = "' + version + '"') !== -1));
+            finish(alreadyCached);
+          }
+        });
       } catch (e) { done(); }
     }
 
@@ -2678,12 +2739,22 @@ body.night .logo { z-index: 6; }
       for (var se = 1; se <= 2; se++) for (var ep = 1; ep <= 6; ep++)
         base.videos.push({ id: it.id + ":" + se + ":" + ep, season: se, episode: ep, title: "Episode " + ep, overview: "" });
     }
-    if (!live || !/^tt\d+$/.test(it.id)) { metaCache[it.id] = base; return Promise.resolve(base); }
+    if (!live) { metaCache[it.id] = base; return Promise.resolve(base); }
     if (metaFlights[it.id]) return metaFlights[it.id];
+    var isImdb = /^tt\d+$/.test(it.id), type = it.type === "series" ? "series" : "movie", url;
+    if (isImdb) {
+      url = CINEMETA + "/meta/" + type + "/" + idPath(it.id) + ".json";
+    } else {
+      var ad = (installedAddons || []).filter(function (a) {
+        return a && addonOK(a.transportUrl) && addonHas(a, "meta", type, it.id);
+      })[0];
+      if (!ad) { if (installedAddons && installedAddons.length) metaCache[it.id] = base; return Promise.resolve(base); }
+      url = addonBase(ad.transportUrl) + "/meta/" + type + "/" + idPath(it.id) + ".json";
+    }
     var id0 = it.id;
-    return metaFlights[id0] = getJSON(CINEMETA + "/meta/" + (it.type === "series" ? "series" : "movie") + "/" + idPath(it.id) + ".json", 6000).then(function (j) {
+    return metaFlights[id0] = getJSON(url, 6000).then(function (j) {
       delete metaFlights[id0];
-      var m = j.meta || {};
+      var m = (j && j.meta) || {};
       var yt = [];
       arr(m.trailers).forEach(function (t) { if (t && t.source) yt.push(t.source); });
       arr(m.trailerStreams).forEach(function (t) { if (t && t.ytId) yt.push(t.ytId); });
@@ -2694,7 +2765,7 @@ body.night .logo { z-index: 6; }
         imdbRating: m.imdbRating || "",
         runtime: m.runtime || base.runtime,
         trailers: yt,
-        background: webUrl(m.background) || ("https://images.metahub.space/background/medium/" + encodeURIComponent(it.id) + "/img"),
+        background: webUrl(m.background) || (isImdb ? "https://images.metahub.space/background/medium/" + encodeURIComponent(it.id) + "/img" : ""),
         videos: arr(m.videos).map(function (v) {
           return { id: String(v.id || ""), season: intIn(v.season, 0, 9999), episode: intIn(v.episode != null ? v.episode : v.number, 0, 99999), title: v.title || v.name || "", overview: v.overview || v.description || "", released: v.released, thumbnail: webUrl(v.thumbnail) };
         })
@@ -3128,10 +3199,20 @@ body.night .logo { z-index: 6; }
         rows[nr].forEach(function (el, i) { if (el.getAttribute("data-aisle") === aisle) best = i; });
       } else {
         var cur = rows[focus.r][focus.c].getBoundingClientRect(), cx = cur.left + cur.width / 2, bd = Infinity;
-        rows[nr].forEach(function (el, i) {
-          var b = el.getBoundingClientRect(), d = Math.abs(b.left + b.width / 2 - cx);
+        var row = rows[nr], i0 = 0, i1 = row.length - 1;
+        if (rowKinds[nr] === "shelf" && row.length) {
+          var sh = row[0].parentNode;
+          var shelfIdx = sh && /^shelf([0-2])$/.test(sh.id) ? +sh.id.charAt(5) : -1;
+          var step = shelfIdx >= 0 ? stepCache[shelfIdx] : 0;
+          if (step > 0 && sh.clientWidth > 0) {
+            i0 = Math.min(row.length - 1, Math.max(0, Math.floor(sh.scrollLeft / step) - 2));
+            i1 = Math.min(row.length - 1, Math.ceil((sh.scrollLeft + sh.clientWidth) / step) + 2);
+          }
+        }
+        for (var i = i0; i <= i1; i++) {
+          var b = row[i].getBoundingClientRect(), d = Math.abs(b.left + b.width / 2 - cx);
           if (d < bd) { bd = d; best = i; }
-        });
+        }
       }
       focus = { r: nr, c: best };
       applyFocus();
@@ -3242,14 +3323,53 @@ body.night .logo { z-index: 6; }
     tvTimer = setTimeout(function () { tvShow(it); }, 950);
   }
   // YouTube reports trouble (removed, region-locked, embedding off) through messages; if it does,
-  // the corner TV goes back to the still instead of showing an error card
+  // the corner TV goes back to the still instead of showing an error card.
+  // Like Karaoke, embeds route through player.html on GitHub Pages so YouTube sees a real website
+  // origin on TizenBrew (avoiding Error 152/153), falling back to a direct embed if the wrapper stalls.
+  var YT_DIRECT_ORIGIN = "https://www.youtube-nocookie.com";
+  var YT_WRAP_DEFAULT = "https://timmydouglas98-netizen.github.io/friday-and-saturday-night/player.html";
+  function ytStored(k) {
+    try {
+      var raw = localStorage.getItem(k);
+      if (raw == null || raw === "") return "";
+      try { return JSON.parse(raw); } catch (e) { return raw; }
+    } catch (e) { return ""; }
+  }
+  function ytWrapURL() {
+    var u = ytStored("snk-player-url");
+    if (typeof u === "string" && u) return u;
+    var base = ytStored("snk-phone-url");
+    if (typeof base === "string" && base) return base.replace(/index\.html$/, "") + "player.html";
+    return YT_WRAP_DEFAULT;
+  }
+  function ytUrlOrigin(u) {
+    var m = /^(https?:\/\/[^\/]+)/.exec(String(u || ""));
+    return m ? m[1] : "";
+  }
+  function ytNoWrap() {
+    var v = ytStored("snk-nowrap");
+    return v === true || v === 1 || v === "1" || v === "true";
+  }
+  function ytDirectURL(id, o) {
+    var v = encodeURIComponent(id);
+    var org = /^https?:\/\//.test(location.origin || "") ? "&origin=" + encodeURIComponent(location.origin) : "";
+    return YT_DIRECT_ORIGIN + "/embed/" + v +
+      "?autoplay=1&mute=" + (o.mute ? 1 : 0) + "&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" +
+      (o.loop ? "&loop=1&playlist=" + v : "") + org;
+  }
   var ytFrames = [];
   // Every trailer goes through here: no controls, no keyboard, no related videos, no annotations, and captions are
   // switched off as soon as the player answers.
   function ytHTML(id, o) {
+    o = o || {};
     var v = encodeURIComponent(id);
-    return '<iframe class="yt" tabindex="-1" title="' + esc(o.title || "Trailer") + '" allow="autoplay; encrypted-media" src="https://www.youtube-nocookie.com/embed/' + v +
-      "?autoplay=1&mute=" + (o.mute ? 1 : 0) + "&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" + (o.loop ? "&loop=1&playlist=" + v : "") + '"></iframe>';
+    var direct = ytDirectURL(id, o);
+    var wrapURL = ytWrapURL(), wrapOrigin = ytUrlOrigin(wrapURL);
+    var useWrap = !!wrapOrigin && !ytNoWrap() && /^[A-Za-z0-9_\-]{11}$/.test(String(id || ""));
+    var src = useWrap ? wrapURL + "#v=" + v + (o.mute ? "&mute=1" : "") + (o.loop ? "&loop=1" : "") : direct;
+    return '<iframe class="yt" tabindex="-1" title="' + esc(o.title || "Trailer") + '" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"' +
+      (useWrap ? ' data-yt-wrap="' + esc(wrapOrigin) + '" data-yt-direct="' + esc(direct) + '"' : "") +
+      ' src="' + esc(src) + '"></iframe>';
   }
   // Watch the trailer: full screen, with sound, over the box you're holding. Back or OK stops it; it closes by
   // itself when the trailer ends, and moves on to the next trailer if YouTube won't play one.
@@ -3278,13 +3398,18 @@ body.night .logo { z-index: 6; }
     trailerView = null; clearTimeout(tv.osdT);
     tv.el.innerHTML = ""; if (tv.el.parentNode) tv.el.parentNode.removeChild(tv.el);
     if (modal) modalFocus(true);
+    if (prefs.sound && !P && !landingOn && !sleepHold) startHum(true);
   }
   function trailerKey(k) {
     if (k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || k === KEY.OK || k === MEDIA.STOP || k === MEDIA.PLAYPAUSE) { sfx("close"); closeTrailer(); return; }
     var o = trailerView.el.querySelector(".tv-osd");   // any other key just brings the label back for a moment
     if (o) { o.classList.remove("gone"); clearTimeout(trailerView.osdT); trailerView.osdT = setTimeout(function () { o.classList.add("gone"); }, 3000); }
   }
-  function ytSay(frame, msg) { try { frame.contentWindow.postMessage(JSON.stringify(msg), "https://www.youtube-nocookie.com"); } catch (e) {} }
+  function ytTargetOrigin(frame) {
+    var wo = frame && frame.getAttribute("data-yt-wrap");
+    return wo || YT_DIRECT_ORIGIN;
+  }
+  function ytSay(frame, msg) { try { frame.contentWindow.postMessage(JSON.stringify(msg), ytTargetOrigin(frame)); } catch (e) {} }
   function ytQuiet(frame) {
     ytSay(frame, { event: "command", func: "unloadModule", args: ["captions"] });
     ytSay(frame, { event: "command", func: "unloadModule", args: ["cc"] });
@@ -3293,22 +3418,47 @@ body.night .logo { z-index: 6; }
   // h: { playing, ended, error }, each optional
   function ytWatch(frame, h) {
     if (!frame) return;
-    ytFrames = ytFrames.filter(function (x) { return document.body.contains(x.frame); });
-    ytFrames.push({ frame: frame, h: h || {}, on: false });
+    ytFrames = ytFrames.filter(function (x) {
+      if (document.body.contains(x.frame)) return true;
+      clearTimeout(x.wrapT);
+      return false;
+    });
+    var wrapOrigin = frame.getAttribute("data-yt-wrap") || "";
+    var direct = frame.getAttribute("data-yt-direct") || "";
+    var rec = { frame: frame, h: h || {}, on: false, wrapped: !!wrapOrigin, wrapOrigin: wrapOrigin, wrapOK: false, got: false, wrapT: null };
+    if (rec.wrapped && direct) {
+      rec.wrapT = setTimeout(function () {
+        rec.wrapT = null;
+        if (rec.wrapOK || rec.got || !rec.wrapped || !document.body.contains(frame)) return;
+        rec.wrapped = false; rec.wrapOrigin = "";
+        frame.removeAttribute("data-yt-wrap");
+        frame.src = direct;
+      }, 6000);
+    }
+    ytFrames.push(rec);
     frame.addEventListener("load", function () { ytSay(frame, { event: "listening", id: 1, channel: "widget" }); ytQuiet(frame); });
   }
   window.addEventListener("message", function (e) {
-    if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(String(e.origin))) return;
-    var rec = null; ytFrames.forEach(function (x) { if (x.frame.contentWindow === e.source) rec = x; });
-    if (!rec) return;
+    var rec = null;
+    ytFrames.forEach(function (x) { if (x.frame.contentWindow && x.frame.contentWindow === e.source) rec = x; });
+    if (!rec || !document.body.contains(rec.frame)) return;
+    var from = String(e.origin);
+    if (!(/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(from) || (rec.wrapped && rec.wrapOrigin && from === rec.wrapOrigin))) return;
     var d = e.data; try { d = typeof d === "string" ? JSON.parse(d) : d; } catch (x) { return; }
     if (!d) return;
+    if (d.event === "snk-wrap-ready") {
+      rec.wrapOK = true; clearTimeout(rec.wrapT); rec.wrapT = null;
+      ytQuiet(rec.frame);
+      return;
+    }
+    rec.got = true; clearTimeout(rec.wrapT); rec.wrapT = null;
+    if (d.event === "snk-tick") return;
     var st = d.event === "onStateChange" ? d.info : d.event === "infoDelivery" && d.info ? d.info.playerState : undefined;
     if (d.event === "onReady" || d.event === "initialDelivery") ytQuiet(rec.frame);
     if (d.event === "onError") { if (rec.h.error) rec.h.error(); }
     else if (st === 1) {
       ytQuiet(rec.frame);
-      if (!rec.on) { rec.on = true; setTimeout(function () { ytQuiet(rec.frame); }, 1500); }
+      if (!rec.on) { rec.on = true; setTimeout(function () { if (document.body.contains(rec.frame)) ytQuiet(rec.frame); }, 1500); }
       if (rec.h.playing) rec.h.playing();
     }
     else if (st === 0 && rec.h.ended) rec.h.ended();
@@ -3363,7 +3513,7 @@ body.night .logo { z-index: 6; }
 
   // ---------- painted store: ceiling, side aisles, carpet ----------
   function prep(cv) {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = window.tizen ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     var w = cv.clientWidth, h = cv.clientHeight;
     cv.width = Math.max(1, Math.round(w * dpr)); cv.height = Math.max(1, Math.round(h * dpr));
     var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3573,7 +3723,7 @@ body.night .logo { z-index: 6; }
     var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 5200; bp.Q.value = 0.8;
     var g3 = ac.createGain(); g3.gain.value = 0.006; n.connect(bp); bp.connect(g3); g3.connect(tubes);
     o1.start(); o2.start(); n.start();
-    var nodes = [o1, o2, n], timers = [];
+    var nodes = [o1, o2, n], timers = {};
     // rain on the roof, muffled through the ceiling
     if (wx === "drizzle" || wx === "rain" || wx === "storm") {
       var rn = ac.createBufferSource(); rn.buffer = noiseBuffer(3); rn.loop = true;
@@ -3582,10 +3732,10 @@ body.night .logo { z-index: 6; }
       rn.connect(rl); rl.connect(rg); rg.connect(out); rn.start(); nodes.push(rn);
     }
     if (wx === "storm") (function rumble() {
-      timers.push(setTimeout(function () { if (!hum) return; roomNoise(out, 3.5, "lowpass", 90, 0.22, 0, Math.random() - 0.5); rumble(); }, 15000 + Math.random() * 25000));
+      timers.rumble = setTimeout(function () { if (!hum) return; roomNoise(out, 3.5, "lowpass", 90, 0.22, 0, Math.random() - 0.5); rumble(); }, 15000 + Math.random() * 25000);
     })();
     (function customer() {
-      timers.push(setTimeout(function () { if (!hum) return; pickOne(CUSTOMERS)(out); customer(); }, 150000 + Math.random() * 210000));
+      timers.customer = setTimeout(function () { if (!hum) return; pickOne(CUSTOMERS)(out); customer(); }, 150000 + Math.random() * 210000);
     })();
     hum = { out: out, tubes: tubes, nodes: nodes, timers: timers, wx: wx, level: level };
     if (!quietStart) chime();
@@ -3598,9 +3748,17 @@ body.night .logo { z-index: 6; }
   function stopHum() {
     if (!hum) return;
     var h = hum; hum = null;
-    (h.timers || []).forEach(clearTimeout);
-    h.out.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
-    setTimeout(function () { h.nodes.forEach(function (n) { try { n.stop(); } catch (e) {} }); }, 400);
+    if (h.timers) Object.keys(h.timers).forEach(function (k) { clearTimeout(h.timers[k]); });
+    try {
+      var now = ac.currentTime;
+      h.out.gain.cancelScheduledValues(now);
+      h.out.gain.setValueAtTime(h.out.gain.value, now);
+      h.out.gain.linearRampToValueAtTime(0, now + 0.3);
+    } catch (e) {}
+    setTimeout(function () {
+      h.nodes.forEach(function (n) { try { n.stop(); } catch (e) {} });
+      try { h.out.disconnect(); } catch (e) {}
+    }, 400);
   }
   function tone(freq, start, dur, vol, type) {
     var o = ac.createOscillator(), g = ac.createGain();
@@ -3937,7 +4095,14 @@ body.night .logo { z-index: 6; }
 
 
   function pickOne(list) { return list[Math.floor(Math.random() * list.length)]; }
-  function shuffled(list) { return list.slice().sort(function () { return Math.random() - 0.5; }); }
+  function shuffled(list) {
+    var a = list.slice(), i, j, t;
+    for (i = a.length - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
   var moveClock = 0, moveStreak = 0, clerkReroll = false;
   // Two clerks share the counter. Their own picks come from the Letterboxd lists you give them (Front desk > Clerks & back room).
   var CLERKS = {
@@ -5029,7 +5194,7 @@ body.night .logo { z-index: 6; }
       ["Streaming server", prefs.server ? (lanHost((parseUrl(prefs.server) || {}).hostname) ? "set (home network)" : "set") : "not set"],
       ["Atmosphere", prefs.atmos + " · sound " + (!prefs.sound ? "off" : prefs.quiet ? "quiet" : "on")],
       ["Saved on this TV", storageUse()],
-      ["Loader", (function () { try { var g = JSON.parse(localStorage.getItem("fnv-good") || "null"); return g && g.ref ? "release " + g.ref + (localStorage.getItem("fnv-bad-ref") ? " · skipped broken " + localStorage.getItem("fnv-bad-ref") : "") : "not using releases yet"; } catch (e) { return "unknown"; } })()]
+      ["Loader", (function () { try { var g = JSON.parse(localStorage.getItem("fsn-good-video") || "null"), b = localStorage.getItem("fsn-bad-ref-video"); return g && g.ref ? "release " + g.ref + (b ? " · skipped broken " + b : "") : "not using releases yet"; } catch (e) { return "unknown"; } })()]
     ];
     var errs = diag.errors.length ? diag.errors.map(function (e) { return "<li><b>" + esc(ago(e.t)) + "</b> " + esc(e.msg) + "</li>"; }).join("") : "<li>Nothing has gone wrong since the store opened.</li>";
     openModal('<div class="panel diag" role="dialog" aria-label="Diagnostics"><div class="clerk-head"><div class="clerk-face" aria-hidden="true">i</div><p>How the store is doing. If something\'s not right, take a photo of this screen.</p></div>' +
@@ -5237,9 +5402,12 @@ body.night .logo { z-index: 6; }
   window.addEventListener("keydown", noteInput, true);
   window.addEventListener("click", noteInput, true);
   window.addEventListener("touchstart", function () { lastInput = Date.now(); }, true);
+  var lastLightAt = Date.now();
   setInterval(function () {
-    if (!demoOn && !modal && !P && !landingOn && !sleepHold && Date.now() - lastInput > IDLE_MS) startDemo();
-    updateLighting();
+    var now = Date.now();
+    if (!demoOn && !modal && !P && !landingOn && !sleepHold && now - lastInput > IDLE_MS) startDemo();
+    if (P) return;
+    if (now - lastLightAt >= 30000) { lastLightAt = now; updateLighting(); }
   }, 5000);
 
   // =====================================================================
@@ -5649,8 +5817,9 @@ body.night .logo { z-index: 6; }
     var avAudio = -1; // AVPlay never says which audio track is playing, so remember the one we picked
     stage.innerHTML = '<object id="avobj" type="application/avplayer"></object>';
     $("player").classList.add("av");
+    document.body.classList.add("av-active");
     document.documentElement.style.background = "transparent"; document.body.style.background = "transparent";
-    var paused = false, suspended = false, prepT = null;
+    var paused = false, suspended = false, prepT = null, closed = false, audioPicked = false, pendingAudio = -1;
     function avTracks() {
       try {
         return av.getTotalTrackInfo().map(function (t) {
@@ -5659,7 +5828,7 @@ body.night .logo { z-index: 6; }
         });
       } catch (e) { return []; }
     }
-    // the web player picks your language itself; AVPlay has to be told, before the tape starts
+    // the web player picks your language itself; AVPlay has to be told once playback enters PLAYING state
     function pickAudio() {
       try {
         var aud = avTracks().filter(function (t) { return t.type === "AUDIO"; });
@@ -5682,38 +5851,70 @@ body.night .logo { z-index: 6; }
         try { av.setBufferingParam("PLAYER_BUFFER_FOR_RESUME", "PLAYER_BUFFER_SIZE_IN_SECOND", 15); } catch (e) {}
       }
       av.setListener({
-        onbufferingstart: function () { cb.buffering(true); },
-        onbufferingcomplete: function () { cb.buffering(false); },
-        onstreamcompleted: function () { cb.ended(); },
-        onerror: function (e) { cb.error(String(e)); },
+        onbufferingstart: function () { if (closed) return; cb.buffering(true); },
+        onbufferingcomplete: function () { if (closed) return; cb.buffering(false); },
+        onstreamcompleted: function () { if (closed) return; cb.ended(); },
+        onerror: function (e) { if (closed) return; cb.error(String(e)); },
         oncurrentplaytime: function () {}
       });
-      prepT = setTimeout(function () { try { av.stop(); } catch (e) {} cb.error("prepare timeout"); }, 25000);
+      prepT = setTimeout(function () {
+        if (closed) return;
+        closed = true;
+        try { av.stop(); } catch (e) {}
+        cb.error("prepare timeout");
+      }, 25000);
       av.prepareAsync(function () {
-        clearTimeout(prepT);
-        pickAudio();
-        function rdy() { cb.ready(); }
+        clearTimeout(prepT); prepT = null;
+        if (closed) return;
+        function rdy() { if (closed) return; cb.ready(); }
         if (startMs) { try { av.seekTo(startMs, rdy, rdy); } catch (e) { rdy(); } } else rdy();
-      }, function (e) { clearTimeout(prepT); cb.error(String(e && e.name || e)); });
-    } catch (e) { setTimeout(function () { cb.error(String(e && e.message || e)); }, 0); }
+      }, function (e) {
+        clearTimeout(prepT); prepT = null;
+        if (closed) return;
+        cb.error(String(e && e.name || e));
+      });
+    } catch (e) { setTimeout(function () { if (closed) return; cb.error(String(e && e.message || e)); }, 0); }
     return {
       kind: "av",
-      start: function () { try { av.play(); paused = false; } catch (e) {} cb.playing(); },
-      play: function () { try { av.play(); paused = false; } catch (e) {} },
-      pause: function () { try { av.pause(); paused = true; } catch (e) {} },
+      start: function () {
+        if (closed) return;
+        var started = false;
+        try { av.play(); paused = false; started = true; } catch (e) {}
+        cb.playing();
+        if (started && !audioPicked && !closed) { audioPicked = true; pickAudio(); }
+      },
+      play: function () {
+        if (closed) return;
+        try {
+          av.play(); paused = false;
+          if (pendingAudio !== -1) {
+            var idx = pendingAudio; pendingAudio = -1;
+            try { av.setSelectTrack("AUDIO", idx); } catch (e) {}
+          }
+        } catch (e) {}
+      },
+      pause: function () { if (closed) return; try { av.pause(); paused = true; } catch (e) {} },
       paused: function () { return paused; },
       time: function () { try { return av.getCurrentTime(); } catch (e) { return 0; } },
       duration: function () { try { return av.getDuration(); } catch (e) { return 0; } },
-      seek: function (ms) { try { av.seekTo(Math.max(0, Math.round(ms))); } catch (e) {} },
+      seek: function (ms) { if (closed) return; try { av.seekTo(Math.max(0, Math.round(ms))); } catch (e) {} },
       // Samsung's player has to be put away when the TV leaves the app (Home, Source) and brought back after
-      suspend: function () { try { av.pause(); paused = true; } catch (e) {} try { av.suspend(); suspended = true; } catch (e) {} },
+      suspend: function () { if (closed) return; try { av.pause(); paused = true; } catch (e) {} try { av.suspend(); suspended = true; } catch (e) {} },
       restore: function () {
+        if (closed) return false;
         if (suspended) { suspended = false; try { av.restore(); } catch (e) { return false; } }
         try { av.pause(); paused = true; } catch (e) {}
         return true;
       },
       tracks: avTracks,
-      setTrack: function (type, index) { try { av.setSelectTrack(type, index); if (type === "AUDIO") avAudio = index; } catch (e) {} },
+      setTrack: function (type, index) {
+        if (closed) return;
+        if (type === "AUDIO" && paused) { pendingAudio = index; avAudio = index; return; }
+        try {
+          av.setSelectTrack(type, index);
+          if (type === "AUDIO") { avAudio = index; pendingAudio = -1; }
+        } catch (e) {}
+      },
       info: function () {
         var out = {};
         try {
@@ -5726,9 +5927,11 @@ body.night .logo { z-index: 6; }
         return out;
       },
       close: function () {
+        closed = true;
         clearTimeout(prepT); prepT = null;
         try { av.stop(); } catch (e) {} try { av.close(); } catch (e) {}
         stage.innerHTML = ""; $("player").classList.remove("av");
+        document.body.classList.remove("av-active");
         document.documentElement.style.background = ""; document.body.style.background = "";
       }
     };
@@ -5738,10 +5941,10 @@ body.night .logo { z-index: 6; }
     // load muted and paused; the tape only starts once the picture is ready
     v.autoplay = false; v.preload = "auto"; v.muted = true; v.setAttribute("playsinline", "");
     stage.innerHTML = ""; stage.appendChild(v);
-    var phase = "load", warmFrom = 0, warmT = null, seekT = null, buffering = false, lastT = -1;
+    var phase = "load", warmFrom = 0, warmT = null, seekT = null, loadT = null, buffering = false, lastT = -1;
     function readyNow() {
-      if (phase === "ready" || phase === "live") return;
-      phase = "ready"; clearTimeout(warmT);
+      if (phase === "ready" || phase === "live" || phase === "closed") return;
+      phase = "ready"; clearTimeout(warmT); clearTimeout(loadT);
       try { v.pause(); } catch (e) {}
       cb.ready();
     }
@@ -5775,7 +5978,7 @@ body.night .logo { z-index: 6; }
       if (buffering && lastT >= 0 && v.currentTime > lastT + 0.2) { buffering = false; cb.buffering(false); }
       lastT = v.currentTime;
     });
-    setTimeout(function () { if (phase === "load") cb.error("timed out loading"); }, 45000);
+    loadT = setTimeout(function () { if (phase === "load") cb.error("timed out loading"); }, 45000);
     function audioList() {
       var at = v.audioTracks, out = [];
       if (!at || typeof at.length !== "number") return out;
@@ -5808,7 +6011,7 @@ body.night .logo { z-index: 6; }
       try { v.audioTracks.addEventListener("addtrack", function () { setTimeout(pickAudio, 50); }); } catch (e) {}
     }
     v.addEventListener("ended", function () { if (phase === "live") cb.ended(); });
-    v.addEventListener("error", function () { clearTimeout(warmT); cb.error("code " + (v.error ? v.error.code : "?")); });
+    v.addEventListener("error", function () { clearTimeout(warmT); clearTimeout(loadT); if (phase !== "closed") cb.error("code " + (v.error ? v.error.code : "?")); });
     v.src = url;
     try { v.load(); } catch (e) {}
     return {
@@ -5834,7 +6037,7 @@ body.night .logo { z-index: 6; }
       tracks: audioList,
       canSwitchAudio: function () { return !!v.audioTracks; },
       setTrack: function (type, index) { if (type === "AUDIO") setAudio(index); },
-      close: function () { clearTimeout(warmT); clearTimeout(seekT); phase = "closed"; try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} stage.innerHTML = ""; }
+      close: function () { clearTimeout(warmT); clearTimeout(seekT); clearTimeout(loadT); phase = "closed"; try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) {} stage.innerHTML = ""; }
     };
   }
   // The sample tape you get in a browser preview (on the TV the real copy plays): colour bars with the store's
@@ -5869,7 +6072,6 @@ body.night .logo { z-index: 6; }
     cv.width = 960; cv.height = 540; stage.innerHTML = ""; stage.appendChild(cv);
     var ctx = cv.getContext("2d"), t = startMs || 0, playing = false;
     var dur = ((it.type === "series" ? 22 : it.runtime) || 100) * 60000;
-    var bars = ["#c0c0c0", "#c0c000", "#00c0c0", "#00c000", "#c000c0", "#c00000", "#0000c0"];
     var last = Date.now();
     var iv = setInterval(function () {
       var now = Date.now();
@@ -5905,6 +6107,7 @@ body.night .logo { z-index: 6; }
     P = { seq: ++playSeq, it: co.it, vid: co.vid, copies: co.copies, idx: co.idx || 0, start: resumeMs || 0, eng: null, menu: null, intro: null,
           lastSave: 0, lastSync: Date.now(), watched: 0, pend: 0, seekT: null, osdT: null, barT: null, subs: [], cues: null, cueLabel: "Off", ended: false,
           autoTries: 0, lastAt: 0, nextPre: false };
+    startPlayerLoops();
     var pl = $("player"); pl.hidden = false; pl.classList.toggle("vhs", !!prefs.vhs);
     $("pTitle").textContent = P.it.name + (P.it.type === "series" ? " · " + epLabel(P.vid) : "");
     $("pSubs").innerHTML = ""; $("pCenter").innerHTML = ""; $("pMenu").hidden = true;
@@ -6245,33 +6448,40 @@ body.night .logo { z-index: 6; }
     $("pEnd").textContent = endTxt;
     renderSubs(t);
   }
-  setInterval(function () {
-    if (!P || !P.eng || P.intro || !P.started) return;
-    tickPlayer();
-    var now = Date.now();
-    if (!P.eng.paused()) { P.watched += 500; if (P.eng.kind !== "fake") stats.ms += 500; }
-    if (now - P.lastSave > 10000) { P.lastSave = now; saveLocalProgress(false); save("fnv-stats", stats); }
-    if (now - P.lastSync > 60000) { P.lastSync = now; syncStremio(false); }
-    if (P.sleep && P.sleep.mode === "mins" && now >= P.sleep.at) goToSleep();
-    // the last few minutes of an episode: find the next one's copies now, so it starts straight after the countdown
-    if (!P.nextPre && P.it.type === "series" && nextEpMode() !== "off" && live && account) {
-      var pd = P.eng.duration(), pt = P.eng.time();
-      if (pd > 120000 && pt > 60000 && pd - pt < 240000) {
-        P.nextPre = true;
-        var preIt = P.it, preSeq = P.seq;
-        nextEpisode(function (nx) { if (nx && samePlay(preSeq)) streamCopies(preIt, nx.id, function () {}); });
+  var playerTickIv = null, playerSubIv = null;
+  function stopPlayerLoops() {
+    if (playerTickIv) { clearInterval(playerTickIv); playerTickIv = null; }
+    if (playerSubIv) { clearInterval(playerSubIv); playerSubIv = null; }
+  }
+  function startPlayerLoops() {
+    stopPlayerLoops();
+    playerTickIv = setInterval(function () {
+      if (!P || !P.eng || P.intro || !P.started) return;
+      tickPlayer();
+      var now = Date.now();
+      if (!P.eng.paused()) { P.watched += 500; if (P.eng.kind !== "fake") stats.ms += 500; }
+      if (now - P.lastSave > 10000) { P.lastSave = now; saveLocalProgress(false); save("fnv-stats", stats); }
+      if (now - P.lastSync > 60000) { P.lastSync = now; syncStremio(false); }
+      if (P.sleep && P.sleep.mode === "mins" && now >= P.sleep.at) goToSleep();
+      // the last few minutes of an episode: find the next one's copies now, so it starts straight after the countdown
+      if (!P.nextPre && P.it.type === "series" && nextEpMode() !== "off" && live && account) {
+        var pd = P.eng.duration(), pt = P.eng.time();
+        if (pd > 120000 && pt > 60000 && pd - pt < 240000) {
+          P.nextPre = true;
+          var preIt = P.it, preSeq = P.seq;
+          nextEpisode(function (nx) { if (nx && samePlay(preSeq)) streamCopies(preIt, nx.id, function () {}); });
+        }
       }
-    }
-    if (P.menu && P.menu.info && now - (P.infoT || 0) > 1000) {
-      P.infoT = now;
-      infoLines().forEach(function (l, i) { if (P.menu.els[i]) P.menu.els[i].textContent = l; });
-    }
-  }, 500);
-
-  // subtitles get their own quicker clock, so lines come and go on time rather than up to half a second late
-  setInterval(function () {
-    if (P && P.eng && P.cues && P.started && !P.intro) renderSubs(P.eng.time());
-  }, 100);
+      if (P.menu && P.menu.info && now - (P.infoT || 0) > 1000) {
+        P.infoT = now;
+        infoLines().forEach(function (l, i) { if (P.menu.els[i]) P.menu.els[i].textContent = l; });
+      }
+    }, 500);
+    // subtitles get their own quicker clock, so lines come and go on time rather than up to half a second late
+    playerSubIv = setInterval(function () {
+      if (P && P.eng && P.cues && P.started && !P.intro) renderSubs(P.eng.time());
+    }, 100);
+  }
   // never skip past the end of the tape: stop a few seconds short and let it finish properly
   function seekLimit(ms) { var d = P.eng.duration(); return Math.max(0, d ? Math.min(ms, d - 5000) : ms); }
   function queueSeek(delta) {
@@ -6515,7 +6725,7 @@ body.night .logo { z-index: 6; }
     fetchSubtitles(P.it, P.vid, copy).then(function (list) {
       if (!P || P.subsKey !== key) return;
       P.subs = list;
-      var m = prefs.subLang && list.filter(function (x) { return x.lang === prefs.subLang; })[0];
+      var m = prefs.subLang && list.filter(function (x) { return normLang(x.lang) === normLang(prefs.subLang); })[0];
       if (m) loadSubs(m); else P.cueLabel = "Off";
     });
   }
@@ -6720,11 +6930,14 @@ body.night .logo { z-index: 6; }
   }
   function closePlayer() {
     if (!P) return;
+    stopPlayerLoops();
     if (P.eng) { try { P.eng.close(); } catch (e) {} }
     clearTimeout(P.seekT); clearTimeout(P.osdT); clearTimeout(P.barT); clearTimeout(P.endT);
     clearInterval(P.fadeT); clearInterval(P.introIv);
     P = null;
     var pl = $("player"); pl.hidden = true; pl.classList.remove("bar-on", "vhs", "av", "sleeping");
+    document.body.classList.remove("av-active");
+    document.documentElement.style.background = ""; document.body.style.background = "";
     $("pIntro").hidden = true; $("pIntro").innerHTML = ""; $("pMenu").hidden = true; $("pSubs").innerHTML = ""; lastCue = "";
     lastInput = Date.now(); tvCurrent = null;
     if (prefs.sound && !sleepHold) startHum(true);
@@ -8216,7 +8429,7 @@ body.night .logo { z-index: 6; }
       on.setAttribute("data-w", closed ? "c" : "o");
     }
     // the same clock as the Strip and the bar: "11:21 am" (no weekday: the shops are named for Friday and Saturday)
-    var d = new Date(), h = d.getHours(), m = d.getMinutes(), days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
     $("landClock").textContent = ry ? "8:00 pm · " + ry : ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + (h < 12 ? " am" : " pm");
     // the same key-cap hints as the Strip and the bar's doorstep
     var tap = ("ontouchstart" in window) && !window.tizen;
@@ -8411,12 +8624,13 @@ body.night .logo { z-index: 6; }
       if (ac.createStereoPanner) { var p = ac.createStereoPanner(); p.pan.value = pan; sw.connect(p); p.connect(out); } else sw.connect(out);
       n.start(ac.currentTime, Math.random() * 4); lfo.start(); nodes.push(n, lfo);
       (function swell() {
-        timers.push(setTimeout(function () {
+        timers["cicada" + i] = setTimeout(function () {
           if (!amb) return;
           sw.gain.setTargetAtTime(0.03 + Math.random() * 0.02, ac.currentTime, 1.2);
-          timers.push(setTimeout(function () { if (amb) sw.gain.setTargetAtTime(0.003, ac.currentTime, 1.4); }, 2500 + Math.random() * 3000));
+          clearTimeout(timers["cicadaFade" + i]);
+          timers["cicadaFade" + i] = setTimeout(function () { if (amb) sw.gain.setTargetAtTime(0.003, ac.currentTime, 1.4); }, 2500 + Math.random() * 3000);
           swell();
-        }, 5000 + Math.random() * 6000 + i * 1500));
+        }, 5000 + Math.random() * 6000 + i * 1500);
       })();
     });
   }
@@ -8444,7 +8658,7 @@ body.night .logo { z-index: 6; }
       var bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1100; bp.Q.value = 3;
       var ng = ac.createGain(); ng.gain.value = 0.004; nb.connect(bp); bp.connect(ng); ng.connect(out); nb.start(); nodes.push(nb);
     }
-    var timers = [], month = new Date().getMonth(), summer = month === 11 || month === 0 || month === 1, hour = new Date().getHours();
+    var timers = {}, month = new Date().getMonth(), summer = month === 11 || month === 0 || month === 1, hour = new Date().getHours();
     var windy = isWindy();
     // summer evenings belong to the cicadas; the crickets take over once it's properly dark
     var cicadaTime = summer && !wet && (mode === "golden" || mode === "sunset");
@@ -8466,18 +8680,27 @@ body.night .logo { z-index: 6; }
       }, 14000 + Math.random() * 30000);
     })();
     // trams a few streets over (until about midnight), dogs in the evening, the sign creaking when it's windy
-    (function trams() { timers.push(setTimeout(function () { if (!amb) return; var h = new Date().getHours(); if (h >= 6 || h < 1) tramBell(out); trams(); }, 40000 + Math.random() * 60000)); })();
-    if (mode !== "day" && !wet) (function dogs() { timers.push(setTimeout(function () { if (!amb) return; dogBark(out); dogs(); }, 70000 + Math.random() * 90000)); })();
-    if (windy) (function creaks() { timers.push(setTimeout(function () { if (!amb) return; signCreak(out); creaks(); }, 8000 + Math.random() * 12000)); })();
+    (function trams() { timers.trams = setTimeout(function () { if (!amb) return; var h = new Date().getHours(); if (h >= 6 || h < 1) tramBell(out); trams(); }, 40000 + Math.random() * 60000); })();
+    if (mode !== "day" && !wet) (function dogs() { timers.dogs = setTimeout(function () { if (!amb) return; dogBark(out); dogs(); }, 70000 + Math.random() * 90000); })();
+    if (windy) (function creaks() { timers.creaks = setTimeout(function () { if (!amb) return; signCreak(out); creaks(); }, 8000 + Math.random() * 12000); })();
     // drips off the awning
     var dripIv = wet ? setInterval(function () { if (amb && Math.random() < 0.6) ptone(2200 + Math.random() * 1800, 0, 0.05, 0.012, Math.random() * 1.2 - 0.6, out, 0.7); }, 380) : null;
     amb = { out: out, nodes: nodes, iv: iv, owlT: function () { return owlT; }, dripIv: dripIv, wx: wx, mode: mode, windy: windy, timers: timers };
   }
   function stopAmbience() {
     if (!amb) return;
-    var a = amb; amb = null; clearInterval(a.iv); clearInterval(a.dripIv); clearTimeout(a.owlT()); (a.timers || []).forEach(clearTimeout);
-    try { a.out.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3); } catch (e) {}
-    setTimeout(function () { a.nodes.forEach(function (x) { try { x.stop(); } catch (e) {} }); }, 400);
+    var a = amb; amb = null; clearInterval(a.iv); clearInterval(a.dripIv); clearTimeout(a.owlT());
+    if (a.timers) Object.keys(a.timers).forEach(function (k) { clearTimeout(a.timers[k]); });
+    try {
+      var now = ac.currentTime;
+      a.out.gain.cancelScheduledValues(now);
+      a.out.gain.setValueAtTime(a.out.gain.value, now);
+      a.out.gain.linearRampToValueAtTime(0, now + 0.3);
+    } catch (e) {}
+    setTimeout(function () {
+      a.nodes.forEach(function (x) { try { x.stop(); } catch (e) {} });
+      try { a.out.disconnect(); } catch (e) {}
+    }, 400);
   }
   function showLanding(force) {
     if (prefs.outside === "skip" && !force) return false;
@@ -8558,9 +8781,8 @@ body.night .logo { z-index: 6; }
   }
   function goOutside() {
     if (showLanding()) return;
-    // the front door is skipped, so Back from the shelves would close the app: ask for a second press, as outside does
-    if (Date.now() - backArmed < 3000) { try { tizen.application.getCurrentApplication().exit(); } catch (x) {} }
-    else { backArmed = Date.now(); toast("Press Back again to close the store", 3000); }
+    // the front door is skipped, so Back from the shelves steps straight out onto the Strip
+    FSN.go("street");
   }
   $("land").addEventListener("animationend", function (e) { if (e.target && e.target.id === "landCam") $("land").classList.remove("cam-in"); });
   $("land").addEventListener("click", function () { if (prefs.sound && !amb) startAmbience(); enterStore(); });
@@ -8599,7 +8821,6 @@ body.night .logo { z-index: 6; }
   });
 
   // ---------- input: TV remote, keyboard, touch ----------
-  var backArmed = 0;
   var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, CHUP: 427, CHDOWN: 428, INFO: 457, CAPTION: 10221 };
   document.addEventListener("keydown", function (e) {
     var k = e.keyCode;
@@ -8765,26 +8986,5 @@ body.night .logo { z-index: 6; }
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { applyFocus(true); });
   FSN.ackBoot("video", APP_VERSION);
-  // The loader (app/index.html) tries a new release once. If the store gets this far and stays up for a few seconds,
-  // that release is kept as the known-good copy; if it never gets here, the loader goes back to the last good one.
-  setTimeout(function () {
-    try {
-      var pend = localStorage.getItem("fnv-boot-pending");
-      if (!pend) return;
-      var html = null, kept = false; try { html = sessionStorage.getItem("fnv-next-html"); } catch (e) {}
-      if (html) {
-        try { localStorage.setItem("fnv-store-cache", html); kept = true; }
-        catch (e) { try { localStorage.removeItem(SNAP_KEY); localStorage.setItem("fnv-store-cache", html); kept = true; } catch (x) {} }
-      }
-      // couldn't save this version: drop the older saved copy too, or the loader would keep opening that one for this release
-      if (!kept) { try { localStorage.removeItem("fnv-store-cache"); } catch (e) {} }
-      localStorage.setItem("fnv-good", JSON.stringify({ ref: pend, version: APP_VERSION, t: Date.now() }));
-      localStorage.removeItem("fnv-boot-pending");
-      localStorage.removeItem("fnv-boot-fails");
-      // a newer release has opened fine: forget the one that was skipped, so it can be tried again if it's ever re-issued
-      if (localStorage.getItem("fnv-bad-ref") && localStorage.getItem("fnv-bad-ref") !== pend) localStorage.removeItem("fnv-bad-ref");
-      try { sessionStorage.removeItem("fnv-next-html"); } catch (e) {}
-    } catch (e) {}
-  }, 4000);
 })();
 </script>
