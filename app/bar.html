@@ -39,6 +39,8 @@ body { font-family: var(--f-ui); color: var(--ink); -webkit-user-select: none; u
 @keyframes filmFlick { 0% { opacity: .02; } 14% { opacity: 0; } 29% { opacity: .035; } 43% { opacity: .01; } 57% { opacity: .03; } 71% { opacity: 0; } 86% { opacity: .025; } }
 #stage[data-sc="sing"] .grain, #stage[data-sc="sing"] .flick { display: none; }
 html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm .rain, html.calm .rain i { animation-play-state: paused !important; }
+html.calm #stageGlow, html.calm #scSing:after { display: none !important; }
+html.calm .receipt-stamp { transition: none !important; }
 .vig { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 92; background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(0,0,0,0) 66%, rgba(24,10,30,.18) 100%); }
 #fade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #08060c; pointer-events: none; opacity: 0; transition: opacity .5s; z-index: 95; }
 #fade.on { opacity: 1; }
@@ -132,6 +134,9 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
   background-image: linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.55) 38%, rgba(255,255,255,0) 46%), repeating-linear-gradient(rgba(0,0,0,0) 0 77px, rgba(60,90,140,.18) 77px 79px); background-position: 0 0, 0 104px; }
 .pg.l { left: 40px; border-radius: 8px 0 0 8px; }
 .pg.r { right: 40px; border-radius: 0 8px 8px 0; padding-left: 52px; }
+.pg.l:after, .pg.r:after { content: ""; position: absolute; top: 0; bottom: 0; width: 68px; pointer-events: none; z-index: 2; }
+.pg.l:after { right: 0; background: linear-gradient(to left, rgba(28,14,8,.28) 0%, rgba(28,14,8,.12) 28%, rgba(28,14,8,.03) 62%, rgba(28,14,8,0) 100%); }
+.pg.r:after { left: 0; background: linear-gradient(to right, rgba(28,14,8,.30) 0%, rgba(28,14,8,.13) 28%, rgba(28,14,8,.03) 62%, rgba(28,14,8,0) 100%); }
 .pg.turn { animation: pgTurn .25s steps(3); }
 @keyframes pgTurn { 0% { transform: scaleX(.2); opacity: .5; } 50% { transform: scaleX(.7); } 100% { transform: scaleX(1); } }
 .pg.l.turn { transform-origin: 100% 50%; } .pg.r.turn { transform-origin: 0 50%; }
@@ -167,10 +172,13 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 .dry .rain { display: none; }
 /* stage lights: a warm wash from above and two coloured side lights; they flare on each new line and each count-in lamp */
 #stageGlow { position: absolute; left: 0; right: 0; top: 0; height: 760px; pointer-events: none; }
-#stageGlow i { position: absolute; display: block; opacity: 0; will-change: opacity; }
+#stageGlow i { position: absolute; display: block; opacity: 0; will-change: opacity; transition: opacity .45s ease; }
 #stageGlow .w { left: 15%; right: 15%; top: -120px; height: 700px; background: radial-gradient(ellipse 50% 55% at 50% 0, rgba(255,214,150,.55), rgba(255,214,150,0) 70%); }
 #stageGlow .l { left: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 0 30%, rgba(255,95,162,.45), rgba(255,95,162,0) 70%); }
 #stageGlow .r { right: -10%; width: 50%; top: 0; height: 760px; background: radial-gradient(ellipse 60% 60% at 100% 30%, rgba(98,232,222,.4), rgba(98,232,222,0) 70%); }
+#stageGlow.p1 .l { background: radial-gradient(ellipse 60% 60% at 0 30%, rgba(96,172,255,.48), rgba(96,172,255,0) 70%); opacity: .85; }
+#stageGlow.p2 .r { background: radial-gradient(ellipse 60% 60% at 100% 30%, rgba(255,112,180,.48), rgba(255,112,180,0) 70%); opacity: .85; }
+#stageGlow.both .w { background: radial-gradient(ellipse 50% 55% at 50% 0, rgba(255,204,88,.55), rgba(255,204,88,0) 70%); opacity: .85; }
 #stageGlow.line .w { -webkit-animation: glowLine .9s ease-out; animation: glowLine .9s ease-out; }
 #stageGlow.line.alt .w { -webkit-animation: glowLine2 .9s ease-out; animation: glowLine2 .9s ease-out; }
 #stageGlow.line.a .l, #stageGlow.line.b .r { -webkit-animation: glowLine 1.1s ease-out; animation: glowLine 1.1s ease-out; }
@@ -186,7 +194,7 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 @-webkit-keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 @keyframes glowTick2 { 0% { opacity: 0; } 25% { opacity: .45; } 100% { opacity: 0; } }
 /* how far through the song: a thin tape-counter line along the bottom edge */
-#sgProg { position: absolute; left: 60px; right: 60px; bottom: 58px; height: 6px; border-radius: 3px; background: rgba(255,243,214,.16); pointer-events: none; }
+#sgProg { position: absolute; left: 96px; right: 96px; bottom: 96px; height: 6px; border-radius: 3px; background: rgba(255,243,214,.16); pointer-events: none; transition: opacity .6s ease; }
 #sgProg i { display: block; height: 100%; width: 100%; border-radius: 3px; background: #ffc857; transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
 #scSing.classic #stageGlow { display: none; }
 .rain.glass.near i { animation-duration: .5s; opacity: .5; }
@@ -197,11 +205,18 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 #lyCard .t { font-family: var(--f-toon); font-size: 68px; line-height: 1.1; margin: 8px 0 6px; }
 #lyCard .s { font-family: var(--f-ui); font-size: 32px; color: var(--muted); }
 #lyBreak { position: absolute; left: 0; right: 0; top: 440px; text-align: center; font-size: 56px; animation: pressBob 1.33s steps(1) infinite; }
-#osd { position: absolute; left: 60px; top: 44px; font-family: var(--f-osd); font-size: 44px; color: #7dffb0; text-shadow: 0 0 10px rgba(80,255,160,.5), 2px 2px 0 #06140c; white-space: pre; }
-#osdR { position: absolute; right: 60px; top: 44px; font-family: var(--f-osd); font-size: 38px; color: #7dffb0; text-shadow: 0 0 10px rgba(80,255,160,.5), 2px 2px 0 #06140c; text-align: right; }
-#timingHud { position: absolute; left: 60px; top: 152px; padding: 14px 20px; background: rgba(8, 10, 18, .82); border: 2px solid rgba(125, 255, 176, .45); border-radius: 8px; font-family: var(--f-osd); font-size: 27px; line-height: 1.25; color: #b8ffd6; white-space: pre; pointer-events: none; z-index: 12; }
+#osd { position: absolute; left: 96px; top: 54px; font-family: var(--f-osd); font-size: 44px; color: #7dffb0; text-shadow: 0 0 10px rgba(80,255,160,.5), 2px 2px 0 #06140c; white-space: pre; transition: opacity .6s ease; }
+#osdR { position: absolute; right: 96px; top: 54px; font-family: var(--f-osd); font-size: 38px; color: #7dffb0; text-shadow: 0 0 10px rgba(80,255,160,.5), 2px 2px 0 #06140c; text-align: right; transition: opacity .6s ease; }
+#timingHud { position: absolute; left: 96px; top: 160px; padding: 14px 20px; background: rgba(8, 10, 18, .82); border: 2px solid rgba(125, 255, 176, .45); border-radius: 8px; font-family: var(--f-osd); font-size: 27px; line-height: 1.25; color: #b8ffd6; white-space: pre; pointer-events: none; z-index: 12; }
+#scSing .hint { bottom: 44px; padding: 0 96px; transition: opacity .6s ease; }
+#scSing.chrome-idle #osd, #scSing.chrome-idle .hint { opacity: 0; }
+#scSing.chrome-idle #sgProg { opacity: .35; }
+#scSing.chrome-idle #osdR { opacity: .45; }
 #cue { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #1c0a12; z-index: 8;
-  background-image: repeating-linear-gradient(90deg, #6d1524 0 60px, #8e1f2e 60px 110px, #a9293a 110px 130px, #8e1f2e 130px 170px); }
+  background-image:
+    radial-gradient(ellipse 85% 36% at 50% 102%, rgba(255,198,92,.34) 0%, rgba(255,164,66,.14) 45%, rgba(255,164,66,0) 78%),
+    linear-gradient(to bottom, rgba(16,4,10,.62) 0%, rgba(16,4,10,.12) 22%, rgba(255,210,150,.06) 65%, rgba(255,190,90,.16) 92%, rgba(24,8,12,.38) 100%),
+    repeating-linear-gradient(90deg, #340710 0px, #6c1322 24px, #a8283b 52px, #bf3548 64px, #8a1d2d 90px, #470a16 120px, #340710 136px); }
 #cue .cue-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-1deg); width: 980px; padding: 40px 50px; background: var(--paper); border: 5px solid var(--ink); border-radius: 12px; box-shadow: 10px 12px 0 rgba(8,4,16,.6); text-align: center; }
 #cue .k { font-family: var(--f-ui); font-weight: 600; font-size: 26px; letter-spacing: .16em; text-transform: uppercase; color: #a8323e; }
 #cue .t { font-family: var(--f-toon); font-size: 62px; line-height: 1.1; margin: 10px 0; }
@@ -229,14 +244,26 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 .chip small, .btn small { display: block; font-weight: 400; font-size: 21px; opacity: .8; }
 .btn { background: #ffe08a; font-family: var(--f-toon); font-weight: 400; font-size: 36px; padding: 10px 34px 14px; box-shadow: 4px 5px 0 var(--ink); }
 .btn.plain { background: #fff; }
-.chip.on, .btn.on { outline: 6px solid #e2364a; outline-offset: 3px; transform: translateY(-3px); }
+.chip.on, .btn.on { position: relative; z-index: 2; background: #ffe08a; border-color: var(--ink); transform: translateY(-4px); box-shadow: 0 0 0 4px #ffc857, 0 0 0 8px var(--ink), 6px 9px 0 rgba(12,6,14,.55); }
+.chip.sel.on { background: #962235; color: #fff7df; }
 .btns { margin-top: 30px; }
 .opt { position: relative; margin: 0 0 10px; padding: 12px 22px 14px; border: 4px solid var(--ink); border-radius: 10px; background: #fff; font-size: 31px; font-weight: 600; }
 .opt span { float: right; font-weight: 400; color: var(--muted); max-width: 560px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.opt.on { background: #ffe08a; outline: 6px solid #e2364a; outline-offset: 2px; }
+.opt.on { z-index: 2; background: #ffe08a; border-color: var(--ink); transform: translateY(-4px); box-shadow: 0 0 0 4px #ffc857, 0 0 0 8px var(--ink), 6px 9px 0 rgba(12,6,14,.55); }
 .score { font-family: var(--f-osd); font-size: 200px; line-height: .9; color: #1d7a45; text-align: center; letter-spacing: .04em; }
 .verdict { font-family: var(--f-toon); font-size: 46px; text-align: center; margin: 4px 0 6px; }
-.receipt { background: #f7f5ee; font-family: var(--f-osd); }
+.receipt { background: #f6f4ec; font-family: var(--f-osd); }
+.card.receipt { background-color: #f6f4ec;
+  background-image:
+    linear-gradient(to bottom, rgba(42,28,24,.04) 0%, rgba(255,255,255,.22) 14%, rgba(255,255,255,0) 50%, rgba(42,28,24,.05) 100%),
+    repeating-linear-gradient(to bottom, rgba(42,28,24,0) 0px, rgba(42,28,24,0) 3px, rgba(42,28,24,.025) 3px, rgba(42,28,24,.025) 4px);
+  border-top: 0; border-bottom: 0; border-radius: 0; overflow: visible; padding-top: 44px; padding-bottom: 44px;
+  box-shadow: 10px 14px 0 rgba(8,4,16,.55); }
+.card.receipt:before, .card.receipt:after { content: ""; position: absolute; left: 0; right: 0; height: 14px; pointer-events: none; background-repeat: repeat-x; background-size: 28px 14px; }
+.card.receipt:before { top: -14px; background-image: radial-gradient(circle at 14px 0, transparent 10px, #f6f4ec 10.5px); }
+.card.receipt:after { bottom: -14px; background-image: radial-gradient(circle at 14px 14px, transparent 10px, #f6f4ec 10.5px); }
+.receipt-stamp { display: inline-block; padding: 6px 22px 8px; border: 5px solid #c8352b; border-radius: 8px; color: #c8352b; font-family: var(--f-osd); font-size: 46px; line-height: 1; letter-spacing: .12em; text-transform: uppercase; background: rgba(200,53,43,.06); box-shadow: inset 0 0 0 2px rgba(200,53,43,.35); opacity: 0; transform: rotate(-11deg) scale(2.1); transition: opacity .22s ease-out, transform .28s cubic-bezier(.18,.89,.32,1.18); pointer-events: none; }
+.receipt-stamp.in { opacity: .92; transform: rotate(-11deg) scale(1); }
 .pols { margin: 16px -10px 0; }
 .pol { display: inline-block; vertical-align: top; width: 230px; margin: 0 12px 22px; padding: 12px 12px 10px; background: #fff; border: 4px solid var(--ink); box-shadow: 4px 5px 0 rgba(20,8,14,.45); text-align: center; }
 .pol:nth-child(odd) { transform: rotate(-2deg); } .pol:nth-child(3n) { transform: rotate(2.4deg); }
@@ -247,7 +274,7 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 .qrow { position: relative; margin: 0 0 12px; padding: 12px 22px 12px 86px; border: 4px solid var(--ink); border-radius: 8px; background: #fff6c9; font-size: 31px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qrow b { position: absolute; left: 18px; top: 8px; font-family: var(--f-osd); font-size: 44px; color: #a8323e; font-weight: 400; }
 .qrow small { font-weight: 400; font-size: 24px; color: var(--muted); margin-left: 14px; }
-.qrow.on { outline: 6px solid #e2364a; outline-offset: 2px; background: #ffe08a; }
+.qrow.on { z-index: 2; background: #ffe08a; border-color: var(--ink); transform: translateY(-4px); box-shadow: 0 0 0 4px #ffc857, 0 0 0 8px var(--ink), 6px 9px 0 rgba(12,6,14,.55); }
 
 /* ---------- the letter board ---------- */
 #osk { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 0 30px; background: #24121a; border-top: 5px solid var(--ink); z-index: 70; text-align: center; box-shadow: 0 -10px 0 rgba(8,4,16,.4); }
@@ -288,6 +315,12 @@ html.calm .weave, html.calm .grain, html.calm .flick, html.calm .pan, html.calm 
 .ln .code { font-size: 28px; top: 24px; }
 .pgno { font-size: 24px; }
 .slip .no { font-size: 30px; }
+
+/* subtle CRT scanline overlay & upcoming-line preview during long breaks */
+#scSing:after { content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 4;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 3px, rgba(0,0,0,.09) 3px 4px); }
+#lyBreak { font-size: 46px; line-height: 1.3; padding: 0 120px; }
+#lyBreak small { display: block; font-family: var(--f-ui); font-size: 28px; font-weight: 500; letter-spacing: .04em; color: rgba(255,241,210,.78); text-shadow: 0 2px 0 #1a0c12; margin-top: 4px; }
 
 </style>
 <body>
@@ -2802,6 +2835,7 @@ var qrcode = function() {
     // ---- walking between venues: the street is laid out video store, then the bar to its right, with the Strip as the
     // step-back view. Leaving slides the scene the way you walk; the next venue slides in from the other side. ----
     var POS = { video: 0, karaoke: 1 }, walking = false;
+    var didWalkIn = false;
     function walkDir(from, to) {
       if (to === "street") return from && from !== "street" ? "out" : "";
       if (from in POS && to in POS && from !== to) return POS[to] > POS[from] ? "+1" : "-1";
@@ -2829,6 +2863,7 @@ var qrcode = function() {
         if (!w || !b || Date.now() - w.t > 8000) return;
         var from = w.dir === "+1" ? "translateX(14%)" : w.dir === "-1" ? "translateX(-14%)" : w.dir === "out" ? "scale(1.1)" : "";
         if (!from) return;
+        didWalkIn = true;
         document.documentElement.style.background = "#0c0a18";
         b.style.transformOrigin = "50% 60%"; b.style.transform = from; b.style.opacity = "0";
         var raf = window.requestAnimationFrame || function (f) { setTimeout(f, 16); };
@@ -2869,7 +2904,7 @@ var qrcode = function() {
       }
     }
 
-    return { go: go, viaLoader: viaLoader, ackBoot: ackBoot };
+    return { go: go, viaLoader: viaLoader, ackBoot: ackBoot, isWalking: function () { return didWalkIn; } };
   })();
 
 // ===== shared art kit =====
@@ -3940,13 +3975,13 @@ var qrcode = function() {
   // ---------- the stage screen's lettering: chunky bitmap type, the way the old karaoke machines drew it ----------
   // Lines are lettered on a tiny 384×216 screen (one dot = 5×5 TV pixels), in a Helvetica-style face with the
   // smoothing taken out, a dark outline and a drop shadow, then blown up without blurring. The colour wipes
-  // across the letters dot by dot as the line is sung.
+  // across the letters dot by dot (or syllable-by-syllable when ELRC syllable marks are present) as the line is sung.
   var PIX = { W: 384, H: 216, P: 5, FAM: 'SNKPix, Arimo, "Helvetica Neue", Helvetica, Arial, sans-serif' };
   var PIXCOL = { cur: [242, 240, 236], next: [172, 170, 194], sung: [236, 186, 72], line: [58, 56, 64], shadow: [14, 12, 22], lit: [236, 186, 72], unlit: [70, 64, 84],
     p1: [96, 172, 255], p2: [255, 112, 180], both: [236, 186, 72], dim: [150, 148, 170], bgCur: [158, 156, 180] };
   function blendCol(a, b, f) { return [Math.round(a[0] * (1 - f) + b[0] * f), Math.round(a[1] * (1 - f) + b[1] * f), Math.round(a[2] * (1 - f) + b[2] * f)]; }
   // mask → letters, a one-dot outline round them, and a shadow one dot down and to the right; fillAt(x, y) picks each pixel's colour
-  function pixPaint(mask, w, h, fillAt) {
+  function pixPaint(mask, w, h, fillAt, haloCol) {
     var img = new ImageData(w, h), d = img.data, n = w * h, ink = new Uint8Array(n), x, y, i;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x; if (mask[i]) { ink[i] = 2; continue; }
@@ -3961,7 +3996,7 @@ var qrcode = function() {
     for (y = 0; y < h; y++) {
       for (x = 0; x < w; x++) {
         i = y * w + x; var k = ink[i]; if (!k) continue;
-        var c = k === 2 ? fillAt(x, y) : k === 1 ? PIXCOL.line : PIXCOL.shadow, o = i * 4;
+        var c = k === 2 ? fillAt(x, y) : k === 1 ? (haloCol ? blendCol(PIXCOL.line, haloCol, 0.22) : PIXCOL.line) : PIXCOL.shadow, o = i * 4;
         d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = k === 3 ? 190 : 255;
       }
     }
@@ -4007,7 +4042,18 @@ var qrcode = function() {
             var xi = Math.round(x), x1 = Math.round(x + it.ww) + 1;
             t.fillText(it.wd.w, xi, y + base);
             if (isCur) {
-              rects.push({ row: ri, x0: xi, x1: x1, a: it.wd.a, b: it.wd.b, bg: !!it.wd.bg });
+              if (it.wd.segs && it.wd.segs.length > 1) {
+                var accTxt = "", prevX = xi;
+                for (var si = 0; si < it.wd.segs.length; si++) {
+                  var sg = it.wd.segs[si];
+                  accTxt += sg.txt;
+                  var sx1 = si === it.wd.segs.length - 1 ? x1 : Math.min(x1, Math.round(x + t.measureText(accTxt).width));
+                  rects.push({ row: ri, x0: prevX, x1: Math.max(prevX + 1, sx1), a: sg.a, b: sg.b, bg: !!it.wd.bg });
+                  prevX = sx1;
+                }
+              } else {
+                rects.push({ row: ri, x0: xi, x1: x1, a: it.wd.a, b: it.wd.b, bg: !!it.wd.bg });
+              }
               if (it.wd.bg) bgZones.push({ x0: xi - 1, x1: x1 + 1, y0: y, y1: y + rowH });
             }
             x += it.ww;
@@ -4029,7 +4075,7 @@ var qrcode = function() {
       var baseC = document.createElement("canvas"), sungC = document.createElement("canvas");
       baseC.width = sungC.width = PIX.W; baseC.height = sungC.height = h;
       baseC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? PIXCOL.bgCur : PIXCOL.cur) : r === "lab" ? lc : PIXCOL.next; }), 0, 0);
-      sungC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? bgSung : sc) : r === "lab" ? lc : PIXCOL.next; }), 0, 0);
+      sungC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? bgSung : sc) : r === "lab" ? lc : PIXCOL.next; }, sc), 0, 0);
       // the block sits in the lower half of the screen, lifted when it runs long
       var top = Math.max(84, Math.min(PIX.H - 14 - h, 150 - Math.round(h / 2)));
       page = { base: baseC, sung: sungC, h: h, top: top, rows: A.rows, rects: rects };
@@ -4125,6 +4171,16 @@ var qrcode = function() {
     believe: 2, angel: 2, little: 2, bottle: 2, trouble: 2, candle: 2, middle: 2
   };
 
+  var FUNC_WORDS = {
+    a: 1, an: 1, the: 1, to: 1, of: 1, in: 1, on: 1, at: 1, for: 1, and: 1, or: 1, but: 1,
+    is: 1, it: 1, my: 1, your: 1, you: 1, i: 1, we: 1, he: 1, she: 1, they: 1, so: 1,
+    as: 1, by: 1, be: 1, me: 1
+  };
+
+  var HOLD_WORDS = {
+    ooh: 1, aah: 1, yeah: 1, whoa: 1, oh: 1, hey: 1, la: 1
+  };
+
   function countSyllables(word) {
     var w = String(word || "").toLowerCase().replace(/[^a-zà-öø-ÿ']/g, "").replace(/'/g, "");
     if (!w) return 1;
@@ -4162,6 +4218,30 @@ var qrcode = function() {
     });
   }
 
+  function isAllBackingText(txt) {
+    var ws = String(txt || "").trim().split(/\s+/);
+    if (!ws.length || !ws[0]) return false;
+    var tagged = tagBackingWords(ws);
+    for (var i = 0; i < tagged.length; i++) {
+      if (!tagged[i].bg) return false;
+    }
+    return true;
+  }
+
+  // Detect non-sung credit, metadata, section header, instrumental, and separator lines
+  function isNonSungLine(txt) {
+    var t = String(txt || "").trim();
+    if (!t) return true;
+    if (/^[♪♫♬♩\s\-—–_*•·.=~|/\\]+$/.test(t)) return true;
+    if (/^\[[^\]]{1,40}\]$/.test(t)) return true;
+    if (/^[\(\[\-—–~\s]*(?:instrumental|interlude|guitar\s+solo|piano\s+solo|music\s+only|纯音乐|间奏|前奏|尾奏)[\)\]\-—–~\s.!]*$/i.test(t)) return true;
+    if (/纯音乐/.test(t)) return true;
+    if (/^(?:lyrics?|words?|music|composer|composed|producer|produced|arranged|arranger|written|writer|vocals?|mixed|mixing|mastered|mastering|recorded|recording|engineered|engineer|performed|performer|artist|singer|album|title|song|copyright|published|publisher)\s*(?:by\b|:|：)/i.test(t)) return true;
+    if (/^(?:作词|作詞|作曲|编曲|編曲|制作人|製作人|混音|母带|录音|监制|词曲)\s*(?:[:：]|$|\s+\S)/.test(t)) return true;
+    if (/^(?:演唱|歌手|出品|词|詞|曲)\s*[:：]/.test(t)) return true;
+    return false;
+  }
+
   function parseLRC(txt) {
     var out = [], offsetMs = 0, rawLines = String(txt || "").split(/\r?\n/);
     // Pass 1: read [offset:±ms] regardless of where it appears in the file
@@ -4187,7 +4267,7 @@ var qrcode = function() {
     return out;
   }
 
-  // Parse inline <mm:ss.xx> word/syllable timestamps, rejecting out-of-order marks
+  // Parse inline <mm:ss.xx> word/syllable timestamps, preserving sub-word segments and rejecting out-of-order marks
   function wordTimes(rest, offsetSec) {
     var off = offsetSec || 0;
     var re = /<(\d+):(\d+(?:[.:]\d+)?)>/g, m, marks = [];
@@ -4199,17 +4279,47 @@ var qrcode = function() {
     for (var k = 1; k < marks.length; k++) {
       if (marks[k].t < marks[k - 1].t - 0.01) return { ok: false, rejected: true };
     }
-    var words = [], cur = null, mi = -1, endT = null;
+    var words = [], cur = null, curSeg = null, mi = -1, endT = null;
     for (var i = 0; i < rest.length; i++) {
-      if (mi + 1 < marks.length && i === marks[mi + 1].at) { mi++; i = marks[mi].after - 1; continue; }
+      if (mi + 1 < marks.length && i === marks[mi + 1].at) {
+        mi++;
+        if (cur) {
+          curSeg = null;
+          cur._end = marks[mi].t;
+        }
+        i = marks[mi].after - 1;
+        continue;
+      }
       var ch = rest.charAt(i);
-      if (/\s/.test(ch)) { cur = null; continue; }
-      if (!cur) { cur = { w: "", a: mi >= 0 ? marks[mi].t : null }; words.push(cur); }
+      if (/\s/.test(ch)) { cur = null; curSeg = null; continue; }
+      if (!cur) {
+        cur = { w: "", a: mi >= 0 ? marks[mi].t : null, _segs: [], _end: null };
+        words.push(cur);
+      }
+      if (!curSeg) {
+        curSeg = { txt: "", a: mi >= 0 ? marks[mi].t : null };
+        cur._segs.push(curSeg);
+        cur._end = null;
+      }
       cur.w += ch;
+      curSeg.txt += ch;
     }
     if (marks.length && marks[marks.length - 1].after >= rest.replace(/\s+$/, "").length) endT = marks[marks.length - 1].t;
     if (!words.length || words.some(function (w) { return w.a == null; })) return { ok: false, rejected: true };
-    return { ok: true, words: words, end: endT };
+    var cleanWords = words.map(function (w, idx) {
+      var nextA = idx + 1 < words.length ? words[idx + 1].a : endT;
+      var wordEnd = w._end != null ? w._end : nextA;
+      var obj = { w: w.w, a: w.a };
+      if (w._end != null) obj.end = w._end;
+      if (w._segs.length > 1) {
+        obj.segs = w._segs.map(function (s, si) {
+          var sb = si + 1 < w._segs.length ? w._segs[si + 1].a : wordEnd;
+          return { txt: s.txt, a: s.a, b: sb != null ? Math.max(s.a + 0.01, sb) : null };
+        });
+      }
+      return obj;
+    });
+    return { ok: true, words: cleanWords, end: endT };
   }
 
   function percentile(arr, p) {
@@ -4221,19 +4331,99 @@ var qrcode = function() {
     return s[lo] + (s[hi] - s[lo]) * (idx - lo);
   }
 
-  // Convert timed rows into lines with per-song syllable pace estimation and zero overlap
+  // Convert timed rows into lines with section-aware pace estimation, prosody weighting, and zero overlap
   function buildLines(raw, dur) {
     var out = [], exactSamples = [], lineRates = [], mismatches = 0;
     var offsetMs = raw && typeof raw.offsetMs === "number" ? raw.offsetMs : 0;
+    var rawArr = raw || [];
 
-    // Pass 1: validate word-timed rows and collect pace samples across every line with a next line
+    // Collect all raw timestamps (including empty, credit, and metadata rows) as nextT upper bounds
+    var allTimes = [];
+    for (var ti = 0; ti < rawArr.length; ti++) {
+      allTimes.push(rawArr[ti].t);
+    }
+
+    // Pre-pass: filter non-sung credit/metadata lines and merge simultaneous-timestamp rows (within 0.05s)
+    var merged = [];
+    for (var ri = 0; ri < rawArr.length; ri++) {
+      var r = rawArr[ri];
+      if (isNonSungLine(r.text)) continue;
+      var trimmed = String(r.text).replace(/\s+/g, " ").trim();
+      var entry = {
+        t: r.t,
+        maxT: r.t,
+        text: trimmed,
+        wt: r.wt || null,
+        wtRejected: !!r.wtRejected,
+        extraBg: null
+      };
+      if (merged.length > 0 && Math.abs(entry.t - merged[merged.length - 1].t) <= 0.05) {
+        var prev = merged[merged.length - 1];
+        var prevBg = isAllBackingText(prev.text);
+        var curBg = isAllBackingText(entry.text);
+        if (curBg && !prevBg) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          if (prev.wt) {
+            prev.extraBg = (prev.extraBg ? prev.extraBg + " " : "") + entry.text;
+          } else {
+            prev.text = prev.text + " " + entry.text;
+          }
+          continue;
+        }
+        if (prevBg && !curBg) {
+          var bgTxt = prev.text;
+          prev.t = Math.min(prev.t, entry.t);
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.wt = entry.wt;
+          prev.wtRejected = entry.wtRejected;
+          if (entry.wt) {
+            prev.text = entry.text;
+            prev.extraBg = (prev.extraBg ? prev.extraBg + " " : "") + bgTxt;
+          } else {
+            prev.text = entry.text + " " + bgTxt;
+          }
+          continue;
+        }
+        if (prevBg && curBg) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.text = prev.text + " " + entry.text;
+          prev.wt = null;
+          continue;
+        }
+        // Two non-parenthetical lines sharing a timestamp
+        if (prev.text.toLowerCase() === entry.text.toLowerCase()) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          continue;
+        }
+        if (!prev.wt && !entry.wt) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.text = prev.text + " / " + entry.text;
+          continue;
+        }
+        // If either has exact word timings, keep both and offset the second cleanly
+        entry.t = prev.t + 0.5;
+        entry.maxT = entry.t;
+      }
+      merged.push(entry);
+    }
+
+    // Pass 1: validate word-timed rows, split into sections (>= 5.0s gap), and collect global + section pace samples
     var items = [];
-    raw.forEach(function (row, i) {
-      if (!row.text || /^[♪\s]*$/.test(row.text)) return;
+    var sections = [];
+    var curSecId = -1;
+    for (var i = 0; i < merged.length; i++) {
+      var row = merged[i];
+      if (i === 0 || (row.t - merged[i - 1].t) >= 5.0) {
+        curSecId++;
+        sections.push({ rates: [] });
+      }
       var words = row.text.split(/\s+/);
       var nextT = null;
-      for (var j = i + 1; j < raw.length; j++) {
-        if (raw[j].t > row.t + 0.001) { nextT = raw[j].t; break; }
+      for (var j = 0; j < allTimes.length; j++) {
+        if (allTimes[j] > row.maxT + 0.001) { nextT = allTimes[j]; break; }
+      }
+      if (i + 1 < merged.length && merged[i + 1].t > row.t + 0.001) {
+        if (nextT == null || merged[i + 1].t < nextT) nextT = merged[i + 1].t;
       }
       var tagged = tagBackingWords(words);
       var hasMain = tagged.some(function (x) { return !x.bg; });
@@ -4250,19 +4440,31 @@ var qrcode = function() {
           mismatches++;
         } else {
           var bad = false;
-          var firstA = W[0].a, lastA = W[W.length - 1].a;
+          var firstA = W[0].a;
+          var lastW = W[W.length - 1];
+          var lastMarkA = (lastW.segs && lastW.segs.length) ? lastW.segs[lastW.segs.length - 1].a : lastW.a;
           if (firstA < row.t - 1.5) bad = true;
           if (nextT != null && firstA > nextT + 0.5) bad = true;
-          if (nextT != null && lastA > nextT + 1.0) bad = true;
+          if (nextT != null && lastMarkA > nextT + 1.0) bad = true;
           for (var k = 1; k < W.length; k++) {
             if (W[k].a < W[k - 1].a - 0.01) { bad = true; break; }
           }
-          if (row.wt.end != null && row.wt.end < lastA - 0.01) bad = true;
+          if (!bad) {
+            for (var wk = 0; wk < W.length; wk++) {
+              if (W[wk].segs && W[wk].segs.length > 1) {
+                for (var sk = 1; sk < W[wk].segs.length; sk++) {
+                  if (W[wk].segs[sk].a < W[wk].segs[sk - 1].a - 0.01) { bad = true; break; }
+                }
+                if (bad) break;
+              }
+            }
+          }
+          if (row.wt.end != null && row.wt.end < lastMarkA - 0.01) bad = true;
           if (bad) {
             mismatches++;
           } else {
             validWt = row.wt;
-            var span = (row.wt.end || (lastA + 0.25)) - firstA;
+            var span = (row.wt.end || (lastMarkA + 0.25)) - firstA;
             if (span > 0.2 && effSyl >= 2) {
               var ep = span / effSyl;
               if (ep >= 0.10 && ep <= 0.80) exactSamples.push(ep);
@@ -4271,30 +4473,43 @@ var qrcode = function() {
         }
       }
 
-      // Compute (gap - breath) / syllables for every line with a next line; breaks naturally sit in the upper tail
+      // Compute (gap - breath) / syllables for every estimated line with a next line
       if (!validWt && nextT != null && effSyl >= 2) {
         var gap = nextT - row.t;
         if (gap > 0.25) {
           var rate = (gap - 0.25) / effSyl;
-          if (rate > 0.05) lineRates.push(rate);
+          if (rate > 0.05) {
+            lineRates.push(rate);
+            sections[curSecId].rates.push(rate);
+          }
         }
       }
 
-      items.push({ row: row, words: words, tagged: tagged, hasMain: hasMain, effSyl: effSyl, nextT: nextT, validWt: validWt });
-    });
+      items.push({ row: row, words: words, tagged: tagged, hasMain: hasMain, effSyl: effSyl, nextT: nextT, validWt: validWt, secId: curSecId });
+    }
 
-    // Learn song pace: median of exact lines if available, else 25th percentile across all lines (works for fast pop and slow ballads)
+    // Learn global song pace: median of exact lines if available, else 25th percentile across all lines
     var rawPace = exactSamples.length >= 2 ? percentile(exactSamples, 0.5)
       : lineRates.length >= 2 ? percentile(lineRates, 0.25)
       : exactSamples.length ? exactSamples[0]
       : lineRates.length ? lineRates[0]
       : 0.26;
-    var pace = Math.max(0.12, Math.min(0.65, rawPace));
+    var globalPace = Math.max(0.12, Math.min(0.65, rawPace));
+
+    // Compute per-section blended pace for sections with >= 3 estimated lines that have a next line
+    var sectionPaces = sections.map(function (sec) {
+      if (sec.rates.length >= 3) {
+        var localPace = percentile(sec.rates, 0.25);
+        return Math.max(0.11, Math.min(0.68, 0.65 * localPace + 0.35 * globalPace));
+      }
+      return globalPace;
+    });
 
     // Pass 2: build timed word entries
     var exactCount = 0, estCount = 0;
     items.forEach(function (it) {
       var row = it.row, tagged = it.tagged, nextT = it.nextT;
+      var linePace = sectionPaces[it.secId];
       var capEnd = nextT != null
         ? Math.max(row.t + 0.05, nextT - 0.04)
         : Math.min(dur || (row.t + 8), row.t + 8);
@@ -4304,20 +4519,44 @@ var qrcode = function() {
         exactCount++;
         var W = it.validWt.words;
         var startT = Math.min(row.t, W[0].a);
-        var defaultLastEnd = W[W.length - 1].a + Math.max(0.28, countSyllables(W[W.length - 1].w) * pace);
+        var lastWObj = W[W.length - 1];
+        var lastRefA = (lastWObj.segs && lastWObj.segs.length) ? lastWObj.segs[lastWObj.segs.length - 1].a : lastWObj.a;
+        var defaultLastEnd = lastRefA + Math.max(0.28, countSyllables(lastWObj.w) * linePace);
         var lastEnd = it.validWt.end != null ? it.validWt.end : defaultLastEnd;
         if (nextT != null) lastEnd = Math.min(lastEnd, capEnd);
-        lastEnd = Math.max(W[W.length - 1].a + 0.05, lastEnd);
-        if (nextT != null && lastEnd > nextT - 0.01) lastEnd = Math.max(W[W.length - 1].a + 0.02, nextT - 0.01);
+        lastEnd = Math.max(lastRefA + 0.05, lastEnd);
+        if (nextT != null && lastEnd > nextT - 0.01) lastEnd = Math.max(lastRefA + 0.02, nextT - 0.01);
+        var builtWords = W.map(function (x, k) {
+          var nextWA = k + 1 < W.length ? W[k + 1].a : lastEnd;
+          var rawB = x.end != null ? Math.min(x.end, nextWA) : nextWA;
+          var wb = Math.max(x.a + 0.03, Math.min(rawB, lastEnd));
+          var wObj = { w: x.w, a: x.a, b: wb, bg: tagged[k].bg };
+          if (x.segs && x.segs.length > 1) {
+            wObj.segs = x.segs.map(function (s, si) {
+              var sb = si + 1 < x.segs.length ? x.segs[si + 1].a : wb;
+              return { txt: s.txt, a: s.a, b: Math.max(s.a + 0.01, Math.min(sb, wb)) };
+            });
+          }
+          return wObj;
+        });
+        var finalText = row.text;
+        if (row.extraBg) {
+          var bgWs = row.extraBg.split(/\s+/);
+          var bgSpan = Math.min(0.6, Math.max(0.15, (capEnd - lastEnd)));
+          var bgStart = lastEnd;
+          var bgStep = bgSpan / bgWs.length;
+          bgWs.forEach(function (bw, bi) {
+            builtWords.push({ w: bw, a: bgStart + bi * bgStep, b: bgStart + (bi + 1) * bgStep, bg: true });
+          });
+          lastEnd = Math.min(capEnd, bgStart + bgSpan);
+          finalText = finalText + " " + row.extraBg;
+        }
         out.push({
           t: startT,
           end: lastEnd,
-          text: row.text,
+          text: finalText,
           exact: true,
-          words: W.map(function (x, k) {
-            var b = k + 1 < W.length ? W[k + 1].a : lastEnd;
-            return { w: x.w, a: x.a, b: Math.max(x.a + 0.03, b), bg: tagged[k].bg };
-          })
+          words: builtWords
         });
         return;
       }
@@ -4327,14 +4566,26 @@ var qrcode = function() {
       var weights = tagged.map(function (x, k) {
         var isLast = k === tagged.length - 1;
         var hasPause = !isLast && /[,;:—–-]$/.test(x.w);
+        var hasPunct = /[,;:—–\-!?.]$/.test(x.w);
         if (hasPause) commaCount++;
-        var base = (x.bg && it.hasMain) ? 0.35 : countSyllables(x.w);
+        var base;
+        if (x.bg && it.hasMain) {
+          base = 0.35;
+        } else {
+          base = countSyllables(x.w);
+          var cleanW = String(x.w || "").toLowerCase().replace(/[^a-zà-öø-ÿ']/g, "").replace(/'/g, "");
+          if (!isLast && !hasPunct && FUNC_WORDS[cleanW]) {
+            base = base * 0.78;
+          } else if (HOLD_WORDS[cleanW] || /^(?:oo+h|aa+h|yea+h|whoa+|oh+|hey+|la+)$/.test(cleanW)) {
+            base = base * 1.45;
+          }
+        }
         return base + (isLast ? 0.45 : 0) + (hasPause ? 0.45 : 0);
       });
       var totalW = 0;
       weights.forEach(function (v) { totalW += v; });
 
-      var pacedLen = it.effSyl * pace + 0.22 + commaCount * 0.14;
+      var pacedLen = it.effSyl * linePace + 0.22 + commaCount * 0.14;
       var end = Math.min(row.t + pacedLen, capEnd);
       if (nextT != null) {
         end = Math.max(Math.min(capEnd, row.t + 0.12), Math.min(end, capEnd));
@@ -4356,7 +4607,14 @@ var qrcode = function() {
       });
     });
 
-    out.meta = { pace: Math.round(pace * 1000) / 1000, exactCount: exactCount, estCount: estCount, mismatches: mismatches, offsetMs: offsetMs };
+    out.meta = {
+      pace: Math.round(globalPace * 1000) / 1000,
+      exactCount: exactCount,
+      estCount: estCount,
+      mismatches: mismatches,
+      offsetMs: offsetMs,
+      sectionPaces: sectionPaces.map(function (p) { return Math.round(p * 1000) / 1000; })
+    };
     return out;
   }
 
@@ -4476,8 +4734,495 @@ var qrcode = function() {
     return buildCandidate(best);
   }
 
+// ===== filtered PLL playback clock =====
+// Playback clock for Saturday Night Karaoke (ES5 / Chromium 69 / Samsung TV safe).
+// Concatenated directly inside app/bar.html's IIFE by src/build.py.
+// Exposes createPlaybackClock(opts) with monotonic prediction, median-of-3 outlier rejection,
+// symmetric damped PLL rate control, edge-triggered sample handling, and micro-stall freezing.
+
+function createPlaybackClock(opts) {
+  opts = opts || {};
+  var nowFn = typeof opts.now === "function"
+    ? opts.now
+    : function () { return performance.now(); };
+
+  var SNAP_THRESHOLD = 0.25;   // seconds: snap immediately when |diff| > 0.25s
+  var PLL_TAU = 0.45;          // seconds: symmetric damped PLL time constant
+  var RATE_MIN = 0.85;
+  var RATE_MAX = 1.18;
+  var STALL_EPS = 0.002;       // seconds: unchanged threshold for micro-stall detection
+  var STALL_MS = 350;          // ms: freeze clock if reportedSec unchanged this long while playing
+  var SEEK_TOL = 2.5;          // seconds: accept post-seek report within this window of target
+  var SEEK_TIMEOUT_MS = 2500;  // ms: release seek hold if no matching report arrives in time
+  var JITTER_WINDOW = 20;      // samples for RMS jitter readout
+
+  var t0, at, rate, state, paused, stalled, seeking, dur;
+  var clockSrc, lastReportAt, reportIntervalMs, lastCorrMs;
+  var diffBuf, jitterBuf, lastReported, lastReportedChangeAt;
+  var hasSynced, lastTime;
+
+  function clamp(v, lo, hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+  }
+
+  function median3(buf) {
+    var n = buf.length;
+    if (n === 0) return 0;
+    if (n === 1) return buf[0];
+    if (n === 2) return (buf[0] + buf[1]) * 0.5;
+    var a = buf[0], b = buf[1], c = buf[2];
+    if (a > b) { var t1 = a; a = b; b = t1; }
+    if (b > c) { var t2 = b; b = c; c = t2; }
+    if (a > b) { var t3 = a; a = b; b = t3; }
+    return b;
+  }
+
+  function computeRmsJitterMs() {
+    var n = jitterBuf.length;
+    if (!n) return 0;
+    var sumSq = 0;
+    for (var i = 0; i < n; i++) {
+      sumSq += jitterBuf[i] * jitterBuf[i];
+    }
+    return Math.round(Math.sqrt(sumSq / n) * 10000) / 10;
+  }
+
+  function rawTime(now) {
+    if (seeking) return seeking.target;
+    if (state === 1 && !paused && !stalled) {
+      var dt = (now - at) / 1000;
+      if (dt < 0) dt = 0;
+      var t = t0 + dt * rate;
+      if (t < lastTime) t = lastTime;
+      lastTime = t;
+      return t;
+    }
+    return t0;
+  }
+
+  function reset() {
+    var now = nowFn();
+    t0 = 0;
+    at = now;
+    rate = 1;
+    state = -1;
+    paused = false;
+    stalled = false;
+    seeking = null;
+    dur = 0;
+    clockSrc = "init";
+    lastReportAt = 0;
+    reportIntervalMs = 0;
+    lastCorrMs = 0;
+    diffBuf = [];
+    jitterBuf = [];
+    lastReported = null;
+    lastReportedChangeAt = now;
+    hasSynced = false;
+    lastTime = 0;
+  }
+
+  function setState(st) {
+    if (typeof st !== "number" || isNaN(st)) return;
+    if (paused && st === 1) return;
+    if (st === state) return;
+    var now = nowFn();
+    if (state === 1 && !stalled) {
+      t0 = rawTime(now);
+      at = now;
+      rate = 1;
+    }
+    state = st;
+    if (st === 1) {
+      at = now;
+      rate = 1;
+      stalled = false;
+      lastReportedChangeAt = now;
+    } else {
+      at = now;
+      rate = 1;
+      stalled = false;
+    }
+  }
+
+  function pause() {
+    var now = nowFn();
+    t0 = rawTime(now);
+    at = now;
+    rate = 1;
+    state = 2;
+    paused = true;
+    stalled = false;
+  }
+
+  function resume() {
+    var now = nowFn();
+    paused = false;
+    state = 1;
+    at = now;
+    rate = 1;
+    stalled = false;
+    lastReportedChangeAt = now;
+  }
+
+  function seekTo(targetSec, blind) {
+    var now = nowFn();
+    var target = typeof targetSec === "number" && isFinite(targetSec) ? Math.max(0, targetSec) : 0;
+    t0 = target;
+    at = now;
+    rate = 1;
+    lastTime = target;
+    stalled = false;
+    diffBuf = [];
+    lastReported = null;
+    lastReportedChangeAt = now;
+    seeking = blind ? null : { target: target, at: now };
+  }
+
+  function report(reportedSec, ropts) {
+    ropts = ropts || {};
+    if (typeof ropts.dur === "number" && isFinite(ropts.dur) && ropts.dur > 0) {
+      dur = ropts.dur;
+    }
+    if (paused) return;
+    if (typeof reportedSec !== "number" || isNaN(reportedSec) || !isFinite(reportedSec)) return;
+
+    var now = nowFn();
+    if (lastReportAt > 0) {
+      reportIntervalMs = Math.round(now - lastReportAt);
+    }
+    lastReportAt = now;
+
+    if (typeof ropts.src === "string" && ropts.src) {
+      clockSrc = ropts.src;
+    }
+
+    var repState = typeof ropts.state === "number" && !isNaN(ropts.state) ? ropts.state : state;
+    var wallDelay = typeof ropts.wallDelaySec === "number" && isFinite(ropts.wallDelaySec)
+      ? clamp(ropts.wallDelaySec, 0, 0.5)
+      : 0;
+    var adjReported = repState === 1 ? reportedSec + wallDelay : reportedSec;
+    if (adjReported < 0) adjReported = 0;
+
+    // Seek hold: keep time() at target until a playing report arrives within 2.5s of target
+    // or the 2.5s timeout elapses, then snap cleanly.
+    if (seeking) {
+      var nearTarget = repState === 1 && Math.abs(adjReported - seeking.target) < SEEK_TOL;
+      var timedOut = (now - seeking.at) >= SEEK_TIMEOUT_MS;
+      if (nearTarget || timedOut) {
+        if (typeof ropts.state === "number") {
+          state = ropts.state;
+        }
+        seeking = null;
+        t0 = adjReported;
+        at = now;
+        rate = 1;
+        lastTime = t0;
+        lastCorrMs = 0;
+        stalled = false;
+        hasSynced = true;
+        diffBuf = [];
+        lastReported = reportedSec;
+        lastReportedChangeAt = now;
+      }
+      return;
+    }
+
+    if (typeof ropts.state === "number") {
+      setState(ropts.state);
+    }
+
+    // If not playing, only sync on initial report or large external jump.
+    if (state !== 1) {
+      var nonPlayDiff = adjReported - t0;
+      lastCorrMs = Math.round(nonPlayDiff * 1000);
+      if (!hasSynced || Math.abs(nonPlayDiff) > SNAP_THRESHOLD) {
+        t0 = adjReported;
+        at = now;
+        rate = 1;
+        lastTime = t0;
+        hasSynced = true;
+        diffBuf = [];
+      }
+      lastReported = reportedSec;
+      lastReportedChangeAt = now;
+      return;
+    }
+
+    // Micro-stall detection while playing (state === 1)
+    var unchanged = lastReported !== null && Math.abs(reportedSec - lastReported) < STALL_EPS;
+    if (unchanged) {
+      if (!stalled && (now - lastReportedChangeAt) >= STALL_MS) {
+        t0 = rawTime(now);
+        at = now;
+        rate = 1;
+        stalled = true;
+        diffBuf = [];
+      }
+      return;
+    }
+
+    // reportedSec has advanced (or this is the very first report)
+    var wasStalled = stalled;
+    lastReported = reportedSec;
+    lastReportedChangeAt = now;
+    if (wasStalled) {
+      stalled = false;
+      at = now;
+      rate = 1;
+      diffBuf = [];
+    }
+
+    // Heartbeat / non-edge sample when already synced: ignore for PLL so quantized ticks don't bias the clock
+    if (ropts.edge === false && hasSynced && !wasStalled) {
+      return;
+    }
+
+    var predicted = rawTime(now);
+    var diff = adjReported - predicted;
+    lastCorrMs = Math.round(diff * 1000);
+
+    // Initial sync or large recovery jump (|diff| > 0.25s)
+    if (!hasSynced || Math.abs(diff) > SNAP_THRESHOLD) {
+      t0 = adjReported;
+      at = now;
+      rate = 1;
+      lastTime = t0;
+      hasSynced = true;
+      diffBuf = [];
+      return;
+    }
+
+    // Record jitter sample for stats
+    jitterBuf.push(diff);
+    if (jitterBuf.length > JITTER_WINDOW) {
+      jitterBuf.shift();
+    }
+
+    // Median-of-3 outlier filter on small diffs
+    diffBuf.push(diff);
+    if (diffBuf.length > 3) {
+      diffBuf.shift();
+    }
+    var filteredDiff = median3(diffBuf);
+
+    // Symmetric damped PLL rate control (zero backward steps, zero median bias)
+    t0 = predicted;
+    at = now;
+    lastTime = t0;
+    rate = clamp(1 + filteredDiff / PLL_TAU, RATE_MIN, RATE_MAX);
+  }
+
+  function time() {
+    return rawTime(nowFn());
+  }
+
+  function stats() {
+    return {
+      clockSrc: clockSrc,
+      reportIntervalMs: reportIntervalMs,
+      lastCorrMs: lastCorrMs,
+      rmsJitterMs: computeRmsJitterMs(),
+      rate: rate,
+      stalled: stalled,
+      state: state,
+      paused: paused,
+      seeking: !!seeking
+    };
+  }
+
+  reset();
+
+  return {
+    time: time,
+    report: report,
+    setState: setState,
+    pause: pause,
+    resume: resume,
+    seekTo: seekTo,
+    reset: reset,
+    stats: stats
+  };
+}
+
+// ===== instrumental / chapter track matcher =====
+// Track-matching, description intro parsing, and two-point drift fit helpers for Saturday Night Karaoke.
+// Pure ES5 (Chromium 69 / Samsung TV safe), strict-mode IIFE-safe.
+// Concatenated inside app/bar.html's IIFE by src/build.py (where norm, cleanTitle, firstArtist exist),
+// and also works standalone in Node.js for unit testing.
+
+function parseDescIntroSec(desc) {
+  if (!desc || typeof desc !== "string") return null;
+  var lines = String(desc).split(/\r?\n/);
+  var tsRe = /\b(\d+):(\d{2})(?::(\d{2}))?\b/;
+  // only markers that mean "the singing starts here". A Chorus (or Bridge) chapter isn't the first vocal: the verse
+  // before it may simply not be marked, so it's only used when it comes straight after an Intro chapter (below).
+  var vocalRe = /\b(vocals?|verse(?:\s*\d+)?|lyrics?\s+(?:start|begin)s?|song\s+starts?|starts?|begins?|singing)\b/i;
+  var introRe = /\b(intro|count[\s-]?in|countdown|music\s+intro|instrumental\s+intro)\b/i;
+  var chapters = [];
+  var i, line, m, sec;
+
+  for (i = 0; i < lines.length; i++) {
+    line = lines[i];
+    m = tsRe.exec(line);
+    if (!m) continue;
+    if (m[3] !== undefined) {
+      var h = +m[1], mm = +m[2], ss = +m[3];
+      if (mm >= 60 || ss >= 60) continue;
+      sec = h * 3600 + mm * 60 + ss;
+    } else {
+      var m1 = +m[1], s1 = +m[2];
+      if (s1 >= 60) continue;
+      sec = m1 * 60 + s1;
+    }
+    chapters.push({ sec: sec, line: line });
+    // a chapter labelled just "Song" (e.g. "0:09 Song") marks the start too; "song" inside a sentence doesn't
+    var label = line.replace(tsRe, "").replace(/[^a-z]+/gi, " ").trim().toLowerCase();
+    if (sec > 0 && sec <= 60 && (vocalRe.test(line) || label === "song")) {
+      return sec;
+    }
+  }
+
+  for (i = 0; i < chapters.length - 1; i++) {
+    if (chapters[i].sec === 0 && introRe.test(chapters[i].line)) {
+      var nextSec = chapters[i + 1].sec;
+      if (nextSec >= 2 && nextSec <= 35) {
+        return nextSec;
+      }
+    }
+  }
+
+  return null;
+}
+
+function nearestDurDiff(vDur, candDurs) {
+  if (!(vDur > 0)) return 0;
+  if (typeof candDurs === "number") return candDurs > 0 ? Math.abs(vDur - candDurs) : 0;
+  if (!Array.isArray(candDurs) || !candDurs.length) return 0;
+  var best = 1e9;
+  for (var i = 0; i < candDurs.length; i++) {
+    var d = Math.abs(vDur - candDurs[i]);
+    if (d < best) best = d;
+  }
+  return best < 1e8 ? best : 0;
+}
+
+function rankVideos(list, song, mode, candDurs) {
+  var normFn = typeof norm === "function"
+    ? norm
+    : function (s) { return String(s || "").toLowerCase().replace(/\(.*?\)|\[.*?\]/g, " ").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim(); };
+  var cleanTitleFn = typeof cleanTitle === "function"
+    ? cleanTitle
+    : function (t) { return String(t || "").replace(/\s*\((?!I've).*?\)\s*/g, " ").replace(/^\.+/, "").trim() || String(t || ""); };
+  var firstArtistFn = typeof firstArtist === "function"
+    ? firstArtist
+    : function (a) { return String(a || "").split(/\s+(?:&|feat\.?|ft\.?|with|and)\s+|,\s*/i)[0]; };
+
+  var nt = normFn(song.t);
+  var bad = mode === "back"
+    ? /\b(cover|live|remix|reaction|tutorial|lesson|piano|guitar|slowed|sped|8d|nightcore|lower key|higher key|drum|bass only)\b/
+    : /\b(cover|live|remix|reaction|tutorial|lesson|karaoke|instrumental|slowed|sped|8d|nightcore|lyrics?)\b/;
+  var want = /\b(instrumental|karaoke|backing|minus one|no vocals)\b/;
+  function low(x) { return String(x).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim(); }
+  var artFull = low(song.a), art = low(firstArtistFn(song.a)), seen = {};
+  var cleanT = low(cleanTitleFn(song.t));
+
+  return (list || []).filter(function (v) {
+    if (!v || seen[v.id]) return false;
+    seen[v.id] = 1;
+    return true;
+  }).map(function (v) {
+    var full = low(v.title), t = full.replace(cleanT, " ");
+    var d = nearestDurDiff(v.dur, candDurs);
+    var sc = d * 1.5 + (v.rank || 0) * 0.4;
+    var ch = low(v.ch);
+    var isTopic = / topic$/.test(ch) || /provided to youtube by/i.test(v.desc || "");
+    var isArtistCh = (artFull && ch.indexOf(artFull) !== -1) || (art && ch.indexOf(art) !== -1);
+    var isVevo = /\bvevo\b/.test(ch);
+    var official = isTopic || isArtistCh || isVevo;
+
+    if (bad.test(t)) sc += 40;
+    if (mode === "back" && !want.test(t)) sc += 60;
+    if (full.indexOf(cleanT) === -1 && full.indexOf(nt) === -1) sc += 30;
+
+    if (mode === "band") {
+      if (isTopic) sc -= 20;
+      else if (isArtistCh && /official audio/.test(t)) sc -= 14;
+      else if (isArtistCh || isVevo) sc -= 6;
+    } else {
+      if (official && /instrumental/.test(t)) sc -= 14;
+      if (/official instrumental/.test(t)) sc -= 6;
+      if (/\bkaraoke\b/.test(t) && !official) sc += 3;
+      if (/\b(official|original|studio|album)\s+instrumental\b/.test(t) || /\b(stems?|multitrack)\b/.test(t)) sc -= 12;
+      if (d > 0 && d <= 1.5) sc -= 4;
+      if (!official && /\b(karaoke version|in the style of|made famous by|tribute)\b/.test(t)) sc += 6;
+    }
+
+    return {
+      id: v.id,
+      dur: v.dur || 0,
+      d: d,
+      sc: sc,
+      official: official,
+      ch: v.ch,
+      introSec: parseDescIntroSec(v.desc)
+    };
+  }).sort(function (a, b) { return a.sc - b.sc; });
+}
+
+function fitTwoPointShift(pts, minSpanSec, maxSlope) {
+  if (!Array.isArray(pts) || pts.length < 2) return null;
+  var p1 = pts[0], p2 = pts[pts.length - 1];
+  var span = p2.t - p1.t;
+  var minSpan = minSpanSec || 30;
+  var maxS = maxSlope || 0.05;
+  if (span < minSpan) return null;
+  var b = (p2.off - p1.off) / span;
+  if (Math.abs(b) > maxS) return null;
+  return {
+    a: Math.round((p1.off - b * p1.t) * 1000) / 1000,
+    b: Math.round(b * 100000) / 100000
+  };
+}
+
+// Adds a timing anchor where the singer corrected the words (t: song time, off: the new offset, dir: +1 later / -1
+// earlier). An anchor within 15 s of the last one replaces it: that's still the same correction being fine-tuned.
+function addDriftPoint(pts, t, off, dir) {
+  var out = Array.isArray(pts) ? pts.slice() : [];
+  var pt = { t: t, off: off, dir: dir > 0 ? 1 : dir < 0 ? -1 : 0 };
+  if (out.length && Math.abs(t - out[out.length - 1].t) <= 15) out[out.length - 1] = pt;
+  else out.push(pt);
+  return out;
+}
+
+// Tempo drift from the anchors, or null for "no drift: just a fixed offset". A backing track that runs slow or fast
+// keeps needing nudges the same way; one nudge back against the previous one is an overshoot being corrected, not
+// drift. So the fit uses the latest run of anchors whose offsets all move one way, and needs either two such steps
+// in a row, or one step in the same direction as the nudge that set the run's first anchor.
+function fitDriftShift(pts, minSpanSec, maxSlope) {
+  if (!Array.isArray(pts) || pts.length < 2) return null;
+  function sgn(x) { return x > 1e-9 ? 1 : x < -1e-9 ? -1 : 0; }
+  var n = pts.length, s = sgn(pts[n - 1].off - pts[n - 2].off);
+  if (!s) return null;
+  var i = n - 2;
+  while (i > 0 && sgn(pts[i].off - pts[i - 1].off) === s) i--;
+  if (n - 1 - i < 2 && (pts[i].dir || 0) !== s) return null;
+  return fitTwoPointShift(pts.slice(i), minSpanSec, maxSlope);
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    parseDescIntroSec: parseDescIntroSec,
+    nearestDurDiff: nearestDurDiff,
+    rankVideos: rankVideos,
+    fitTwoPointShift: fitTwoPointShift,
+    addDriftPoint: addDriftPoint,
+    fitDriftShift: fitDriftShift
+  };
+}
+
 // ===== the bar =====
-  var APP_VERSION = "0.6.6", APP_DATE = "23 Nov 2026";
+  var APP_VERSION = "0.7.2", APP_DATE = "26 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -5067,7 +5812,8 @@ var qrcode = function() {
   function phoneCount() { var n = 0, now = Date.now(); for (var k in phones) if (now - phones[k] < 4 * 3600000) n++; return n; }
   function toPhones(obj) { if (line) relaySend(topicPh(), obj, pkeyBytes).catch(function () {}); }
   function stateObj() {
-    return { t: "state", bar: prefs.barName, now: S && !S.loading ? { s: who(S.q), t: S.q.song.t, a: S.q.song.a } : null,
+    return { t: "state", bar: prefs.barName,
+      now: S && !S.loading ? { s: who(S.q), t: S.q.song.t, a: S.q.song.a, playing: !!(S.player && S.player.playing()), off: S.off, mode: S.q.mode } : null,
       q: queue.slice(0, 8).map(function (q) { return { s: who(q), t: clip(q.song.t, 60), a: clip(q.song.a, 40) }; }), n: queue.length, key: !!prefs.ytKey };
   }
   function sendState(force) {
@@ -5105,6 +5851,21 @@ var qrcode = function() {
       prefs.ytKey = k; savePrefs(); toPhones({ t: "ack", id: id2, ok: true }); sfx("stamp");
       openDesk("d-key"); say("Lovely. The jukebox key came through from the phone."); sendState(true);
     }
+    else if (m.t === "stage" && SC === "sing" && S && !S.loading) {
+      var cmd = str(m.cmd, 16);
+      if (cmd === "nudge") { nudge(m.dir < 0 ? -1 : 1, false); sendState(true); }
+      else if (cmd === "pause") {
+        if (S.player.playing()) S.player.pause();
+        else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); }
+        sendState(true);
+      }
+      else if (cmd === "cheer") {
+        S.cheers = (S.cheers || 0) + 1;
+        stageGlow("line " + (Math.random() < 0.5 ? "a" : "b"));
+        flashOsd("CHEERS FROM THE CROWD!", 2200);
+        if (ac && prefs.sound) sfx("score");
+      }
+    }
   }
   function qrSVG(text, px) {
     var q = qrcode(0, "M"); q.addData(text); q.make();
@@ -5133,8 +5894,49 @@ var qrcode = function() {
 
   // ---------- the regulars' wall ----------
   function polaroid(w) {
-    return '<div class="pol"><div class="ph" style="background:' + POL_BG[w.s % POL_BG.length] + '"><svg viewBox="0 0 200 150">' + Ci(100, 62, 26, "#f0b891", ink(4)) + Pt("M40,150 Q100,70 160,150 Z", "#2a1c18") + R(128, 58, 9, 60, "#55505e", ink(3)) + Ci(132, 54, 12, "#8d93a0", ink(3)) +
-      '<path d="M90,70 Q100,80 112,69" fill="none"' + ink(4) + "/></svg></div><div class=\"who\">" + esc(w.who) + '</div><div class="what">' + esc(w.t) + " · " + w.s + "</div></div>";
+    var key = String(w.who || "") + "|" + String(w.t || ""), h = 0, i;
+    for (i = 0; i < key.length; i++) h = ((h << 5) - h + key.charCodeAt(i)) | 0;
+    h = Math.abs(h);
+    var skins = ["#f0b891", "#e5a37a", "#c9855a", "#f5cba7", "#8d5524"];
+    var tops = ["#2a1c18", "#3a2240", "#1e3a5f", "#6b2232", "#224438"];
+    var skin = skins[h % skins.length], top = tops[(h >> 3) % tops.length], art = "";
+    if (String(w.who || "").indexOf(" & ") !== -1) {
+      var skin2 = skins[(h + 2) % skins.length], top2 = tops[(h + 3) % tops.length];
+      art = Pt("M12,150 Q62,82 112,150 Z", top) + Pt("M88,150 Q138,82 188,150 Z", top2) +
+        Ci(62, 66, 22, skin, ink(4)) + Ci(138, 66, 22, skin2, ink(4)) +
+        '<path d="M53,73 Q62,81 71,72" fill="none"' + ink(3.5) + '/>' +
+        '<path d="M129,73 Q138,81 147,72" fill="none"' + ink(3.5) + '/>' +
+        R(96, 78, 8, 56, "#55505e", ink(3)) + Ci(100, 72, 11, "#8d93a0", ink(3)) +
+        '<path d="M96,36 L96,18 L112,14 L112,30" fill="none" stroke="#ff5fa2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        Ci(92, 37, 4.5, "#ff5fa2", "") + Ci(108, 31, 4.5, "#ff5fa2", "");
+    } else {
+      var v = h % 4;
+      art = Pt("M40,150 Q100,70 160,150 Z", top) + Ci(100, 62, 26, skin, ink(4));
+      if (v === 0) {
+        art += R(128, 58, 9, 60, "#55505e", ink(3)) + Ci(132, 54, 12, "#8d93a0", ink(3)) +
+          '<path d="M90,70 Q100,80 112,69" fill="none"' + ink(4) + "/>";
+      } else if (v === 1) {
+        art += R(76, 52, 20, 12, "#191522", ink(3)) + R(104, 52, 20, 12, "#191522", ink(3)) +
+          '<path d="M96,57 L104,57 M76,56 L72,54 M124,56 L128,54" fill="none"' + ink(3) + '/>' +
+          '<path d="M80,55 L86,55 M108,55 L114,55" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
+          '<path d="M91,73 Q101,79 111,72" fill="none"' + ink(3.5) + '/>' +
+          R(128, 62, 9, 56, "#55505e", ink(3)) + Ci(132, 58, 11, "#8d93a0", ink(3));
+      } else if (v === 2) {
+        art += Pt("M86,44 L89,52 L97,52 L91,57 L93,65 L86,60 L79,65 L81,57 L75,52 L83,52 Z", "#ffd166", ink(2.5)) +
+          Pt("M114,44 L117,52 L125,52 L119,57 L121,65 L114,60 L107,65 L109,57 L103,52 L111,52 Z", "#ffd166", ink(2.5)) +
+          '<path d="M95,55 L105,55" fill="none"' + ink(2.5) + '/>' +
+          '<path d="M90,72 Q100,82 112,71" fill="none"' + ink(4) + '/>' +
+          Pt("M44,34 L47,42 L55,45 L47,48 L44,56 L41,48 L33,45 L41,42 Z", "#fff7d6", ink(2)) +
+          R(130, 62, 8, 54, "#55505e", ink(3)) + Ci(134, 58, 11, "#8d93a0", ink(3));
+      } else {
+        art += Pt("M74,52 Q100,32 126,52 Z", "#c4313d", ink(3.5)) +
+          R(118, 46, 22, 7, "#c4313d", ink(3)) +
+          R(75, 48, 50, 7, "#ff5fa2", ink(2.5)) +
+          Pt("M88,68 Q100,84 112,68 Z", "#fff", ink(3)) +
+          R(128, 62, 9, 56, "#55505e", ink(3)) + Ci(132, 58, 11, "#8d93a0", ink(3));
+      }
+    }
+    return '<div class="pol"><div class="ph" style="background:' + POL_BG[w.s % POL_BG.length] + '"><svg viewBox="0 0 200 150">' + art + '</svg></div><div class="who">' + esc(w.who) + '</div><div class="what">' + esc(w.t) + " · " + w.s + "</div></div>";
   }
   function openWall() {
     var h = '<div class="k">Pinned up behind the table</div><h3>The regulars</h3>';
@@ -5265,51 +6067,11 @@ var qrcode = function() {
       var ids = (j.items || []).map(function (i) { return i.id && i.id.videoId; }).filter(Boolean);
       if (!ids.length) return [];
       return getJSON(api + "videos?part=contentDetails,snippet&id=" + ids.join(",") + key).then(function (k) {
-        return (k.items || []).map(function (v, i) { var sn = v.snippet || {}; return { id: v.id, title: String(sn.title || ""), ch: String(sn.channelTitle || ""), desc: String(sn.description || "").slice(0, 400), dur: isoDur(v.contentDetails && v.contentDetails.duration), rank: i }; });
+        return (k.items || []).map(function (v, i) { var sn = v.snippet || {}; return { id: v.id, title: String(sn.title || ""), ch: String(sn.channelTitle || ""), desc: String(sn.description || "").slice(0, 1500), dur: isoDur(v.contentDetails && v.contentDetails.duration), rank: i }; });
       });
     });
   }
-  function nearestDurDiff(vDur, candDurs) {
-    if (!(vDur > 0)) return 0;
-    if (typeof candDurs === "number") return candDurs > 0 ? Math.abs(vDur - candDurs) : 0;
-    if (!Array.isArray(candDurs) || !candDurs.length) return 0;
-    var best = 1e9;
-    for (var i = 0; i < candDurs.length; i++) {
-      var d = Math.abs(vDur - candDurs[i]);
-      if (d < best) best = d;
-    }
-    return best < 1e8 ? best : 0;
-  }
-  function rankVideos(list, song, mode, candDurs) {
-    var nt = norm(song.t), bad = mode === "back" ? /\b(cover|live|remix|reaction|tutorial|lesson|piano|guitar|slowed|sped|8d|nightcore|lower key|higher key|drum|bass only)\b/ : /\b(cover|live|remix|reaction|tutorial|lesson|karaoke|instrumental|slowed|sped|8d|nightcore|lyrics?)\b/;
-    var want = /\b(instrumental|karaoke|backing|minus one|no vocals)\b/;
-    function low(x) { return String(x).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim(); }
-    var artFull = low(song.a), art = low(firstArtist(song.a)), seen = {};
-    return list.filter(function (v) { if (seen[v.id]) return false; seen[v.id] = 1; return true; }).map(function (v) {
-      var full = low(v.title), t = full.replace(low(cleanTitle(song.t)), " "), d = nearestDurDiff(v.dur, candDurs), sc = d * 1.5 + v.rank * 0.4;
-      var ch = low(v.ch);
-      var isTopic = / topic$/.test(ch) || /provided to youtube by/i.test(v.desc);
-      var isArtistCh = (artFull && ch.indexOf(artFull) !== -1) || (art && ch.indexOf(art) !== -1);
-      var isVevo = /\bvevo\b/.test(ch);
-      var official = isTopic || isArtistCh || isVevo;
-      if (bad.test(t)) sc += 40;
-      if (mode === "back" && !want.test(t)) sc += 60;
-      if (full.indexOf(low(cleanTitle(song.t))) === -1 && full.indexOf(nt) === -1) sc += 30;
-      // the record company's own upload is the actual record (minus the vocals, for an instrumental),
-      // so the lyric timings line up closely. Re-recorded karaoke versions come next.
-      if (mode === "band") {
-        // In "With the band" mode: Topic tracks (exact album audio, no video intro) first, then official audio on artist channel, then VEVO/music videos
-        if (isTopic) sc -= 20;
-        else if (isArtistCh && /official audio/.test(t)) sc -= 14;
-        else if (isArtistCh || isVevo) sc -= 6;
-      } else {
-        if (official && /instrumental/.test(t)) sc -= 14;
-        if (/official instrumental/.test(t)) sc -= 6;
-        if (/\bkaraoke\b/.test(t) && !official) sc += 3;
-      }
-      return { id: v.id, dur: v.dur || 0, d: d, sc: sc, official: official, ch: v.ch };
-    }).sort(function (a, b) { return a.sc - b.sc; });
-  }
+  // nearestDurDiff() and rankVideos() live in src/karaoke/track-match.js
   function findVideo(song, mode, candDurs) {
     var memo = songMemo[songKey(song) + "|" + mode];
     if (memo && memo.v && (memo.rv >= 2 || memo.off)) return Promise.resolve([{ id: memo.v, dur: memo.dur || 0, d: memo.d || 0, memo: true }]);
@@ -5343,10 +6105,10 @@ var qrcode = function() {
   function jukeboxURL() { return store.get("snk-player-url", "") || phoneBase().replace(/index\.html$/, "") + "player.html"; }
   function urlOrigin(u) { var m = /^(https?:\/\/[^\/]+)/.exec(u); return m ? m[1] : ""; }
   function ytPlayer(id, h, tapeDur) {
+    var clk = createPlaybackClock();
     var p = {
-      kind: "yt", t0: 0, at: 0, rate: 1, state: -1, dur: tapeDur || 0, dead: false, got: false, blind: false, paused: false,
-      wrapped: true, wrapOK: false, seeking: null,
-      clockSrc: "init", lastReportAt: 0, reportIntervalMs: 0, lastCorrMs: 0, rawLogged: false
+      kind: "yt", dur: tapeDur || 0, dead: false, got: false, blind: false, paused: false,
+      wrapped: true, wrapOK: false, everPlayed: false, rawLogged: false, lastInfoT: NaN
     };
     var org = /^https?:\/\//.test(location.origin || "") ? "&origin=" + enc(location.origin) : "";
     var direct = "https://www.youtube-nocookie.com/embed/" + enc(id) + "?autoplay=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" + org;
@@ -5369,35 +6131,18 @@ var qrcode = function() {
     function goBlind() {
       if (p.dead || p.got || p.everPlayed) { if (!p.dead && !p.got && !loadedAt) blindT = setTimeout(goBlind, 3000); return; }
       if (!loadedAt) { blindT = setTimeout(goBlind, 3000); return; }
-      p.blind = true; p.clockSrc = "blind"; p.everPlayed = true; clearTimeout(dog);
+      p.blind = true; p.everPlayed = true; clearTimeout(dog);
       // the tape usually starts a second or two after its page appears
-      p.t0 = Math.max(0, (performance.now() - loadedAt) / 1000 - 2); p.at = performance.now(); p.state = 1; p.rate = 1;
+      var tStart = Math.max(0, (performance.now() - loadedAt) / 1000 - 2);
+      clk.report(tStart, { src: "blind", state: 1, edge: true });
       schedEnd(); h.playing();
     }
     function schedEnd() { clearTimeout(endT); if (!p.blind || p.paused) return; var left = (p.dur || tapeDur || 240) + 2 - p.time(); endT = setTimeout(function () { if (!p.dead) h.ended(); }, Math.max(1, left) * 1000); }
-    function updateClock(reported, srcName) {
-      var now = performance.now();
-      if (p.lastReportAt) p.reportIntervalMs = Math.round(now - p.lastReportAt);
-      p.lastReportAt = now;
-      p.clockSrc = srcName;
-      if (p.seeking) {
-        if (Math.abs(reported - p.seeking.target) < 2.5 || (now - p.seeking.at) > 2500) {
-          p.seeking = null;
-          p.t0 = reported; p.at = now; p.rate = 1; p.lastCorrMs = 0;
-        }
-        return;
-      }
-      if (p.paused) return;
-      var predicted = p.time();
-      var diff = reported - predicted;
-      p.lastCorrMs = Math.round(diff * 1000);
-      if (!p.everPlayed || p.state !== 1 || Math.abs(diff) > 0.25) {
-        p.t0 = reported; p.at = now; p.rate = 1;
-      } else {
-        // Symmetric rate correction: absorb small error over ~0.5 s in either direction without jumping or stepping backwards
-        p.t0 = predicted; p.at = now;
-        p.rate = Math.max(0.80, Math.min(1.25, 1 + diff / 0.5));
-      }
+    function onPlayState(st) {
+      if (p.paused && st === 1) return;
+      clk.setState(st);
+      if (st === 1 && !p.everPlayed) { p.everPlayed = true; clearTimeout(dog); clearTimeout(blindT); cmd("unloadModule", ["captions"]); cmd("setVolume", [100]); h.playing(); }
+      if (st === 0) h.ended();
     }
     function onMsg(e) {
       if (p.dead || e.source !== fr.contentWindow) return;
@@ -5409,10 +6154,10 @@ var qrcode = function() {
       if (d.event === "snk-tick") {
         if (!p.got) { p.got = true; if (p.blind) { p.blind = false; clearTimeout(endT); } }
         if (typeof d.dur === "number" && d.dur > 0) p.dur = d.dur;
-        if (typeof d.state === "number") setState(d.state);
+        if (typeof d.state === "number") onPlayState(d.state);
         if (typeof d.t === "number") {
           var delay = typeof d.wall === "number" ? Math.max(0, Math.min(0.5, (Date.now() - d.wall) / 1000)) : 0;
-          updateClock(d.state === 1 ? d.t + delay : d.t, "YT.Player");
+          clk.report(d.t, { src: "YT.Player", state: d.state, edge: d.edge !== false, wallDelaySec: delay, dur: d.dur });
         }
         return;
       }
@@ -5423,42 +6168,26 @@ var qrcode = function() {
       if (info) {
         if (!p.rawLogged && isDebug()) { p.rawLogged = true; try { console.log("[SNK infoDelivery]", info); } catch (x) {} }
         if (typeof info.duration === "number" && info.duration) p.dur = info.duration;
-        if (typeof info.playerState === "number") setState(info.playerState);
+        if (typeof info.playerState === "number") onPlayState(info.playerState);
         if (typeof info.currentTime === "number") {
           var infoDelay = typeof info.currentTimeLastUpdated_ === "number"
             ? Math.max(0, Math.min(0.5, Date.now() / 1000 - info.currentTimeLastUpdated_)) : 0;
-          updateClock((p.state === 1 ? info.currentTime + infoDelay : info.currentTime), "infoDelivery");
+          var infoEdge = isNaN(p.lastInfoT) || Math.abs(info.currentTime - p.lastInfoT) >= 0.002;
+          p.lastInfoT = info.currentTime;
+          clk.report(info.currentTime, { src: "infoDelivery", state: clk.stats().state, edge: infoEdge, wallDelaySec: infoDelay, dur: info.duration });
         }
       }
-      if (d.event === "onStateChange" && typeof d.info === "number") setState(d.info);
-    }
-    function setState(st) {
-      if (p.paused && st === 1) return; // ignore stale playing report right after local pause
-      if (st === p.state) return;
-      if (p.state === 1) { p.t0 = p.time(); p.at = performance.now(); p.rate = 1; }
-      p.state = st;
-      if (st === 1) { p.at = performance.now(); p.rate = 1; }
-      if (st === 1 && !p.everPlayed) { p.everPlayed = true; clearTimeout(dog); clearTimeout(blindT); cmd("unloadModule", ["captions"]); cmd("setVolume", [100]); h.playing(); }
-      if (st === 0) h.ended();
+      if (d.event === "onStateChange" && typeof d.info === "number") onPlayState(d.info);
     }
     window.addEventListener("message", onMsg);
-    p.time = function () {
-      if (p.seeking) return p.seeking.target;
-      return p.state === 1 ? p.t0 + ((performance.now() - p.at) / 1000) * (p.rate || 1) : p.t0;
-    };
-    p.playing = function () { return p.state === 1 && !p.paused; };
-    p.pause = function () {
-      p.t0 = p.time(); p.at = performance.now(); p.rate = 1; p.state = 2; p.paused = true;
-      clearTimeout(endT); cmd("pauseVideo");
-    };
-    p.resume = function () {
-      p.paused = false; p.at = performance.now(); p.rate = 1; p.state = 1;
-      cmd("playVideo"); if (p.blind) schedEnd();
-    };
+    p.time = function () { return clk.time(); };
+    p.playing = function () { return clk.stats().state === 1 && !p.paused; };
+    p.stats = function () { return clk.stats(); };
+    p.pause = function () { p.paused = true; clk.pause(); clearTimeout(endT); cmd("pauseVideo"); };
+    p.resume = function () { p.paused = false; clk.resume(); cmd("playVideo"); if (p.blind) schedEnd(); };
     p.seek = function (d) {
-      var t = Math.max(0, p.time() + d);
-      p.t0 = t; p.at = performance.now(); p.rate = 1;
-      p.seeking = p.blind ? null : { target: t, at: performance.now() };
+      var t = Math.max(0, clk.time() + d);
+      clk.seekTo(t, p.blind);
       cmd("seekTo", [t, true]); schedEnd();
       if (pix) pix.resetMonotonic();
     };
@@ -5466,9 +6195,12 @@ var qrcode = function() {
     return p;
   }
   function housePlayer(h) {
-    var ctx = audioReady() ? ac : null;
-    var p = { kind: "house", dur: HOUSE_DUR, dead: false, clockSrc: "WebAudio", reportIntervalMs: 0, lastCorrMs: 0 };
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = null, ownCtx = false;
+    try { if (AC) { ctx = new AC(); ownCtx = true; } } catch (e) {}
+    if (!ctx && audioReady()) ctx = ac;
+    var p = { kind: "house", dur: HOUSE_DUR, dead: false, stats: function () { return { clockSrc: "WebAudio", reportIntervalMs: 0, lastCorrMs: 0, rmsJitterMs: 0, rate: 1, stalled: false }; } };
     if (!ctx) { setTimeout(function () { if (!p.dead) h.error("audio"); }, 100); p.time = function () { return 0; }; p.playing = function () { return false; }; p.pause = p.resume = p.seek = function () {}; p.stop = function () { p.dead = true; }; return p; }
+    if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
     var t0 = ctx.currentTime + 0.15, out = ctx.createGain(), nodes = []; out.gain.value = 0.9; out.connect(ctx.destination);
     function note(f, at, len, vol, type) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + len + 0.05); nodes.push(o); }
     var nb = noise(ctx);
@@ -5496,13 +6228,27 @@ var qrcode = function() {
       for (var i = 0; i < nodes.length; i++) { try { nodes[i].stop(); } catch (e) {} }
       nodes.length = 0;
       try { out.disconnect(); } catch (e) {}
-      if (paused) { paused = false; try { ctx.resume(); } catch (e) {} }
+      if (ownCtx) { try { ctx.close(); } catch (e) {} }
+      else if (paused) { paused = false; try { ctx.resume(); } catch (e) {} }
     };
     return p;
   }
 
   // ---------- on stage ----------
-  var winPainted = false, tickRaf = null, osdT = null, hudLastAt = 0;
+  var winPainted = false, tickRaf = null, osdT = null, chromeT = null, hudLastAt = 0;
+  function clearStageChrome() {
+    clearTimeout(chromeT); chromeT = null;
+    var sc = $("scSing"); if (sc) sc.classList.remove("chrome-idle");
+  }
+  function wakeStageChrome() {
+    clearStageChrome();
+    chromeT = setTimeout(function () {
+      chromeT = null;
+      if (SC === "sing" && S && !S.loading && !S.showHud && !S.flash && S.player && S.player.playing()) {
+        var sc = $("scSing"); if (sc) sc.classList.add("chrome-idle");
+      }
+    }, 4200);
+  }
   function paintWindow() {
     $("scSing").classList.toggle("classic", prefs.screen === "classic");
     if (!winPainted) { winPainted = true; svgToCanvas(windowPlateSVG(), $("wPlate"), yes, function () { texturize($("wPlate"), .3, false); }); }
@@ -5513,13 +6259,13 @@ var qrcode = function() {
     var q = queue.shift(); if (!q) return;
     ambience(null);
     fadeThen(function () {
-      go("sing"); paintWindow();
+      go("sing"); clearStageChrome(); paintWindow();
       ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("timingHud").hidden = true;
       var c = $("cue"); c.hidden = false; c.classList.remove("open");
       cue(who(q) + " — you're up", q.song.t, HOST + " is finding the words…");
-      hint("sgHint", [["", "OK  pause"], ["", "◄ ►  words earlier / later"], ["", "INFO  timing"], ["r", "Stop the song"]]);
+      hint("sgHint", [["", "OK  pause"], ["", "◄ ►  nudge"], ["g", "Sync line"], ["", "CH±  tape"], ["", "INFO  timing"], ["r", "Stop"]]);
       $("sgProg").firstChild.style.transform = "scaleX(0)"; $("sgProg").hidden = false;
-      S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
+      S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, nudgeCount: 0, cheers: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
       var mine = S.id, load = prepare(q);
       load.then(function (d) { if (S && S.id === mine) beginSong(d); }, function (e) { if (S && S.id === mine) songFailed(e && e.kind || "net"); });
     });
@@ -5583,11 +6329,16 @@ var qrcode = function() {
     S.drift = (v.dur > 0 && S.dur > 0) ? Math.abs(v.dur - S.dur) : (v.d || 0);
     // Load shift keyed by tape ID + LRCLIB ID (falling back to legacy memo.off)
     var sk = shiftKey(v.id, S.lrcId), sh = songShifts[sk], memo = songMemo[memoKey()];
-    S.off = 0; S.driftA = 0; S.driftB = 0; S.nudgePts = []; S.firstNudgeDir = 0; S.savedShiftUsed = false;
+    S.off = 0; S.driftA = 0; S.driftB = 0; S.nudgePts = []; S.savedShiftUsed = false; S.autoIntroUsed = false;
     if (sh && typeof sh.a === "number") {
       S.off = sh.a; S.driftA = sh.a; S.driftB = sh.b || 0; S.savedShiftUsed = true;
     } else if (memo && memo.v === v.id && typeof memo.off === "number" && Math.abs(memo.off) >= 0.01) {
       S.off = memo.off; S.driftA = memo.off; S.driftB = 0; S.savedShiftUsed = true;
+    } else if (typeof v.introSec === "number" && S.lines && S.lines.length) {
+      var introShift = Math.round((v.introSec - S.lines[0].t) * 100) / 100;
+      if (introShift >= 1.5 && introShift <= 20) {
+        S.off = introShift; S.driftA = introShift; S.driftB = 0; S.autoIntroUsed = true;
+      }
     }
     cue(null, null, HOST + " is cueing up tape " + (S.vi + 1) + " of " + S.vids.length + "…");
     S.player = ytPlayer(v.id, S.h, v.dur || S.dur);
@@ -5629,6 +6380,8 @@ var qrcode = function() {
     $("osdR").innerHTML = esc(who(S.q).toUpperCase()) + "<br>♪ " + (S.q.mode === "band" ? "WITH THE BAND" : S.q.mode === "house" ? "HOUSE BAND" : "BACKING TRACK");
     if (S.savedShiftUsed && (Math.abs(S.off) >= 0.01 || Math.abs(S.driftB) > 0.0001)) {
       flashOsd("WORDS " + (S.off > 0 ? "+" : "") + S.off.toFixed(2) + " s (SAVED)", 5000);
+    } else if (S.autoIntroUsed) {
+      flashOsd("INTRO +" + S.off.toFixed(2) + " s (FROM CHAPTERS)", 5000);
     } else if (S.player.blind) {
       flashOsd("PLAYING BY EAR — ◄ ► TO LINE THE WORDS UP", 9000);
     } else if (S.exact) {
@@ -5638,6 +6391,7 @@ var qrcode = function() {
     } else if (S.drift > 2) {
       flashOsd("TIMING MAY WANDER — ◄ ► TO NUDGE", 7000);
     }
+    wakeStageChrome();
     cancelAnimationFrame(tickRaf); tickRaf = null;
     if (document.hidden) {
       if (S.player && S.player.playing()) S.player.pause();
@@ -5681,11 +6435,13 @@ var qrcode = function() {
   var lastFailed = null;
   ACT.otherway = function () { var q = lastFailed; closeModal(); if (!q) return; var nq = { song: q.song, singer: q.singer, mode: q.mode === "band" ? "back" : "band" }; if (q.singer2) nq.singer2 = q.singer2; queue.unshift(nq); startNext(); };
   var pix = null;
-  function stopSong() { $("sgProg").hidden = true; cancelAnimationFrame(tickRaf); tickRaf = null; $("timingHud").hidden = true; if (pix) pix.setPage(null); if (S && S.player) S.player.stop(); S = null; }
-  function flashOsd(t, ms) { S && (S.flash = t); clearTimeout(osdT); osdT = setTimeout(function () { if (S) S.flash = ""; }, ms || 2200); }
+  function stopSong() { clearStageChrome(); $("sgProg").hidden = true; cancelAnimationFrame(tickRaf); tickRaf = null; $("timingHud").hidden = true; if (pix) pix.setPage(null); if (S && S.player) S.player.stop(); S = null; }
+  function flashOsd(t, ms) { S && (S.flash = t); wakeStageChrome(); clearTimeout(osdT); osdT = setTimeout(function () { if (S) { S.flash = ""; wakeStageChrome(); } }, ms || 2200); }
   function currentOffset(t) { return S.driftB ? (S.driftA + S.driftB * t) : S.off; }
   function nudge(dir, isRepeat) {
     if (!S || S.loading) return;
+    S.nudgeCount = (S.nudgeCount || 0) + 1;
+    wakeStageChrome();
     var now = performance.now();
     if (dir === S.lastNudgeDir && (now - (S.lastNudgeAt || 0)) < 300) S.nudgeStreak = (S.nudgeStreak || 1) + 1;
     else S.nudgeStreak = 1;
@@ -5698,43 +6454,86 @@ var qrcode = function() {
     S.off = nextOff; S.driftA = nextOff; S.driftB = 0;
     if (pix) pix.resetMonotonic();
 
-    // Only learn linear drift on backing tracks (mode "back"), and only when both nudges (>= 60s apart) go the same way
+    // Learn linear tempo drift on backing tracks from anchors >= 45 s apart, but only while the nudges keep going one
+    // way (a nudge back against the last one is an overshoot correction, not drift): see fitDriftShift
     if (S.q.mode === "back" && t > 2) {
-      if (S.firstNudgeDir && S.firstNudgeDir !== dir) {
-        // Reversed direction (correcting an overshoot): reset drift anchor rather than inventing drift
-        S.nudgePts = [{ t: t, off: nextOff }];
-        S.firstNudgeDir = dir;
-      } else {
-        if (!S.firstNudgeDir) S.firstNudgeDir = dir;
-        if (!S.nudgePts.length || Math.abs(t - S.nudgePts[S.nudgePts.length - 1].t) > 15) {
-          S.nudgePts.push({ t: t, off: nextOff });
-        } else {
-          S.nudgePts[S.nudgePts.length - 1] = { t: t, off: nextOff };
-        }
-        if (S.nudgePts.length >= 2) {
-          var p1 = S.nudgePts[0], p2 = S.nudgePts[S.nudgePts.length - 1];
-          if (p2.t - p1.t >= 60 && (p2.off - p1.off) * dir > 0) {
-            var b = (p2.off - p1.off) / (p2.t - p1.t);
-            if (Math.abs(b) <= 0.03) {
-              S.driftB = Math.round(b * 100000) / 100000;
-              S.driftA = Math.round((p1.off - S.driftB * p1.t) * 1000) / 1000;
-            }
-          }
-        }
-      }
+      S.nudgePts = addDriftPoint(S.nudgePts, t, nextOff, dir);
+      var fit = fitDriftShift(S.nudgePts, 45, 0.03);
+      if (fit) { S.driftA = fit.a; S.driftB = fit.b; }
     }
 
     var driftTxt = S.driftB ? " (DRIFT " + (S.driftB > 0 ? "+" : "") + (S.driftB * 60).toFixed(2) + "s/min)" : "";
     flashOsd("WORDS " + (nextOff > 0 ? "+" : "") + nextOff.toFixed(2) + "s " + (nextOff > 0 ? "LATER" : nextOff < 0 ? "EARLIER" : "") + driftTxt);
-    if (S.player.kind === "yt") {
-      var v = S.vids[S.vi];
-      if (v) {
-        songShifts[shiftKey(v.id, S.lrcId)] = { a: S.driftA, b: S.driftB, t: Date.now() };
-        pruneObj(songShifts, 250);
-        store.set("snk-shifts", songShifts);
-      }
-      var m = songMemo[memoKey()];
-      if (m) { m.off = S.driftA; m.t = Date.now(); pruneObj(songMemo, 250); store.set("snk-songs", songMemo); }
+    saveShift();
+  }
+  function saveShift() {
+    if (!S || !S.player || S.player.kind !== "yt") return;
+    var v = S.vids[S.vi];
+    if (v) {
+      songShifts[shiftKey(v.id, S.lrcId)] = { a: S.driftA, b: S.driftB, t: Date.now() };
+      pruneObj(songShifts, 250);
+      store.set("snk-shifts", songShifts);
+    }
+    var m = songMemo[memoKey()];
+    if (m) { m.off = S.driftA; m.t = Date.now(); pruneObj(songMemo, 250); store.set("snk-songs", songMemo); }
+  }
+  // One-tap line sync: snap the current/upcoming line's start to right now
+  function syncLineNow() {
+    if (!S || S.loading || !S.lines.length) return;
+    wakeStageChrome();
+    var t = S.player ? S.player.time() : 0, lag = activeLag(S.player.kind);
+    var tl = t - currentOffset(t) - lag;
+    var idx = Math.max(0, Math.min(S.lines.length - 1, S.ni < 0 ? 0 : S.ni));
+    var curL = S.lines[idx], nxtL = S.lines[idx + 1];
+    // If we're more than 40% past the current line's end or within 3s of the next line, snap the next line
+    var target = (nxtL && tl > curL.end && (nxtL.t - tl) < 4) ? nxtL : curL;
+    var newOff = Math.round((t - lag - target.t) * 100) / 100;
+    if (Math.abs(newOff) > 45) { flashOsd("TOO FAR TO SNAP — USE ◄ ►", 2200); return; }
+    var prevOff = currentOffset(t);
+    S.off = newOff; S.driftA = newOff; S.driftB = 0; S.ni = -2;
+    if (S.q.mode === "back" && t > 2) {
+      S.nudgePts = addDriftPoint(S.nudgePts, t, newOff, newOff - prevOff);
+      var fit = fitDriftShift(S.nudgePts, 30, 0.05);
+      if (fit) { S.driftA = fit.a; S.driftB = fit.b; }
+    } else {
+      S.nudgePts = [{ t: t, off: newOff }];
+    }
+    if (pix) pix.resetMonotonic();
+    var driftTxt = S.driftB ? " (DRIFT " + (S.driftB > 0 ? "+" : "") + (S.driftB * 60).toFixed(2) + "s/min)" : "";
+    flashOsd("SYNCED LINE → " + (newOff > 0 ? "+" : "") + newOff.toFixed(2) + "s" + driftTxt);
+    saveShift();
+    sendState(true);
+  }
+  // Mid-song tape swap (CH+ / CH-) if tape 1 is a bad cover or wrong key
+  function swapTape(delta) {
+    if (!S || S.loading || S.q.song.house) return;
+    var mine = S.id;
+    function cycle() {
+      if (!S || S.id !== mine || S.vids.length < 2) { flashOsd("NO OTHER TAPES FOUND", 2000); return; }
+      S.loading = true;
+      cancelAnimationFrame(tickRaf); tickRaf = null;
+      if (S.player) S.player.stop();
+      S.vi = (S.vi + delta + S.vids.length) % S.vids.length;
+      var c = $("cue"); c.hidden = false; c.classList.remove("open");
+      cue(who(S.q) + " — swapping tape", S.q.song.t, HOST + " is cueing up tape " + (S.vi + 1) + " of " + S.vids.length + "…");
+      tryVideo();
+    }
+    if (S.vids.length < 2 && S.vids[0] && S.vids[0].memo) {
+      delete songMemo[memoKey()]; store.set("snk-songs", songMemo);
+      flashOsd("FINDING MORE TAPES…", 3000);
+      var candsP = S.memoOnlyCands ? findLyricsCandidates(S.q.song).catch(function () { return S.candidates; }) : Promise.resolve(S.candidates);
+      candsP.then(function (cands) {
+        if (!S || S.id !== mine) return;
+        if (cands && cands.length) { S.candidates = cands; S.memoOnlyCands = false; }
+        var candDurs = S.candidates.map(function (x) { return x.duration; }).filter(function (x) { return x > 10; });
+        return findVideo(S.q.song, S.q.mode, candDurs);
+      }).then(function (vids) {
+        if (!S || S.id !== mine) return;
+        if (vids && vids.length) { S.vids = vids; S.vi = 0; }
+        cycle();
+      }, function () { if (S && S.id === mine) flashOsd("NO OTHER TAPES FOUND", 2000); });
+    } else {
+      cycle();
     }
   }
   function toggleTimingHud() {
@@ -5743,17 +6542,19 @@ var qrcode = function() {
     $("timingHud").hidden = !S.showHud;
     hudLastAt = 0;
     if (S.showHud) updateTimingHud(S.player.time());
+    wakeStageChrome();
   }
   function updateTimingHud(t) {
     if (!S || !S.showHud) return;
-    var p = S.player, v = S.vids[S.vi] || {}, m = S.lrcMeta || {};
+    var p = S.player, st = p.stats ? p.stats() : {}, v = S.vids[S.vi] || {}, m = S.lrcMeta || {};
     var lag = activeLag(p.kind), effOff = currentOffset(t);
     var tapeLen = p.dur || S.tapeDur || 0, lrcLen = S.dur || 0;
     var diffStr = (tapeLen && lrcLen) ? (tapeLen - lrcLen).toFixed(1) + "s" : "n/a";
+    var modeStr = m.hasSubWordSyl ? "ELRC syl" : S.exact ? "word" : S.synced ? "line" : "plain";
     var lines = [
-      "CLOCK: " + (p.clockSrc || p.kind) + " · int " + (p.reportIntervalMs || 0) + "ms · corr " + (p.lastCorrMs >= 0 ? "+" : "") + (p.lastCorrMs || 0) + "ms",
+      "CLOCK: " + (st.clockSrc || p.kind) + " · rate " + (st.rate || 1).toFixed(3) + "x · rms ±" + (st.rmsJitterMs || 0).toFixed(1) + "ms · corr " + (st.lastCorrMs >= 0 ? "+" : "") + (st.lastCorrMs || 0) + "ms" + (st.stalled ? " [STALL]" : ""),
       "LAG(" + (p.kind === "yt" ? "YT" : "WA") + "): " + lagFmt(lag) + " · SHIFT: " + (effOff >= 0 ? "+" : "") + effOff.toFixed(2) + "s" + (S.driftB ? " (b=" + (S.driftB * 60).toFixed(2) + "s/m)" : ""),
-      "LYRIC #" + (S.lrcId != null ? S.lrcId : "-") + " (" + Math.round(lrcLen) + "s) vs TAPE " + (v.id || "house") + " (" + Math.round(tapeLen) + "s) · Δ " + diffStr,
+      "LYRIC #" + (S.lrcId != null ? S.lrcId : "-") + " (" + Math.round(lrcLen) + "s, " + modeStr + ") vs TAPE " + (S.vi + 1) + "/" + Math.max(1, S.vids.length) + " " + (v.id || "house") + " (" + Math.round(tapeLen) + "s) · Δ " + diffStr,
       "LINES: " + (m.exactCount || 0) + " exact / " + (m.estCount || 0) + " est · pace " + (m.pace || 0) + "s/syl · off " + (m.offsetMs || 0) + "ms · mism " + (m.mismatches || 0)
     ];
     $("timingHud").textContent = lines.join("\n");
@@ -5770,14 +6571,25 @@ var qrcode = function() {
     while (ni > 0 && L[ni - 1].end > tl) ni--;
     var now = L[ni];
     if (ni !== S.ni) { S.ni = ni; var lab = partLabel(now); pix.setPage(now, L[ni + 1], !!prefs.big, lab, lab ? lab.col : null); }
-    // the stage lights flare as each line starts (alternating sides), and blink with the count-in lamps
-    if (now && tl >= now.t && S.glowLine !== ni) { S.glowLine = ni; stageGlow("line " + (ni % 2 ? "a" : "b")); }
+    // the stage lights flare as each line starts (alternating sides, or duet singer colour), and blink with the count-in lamps
+    if (now && tl >= now.t && S.glowLine !== ni) {
+      S.glowLine = ni;
+      if (S.duet) stageGlow("line " + (now.part === 1 ? "p1" : now.part === 2 ? "p2" : "both"));
+      else stageGlow("line " + (ni % 2 ? "a" : "b"));
+    }
     var wait = now ? now.t - tl : 0, card = $("lyCard");
+    var beatSec = Math.max(0.45, Math.min(1.05, S.lrcMeta && S.lrcMeta.pace ? S.lrcMeta.pace * 2.4 : 0.75));
     var showCard = ni === 0 && now && wait > 4.5 && t < 30;
     if (showCard !== !card.hidden) { card.hidden = !showCard; if (showCard) card.innerHTML = '<div class="k">Now singing · ' + esc(who(S.q)) + '</div><div class="t">' + esc(S.q.song.t) + '</div><div class="s">' + esc(S.q.song.a) + "</div>"; }
-    var lit = now && wait > 0 && wait <= 4 && (ni === 0 || now.t - L[ni - 1].end >= 4) ? Math.ceil(wait) : -1;
+    var lit = now && wait > 0 && wait <= beatSec * 4 && (ni === 0 || now.t - L[ni - 1].end >= 4) ? Math.max(1, Math.min(4, Math.ceil(wait / beatSec))) : -1;
     var brk = !!(now && ni > 0 && wait > 4 && now.t - L[ni - 1].end >= 9) || (!now && n > 0 && S.dur - tl > 6);
     if (brk !== !$("lyBreak").hidden) $("lyBreak").hidden = !brk;
+    if (brk) {
+      var bTxt = now
+        ? "♪ &nbsp; ♪ &nbsp; ♪<small>Next in " + Math.ceil(wait) + "s: “" + esc(clip(now.text, 44)) + "”</small>"
+        : "♪ &nbsp; ♪ &nbsp; ♪<small>Instrumental outro</small>";
+      if (S.brkHtml !== bTxt) { S.brkHtml = bTxt; $("lyBreak").innerHTML = bTxt; }
+    }
     if (lit !== S.glowLit) { S.glowLit = lit; if (lit > 0) stageGlow("tick"); }
     pix.draw(tl, lit, !!now && wait <= 4.5);
     var total = p.dur || S.dur || 0, pct = total > 0 ? Math.max(0, Math.min(100, t / total * 100)) : 0;
@@ -5798,19 +6610,27 @@ var qrcode = function() {
   function finishSong(natural) {
     if (!S) return;
     var q = S.q, sung = S.player ? S.player.time() : 0, enough = natural || sung > 45 || (S.dur && sung > S.dur * 0.5);
+    var wasDuet = !!S.duet, cheers = S.cheers || 0, nudges = S.nudgeCount || 0;
     stopSong(); pix.setPage(null); $("lyBreak").hidden = true; $("lyCard").hidden = true; $("osd").textContent = "";
     if (!enough) { fadeThen(function () { showBar(); say("No shame in it, " + who(q) + ". Come back up whenever you like."); }); return; }
     var v = pick(VERDICTS), score = v[0] + Math.floor(Math.random() * 2);
+    var stampTxt = wasDuet ? "DUET MAGIC" : cheers >= 3 ? "CROWD FAVOURITE" : nudges === 0 && natural ? "LOCKED IN" : score >= 95 ? "ENCORE!" : "STANDING OVATION";
+    var noteParts = [];
+    if (wasDuet) noteParts.push("Duet harmony");
+    if (cheers > 0) noteParts.push(cheers + " crowd " + (cheers === 1 ? "cheer" : "cheers"));
+    if (nudges === 0 && natural) noteParts.push("Locked in · zero nudges");
+    var sessionNote = noteParts.length ? '<p class="sm" style="text-align:center;margin-top:4px">' + esc(noteParts.join(" · ")) + "</p>" : "";
     wall.unshift({ who: who(q), t: q.song.t, a: q.song.a, s: score, d: Date.now() }); wall = wall.slice(0, 40); store.set("snk-wall", wall);
     audioReady(); sfx("applause");
     var nx = queue[0];
-    openModal('<div class="k">The machine has spoken · ' + esc(who(q)) + '</div><div class="score" id="scoreN">00</div><div class="verdict">' + esc(v[1].replace("Rhonda", HOST)) + '</div><p class="sm" style="text-align:center">' + esc(q.song.t) + " — " + esc(q.song.a) + " · your polaroid's going on the wall</p>" +
+    openModal('<div class="k">The machine has spoken · ' + esc(who(q)) + '</div><div class="score" id="scoreN">00</div><div class="receipt-stamp" id="rStamp">' + esc(stampTxt) + '</div><div class="verdict">' + esc(v[1].replace("Rhonda", HOST)) + '</div><p class="sm" style="text-align:center">' + esc(q.song.t) + " — " + esc(q.song.a) + " · your polaroid's going on the wall</p>" + sessionNote +
       '<div class="btns" style="text-align:center">' + (nx ? '<span class="btn f" data-act="nextup">Next: ' + esc(clip(who(nx), 16)) + " — " + esc(clip(nx.song.t, 20)) + "</span>" : "") + '<span class="btn ' + (nx ? "plain " : "") + 'f" data-act="tobar">Back to the bar</span><span class="btn plain f" data-act="again">Sing it again</span></div>', function () { ACT.tobar(); }, "receipt");
     lastSung = q;
     var n = 0, el = $("scoreN"); clearInterval(scoreIv); scoreIv = setInterval(function () {
       n += Math.ceil((score - n) / 6) || 1;
       if (n >= score) {
         n = score; clearInterval(scoreIv); scoreIv = null; sfx("ta-da");
+        var stEl = $("rStamp"); if (stEl) stEl.classList.add("in");
         clearTimeout(autoNext); if (queue.length) autoNext = setTimeout(function () { if ($("scoreN") && !$("modal").hidden) { closeModal(); startIntermission(); } }, 7000);
       } else sfx("score");
       if (el) el.textContent = n;
@@ -5835,11 +6655,11 @@ var qrcode = function() {
     kind = kind === "yt" ? "yt" : "wa";
     if (kind === "wa" && !audioReady()) { say("This TV can't play the clicks, love."); return; }
     ambience(null);
-    go("sing"); paintWindow(); clearScreen();
+    go("sing"); clearStageChrome(); paintWindow(); clearScreen();
     ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("cue").hidden = true; $("timingHud").hidden = true;
-    hint("sgHint", [["", "◄ ►  move the flash"], ["", "OK  keep it"], ["", "BACK  leave it as it was"]]);
+    hint("sgHint", [["", "◄ ►  move the flash"], ["", "▼  tap along (8×)"], ["", "OK  keep it"], ["", "BACK  cancel"]]);
     if (kind === "yt") {
-      CHK = { kind: "yt", lag: prefs.lagYT, player: null, raf: null };
+      CHK = { kind: "yt", lag: prefs.lagYT, player: null, raf: null, taps: [] };
       drawCheck(); $("chkLamp").hidden = false;
       CHK.player = ytPlayer(checkYtId(), {
         playing: function () {},
@@ -5848,7 +6668,7 @@ var qrcode = function() {
       }, 60);
       CHK.raf = requestAnimationFrame(checkFrame);
     } else {
-      CHK = { kind: "wa", lag: prefs.lagWA, next: ac.currentTime + 0.5, flashes: [], timer: null, raf: null };
+      CHK = { kind: "wa", lag: prefs.lagWA, next: ac.currentTime + 0.5, flashes: [], timer: null, raf: null, taps: [] };
       drawCheck(); $("chkLamp").hidden = false;
       CHK.timer = setInterval(checkSchedule, 80); checkSchedule();
       CHK.raf = requestAnimationFrame(checkFrame);
@@ -5901,6 +6721,31 @@ var qrcode = function() {
     var l = $("chkLamp"); if (l.classList.contains("on") !== on) l.classList.toggle("on", on);
     CHK.raf = requestAnimationFrame(checkFrame);
   }
+  function checkTap() {
+    if (!CHK) return;
+    var err = null;
+    if (CHK.kind === "yt" && CHK.player) {
+      var t = CHK.player.time();
+      if (t < 1.6) return;
+      var k = Math.round((t - 2.0) / 0.8);
+      err = t - (2.0 + k * 0.8);
+    } else if (CHK.flashes && CHK.flashes.length) {
+      var now = performance.now(), best = 1e9;
+      for (var i = 0; i < CHK.flashes.length; i++) {
+        var d = (now - CHK.flashes[i]) / 1000;
+        if (Math.abs(d) < Math.abs(best)) best = d;
+      }
+      if (Math.abs(best) < 0.45) err = best;
+    }
+    if (err == null || Math.abs(err) > 0.45) return;
+    CHK.taps.push(err);
+    if (CHK.taps.length > 8) CHK.taps.shift();
+    var sorted = CHK.taps.slice().sort(function (a, b) { return a - b; });
+    var med = sorted[Math.floor(sorted.length / 2)];
+    CHK.lag = Math.max(-0.3, Math.min(1.0, Math.round(med * 100) / 100));
+    drawCheck();
+    say("Tap " + CHK.taps.length + "/8 → " + lagFmt(CHK.lag), "Sound check", 1200);
+  }
   function endCheck(keep) {
     if (!CHK) return;
     clearInterval(CHK.timer); cancelAnimationFrame(CHK.raf);
@@ -5926,7 +6771,7 @@ var qrcode = function() {
   function startIntermission() {
     if (!queue.length) { fadeThen(showBar); return; }
     if (INT) clearInterval(INT.t);
-    go("sing"); paintWindow(); clearScreen();
+    go("sing"); clearStageChrome(); paintWindow(); clearScreen();
     ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("cue").hidden = true; $("timingHud").hidden = true;
     hint("sgHint", [["", "OK  start now"], ["r", "Skip this slip"], ["", "BACK  to the bar"]]);
     INT = { left: 15, t: document.hidden ? null : setInterval(intTick, 1000), bgPaused: !!document.hidden };
@@ -5966,14 +6811,14 @@ var qrcode = function() {
   }
 
   // ---------- the remote ----------
-  var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, PLAY: 415, PAUSE: 19, PP: 10252, STOP: 413, RW: 412, FF: 417, INFO: 457, IME_DONE: 65376, IME_CANCEL: 65385 };
-  ["ColorF0Red", "ColorF1Green", "ColorF2Yellow", "ColorF3Blue", "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop", "MediaRewind", "MediaFastForward", "Info"].forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
+  var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, PLAY: 415, PAUSE: 19, PP: 10252, STOP: 413, RW: 412, FF: 417, CH_UP: 427, CH_DOWN: 428, INFO: 457, IME_DONE: 65376, IME_CANCEL: 65385 };
+  ["ColorF0Red", "ColorF1Green", "ColorF2Yellow", "ColorF3Blue", "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop", "MediaRewind", "MediaFastForward", "ChannelUp", "ChannelDown", "Info"].forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
   function onKey(e) {
     var k = e.keyCode, typing = document.activeElement === $("oskReal");
     audioReady();
     if (typing) { if (k === KEY.OK || k === KEY.IME_DONE || k === KEY.IME_CANCEL || k === KEY.BACK || k === KEY.ESC) { e.preventDefault(); $("oskReal").blur(); } return; }
     // a desk keyboard stands in for the coloured / info buttons when you try the bar on a computer
-    if (!osk && e.key && e.key.length === 1) { var m = { r: KEY.RED, g: KEY.GREEN, y: KEY.YELLOW, b: KEY.BLUE, i: KEY.INFO }[e.key.toLowerCase()]; if (m) k = m; }
+    if (!osk && e.key && e.key.length === 1) { var m = { r: KEY.RED, g: KEY.GREEN, y: KEY.YELLOW, b: KEY.BLUE, i: KEY.INFO, "]": KEY.CH_UP, "[": KEY.CH_DOWN }[e.key.toLowerCase()]; if (m) k = m; }
     var dir = k === KEY.LEFT ? [-1, 0] : k === KEY.RIGHT ? [1, 0] : k === KEY.UP ? [0, -1] : k === KEY.DOWN ? [0, 1] : null;
     if (dir || k === KEY.OK || k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || (k >= 403 && k <= 406) || k === KEY.INFO) e.preventDefault();
     if (osk) {
@@ -6011,6 +6856,7 @@ var qrcode = function() {
     } else if (SC === "sing" && CHK) {
       if (k === KEY.LEFT) { CHK.lag = Math.max(-0.3, Math.round((CHK.lag - 0.02) * 100) / 100); drawCheck(); }
       else if (k === KEY.RIGHT) { CHK.lag = Math.min(1, Math.round((CHK.lag + 0.02) * 100) / 100); drawCheck(); }
+      else if (k === KEY.DOWN) checkTap();
       else if (k === KEY.OK) endCheck(true);
       else if (k === KEY.BACK || k === KEY.ESC) endCheck(false);
     } else if (SC === "sing" && INT) {
@@ -6023,9 +6869,13 @@ var qrcode = function() {
       }
     } else if (SC === "sing") {
       if (!S) return;
+      wakeStageChrome();
       if (k === KEY.RED || k === KEY.STOP || k === KEY.BACK || k === KEY.ESC) { if (S.loading) { stopSong(); fadeThen(showBar); } else finishSong(false); }
       else if (S.loading) return;
       else if (k === KEY.INFO) toggleTimingHud();
+      else if (k === KEY.GREEN) syncLineNow();
+      else if (k === KEY.CH_UP) swapTape(1);
+      else if (k === KEY.CH_DOWN) swapTape(-1);
       else if (k === KEY.OK || k === KEY.PP) { if (S.player.playing()) S.player.pause(); else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
       else if (k === KEY.PLAY) { if (!S.player.playing()) { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
       else if (k === KEY.PAUSE) { if (S.player.playing()) S.player.pause(); }
@@ -6060,7 +6910,7 @@ var qrcode = function() {
   $("grain").style.backgroundImage = "url(" + grainTexture() + ")";
   Array.prototype.forEach.call(document.querySelectorAll(".rain.near i"), function (i) { i.style.backgroundImage = dropTile(320, 22, 26, 52, 2.2, .3, .6, 31); });
   Array.prototype.forEach.call(document.querySelectorAll(".rain.far i"), function (i) { i.style.backgroundImage = dropTile(220, 40, 12, 26, 1.4, .22, .5, 57); });
-  function open() { showOutside(true); setTimeout(function () { $("fade").classList.remove("on"); }, 350); }
+  function open() { showOutside(true); if (FSN && typeof FSN.isWalking === "function" && FSN.isWalking()) $("fade").classList.remove("on"); else setTimeout(function () { $("fade").classList.remove("on"); }, 350); }
   try { if (document.fonts && document.fonts.load) { var opened = false, o1 = function () { if (!opened) { opened = true; open(); } }; Promise.all([document.fonts.load("40px Caprasimo"), document.fonts.load("600 20px Oswald"), document.fonts.load("20px VT323"), document.fonts.load("bold 19px SNKPix")]).then(o1, o1); setTimeout(o1, 2500); } else open(); } catch (e) { open(); }
   setInterval(function () { if (SC === "out") { $("oClock").textContent = clockText(); if (Date.now() - outPainted > 20 * 60000 && !entering) paintOutside(); } else if (SC === "bar" || SC === "book") lastCall(); }, 30000);
   FSN.ackBoot("karaoke", APP_VERSION);

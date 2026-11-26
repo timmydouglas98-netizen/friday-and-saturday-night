@@ -51,7 +51,14 @@
     $("bn1").textContent = parts.length && parts[0] !== last ? parts.join(" ") : ""; $("bn2").textContent = last.toUpperCase();
     document.title = (s.bar || "Karaoke") + " · Songbook";
     var h = "";
-    if (s.now) h += '<div class="k">Now singing</div><div class="now">' + esc(s.now.s) + "<small>" + esc(s.now.t) + " — " + esc(s.now.a) + "</small></div>";
+    if (s.now) {
+      var offTxt = typeof s.now.off === "number" && Math.abs(s.now.off) >= 0.01 ? " (" + (s.now.off > 0 ? "+" : "") + s.now.off.toFixed(1) + "s)" : "";
+      h += '<div class="k">Now singing</div><div class="now">' + esc(s.now.s) + "<small>" + esc(s.now.t) + " — " + esc(s.now.a) + esc(offTxt) + "</small></div>" +
+        '<div class="stage-bar"><button type="button" data-st="nudge" data-d="-1">−0.1s</button>' +
+        '<button type="button" data-st="pause">' + (s.now.playing ? "Pause" : "Resume") + '</button>' +
+        '<button type="button" data-st="nudge" data-d="1">+0.1s</button>' +
+        '<button type="button" class="cheer" data-st="cheer">Cheer ♪</button></div>';
+    }
     if (s.q && s.q.length) {
       h += '<div class="k"' + (s.now ? ' style="margin-top:12px"' : "") + ">Up next</div><ol>" + s.q.map(function (q) { return "<li>" + esc(q.s) + "<small>" + esc(q.t) + " — " + esc(q.a) + "</small></li>"; }).join("") + "</ol>";
       if (s.n > s.q.length) h += '<p class="sm">…and ' + (s.n - s.q.length) + " more.</p>";
@@ -168,6 +175,11 @@
     else if (t.id === "closeSheet" || t === $("sheet")) closeSheet();
     else if (t.id === "cog") { if (pair) openSettings(); }
     else if (t.id === "sendKey") sendKey();
+    else if ((el = t.closest("[data-st]"))) {
+      var cmd = el.getAttribute("data-st"), dir = +(el.getAttribute("data-d") || 0);
+      send({ t: "stage", cmd: cmd, dir: dir }).catch(function () {});
+      if (cmd === "cheer") toast("Sent a cheer to the stage!", "The bar", 1500);
+    }
     else if (t.id === "forget") { ldel("snk-phone-pair"); try { history.replaceState(null, "", location.pathname); } catch (x) {} location.reload(); }
   });
   $("askForm").addEventListener("submit", function (e) { e.preventDefault(); $("ask").blur(); doAsk($("ask").value); });

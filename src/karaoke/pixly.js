@@ -1,13 +1,13 @@
   // ---------- the stage screen's lettering: chunky bitmap type, the way the old karaoke machines drew it ----------
   // Lines are lettered on a tiny 384×216 screen (one dot = 5×5 TV pixels), in a Helvetica-style face with the
   // smoothing taken out, a dark outline and a drop shadow, then blown up without blurring. The colour wipes
-  // across the letters dot by dot as the line is sung.
+  // across the letters dot by dot (or syllable-by-syllable when ELRC syllable marks are present) as the line is sung.
   var PIX = { W: 384, H: 216, P: 5, FAM: 'SNKPix, Arimo, "Helvetica Neue", Helvetica, Arial, sans-serif' };
   var PIXCOL = { cur: [242, 240, 236], next: [172, 170, 194], sung: [236, 186, 72], line: [58, 56, 64], shadow: [14, 12, 22], lit: [236, 186, 72], unlit: [70, 64, 84],
     p1: [96, 172, 255], p2: [255, 112, 180], both: [236, 186, 72], dim: [150, 148, 170], bgCur: [158, 156, 180] };
   function blendCol(a, b, f) { return [Math.round(a[0] * (1 - f) + b[0] * f), Math.round(a[1] * (1 - f) + b[1] * f), Math.round(a[2] * (1 - f) + b[2] * f)]; }
   // mask → letters, a one-dot outline round them, and a shadow one dot down and to the right; fillAt(x, y) picks each pixel's colour
-  function pixPaint(mask, w, h, fillAt) {
+  function pixPaint(mask, w, h, fillAt, haloCol) {
     var img = new ImageData(w, h), d = img.data, n = w * h, ink = new Uint8Array(n), x, y, i;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x; if (mask[i]) { ink[i] = 2; continue; }
@@ -22,7 +22,7 @@
     for (y = 0; y < h; y++) {
       for (x = 0; x < w; x++) {
         i = y * w + x; var k = ink[i]; if (!k) continue;
-        var c = k === 2 ? fillAt(x, y) : k === 1 ? PIXCOL.line : PIXCOL.shadow, o = i * 4;
+        var c = k === 2 ? fillAt(x, y) : k === 1 ? (haloCol ? blendCol(PIXCOL.line, haloCol, 0.22) : PIXCOL.line) : PIXCOL.shadow, o = i * 4;
         d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = k === 3 ? 190 : 255;
       }
     }
@@ -68,7 +68,18 @@
             var xi = Math.round(x), x1 = Math.round(x + it.ww) + 1;
             t.fillText(it.wd.w, xi, y + base);
             if (isCur) {
-              rects.push({ row: ri, x0: xi, x1: x1, a: it.wd.a, b: it.wd.b, bg: !!it.wd.bg });
+              if (it.wd.segs && it.wd.segs.length > 1) {
+                var accTxt = "", prevX = xi;
+                for (var si = 0; si < it.wd.segs.length; si++) {
+                  var sg = it.wd.segs[si];
+                  accTxt += sg.txt;
+                  var sx1 = si === it.wd.segs.length - 1 ? x1 : Math.min(x1, Math.round(x + t.measureText(accTxt).width));
+                  rects.push({ row: ri, x0: prevX, x1: Math.max(prevX + 1, sx1), a: sg.a, b: sg.b, bg: !!it.wd.bg });
+                  prevX = sx1;
+                }
+              } else {
+                rects.push({ row: ri, x0: xi, x1: x1, a: it.wd.a, b: it.wd.b, bg: !!it.wd.bg });
+              }
               if (it.wd.bg) bgZones.push({ x0: xi - 1, x1: x1 + 1, y0: y, y1: y + rowH });
             }
             x += it.ww;
@@ -90,7 +101,7 @@
       var baseC = document.createElement("canvas"), sungC = document.createElement("canvas");
       baseC.width = sungC.width = PIX.W; baseC.height = sungC.height = h;
       baseC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? PIXCOL.bgCur : PIXCOL.cur) : r === "lab" ? lc : PIXCOL.next; }), 0, 0);
-      sungC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? bgSung : sc) : r === "lab" ? lc : PIXCOL.next; }), 0, 0);
+      sungC.getContext("2d").putImageData(pixPaint(mask, PIX.W, h, function (xx, yy) { var r = rowsInfo[yy]; return r === "cur" ? (isBg(xx, yy) ? bgSung : sc) : r === "lab" ? lc : PIXCOL.next; }, sc), 0, 0);
       // the block sits in the lower half of the screen, lifted when it runs long
       var top = Math.max(84, Math.min(PIX.H - 14 - h, 150 - Math.round(h / 2)));
       page = { base: baseC, sung: sungC, h: h, top: top, rows: A.rows, rects: rects };

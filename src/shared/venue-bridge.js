@@ -141,6 +141,7 @@
     // ---- walking between venues: the street is laid out video store, then the bar to its right, with the Strip as the
     // step-back view. Leaving slides the scene the way you walk; the next venue slides in from the other side. ----
     var POS = { video: 0, karaoke: 1 }, walking = false;
+    var didWalkIn = false;
     function walkDir(from, to) {
       if (to === "street") return from && from !== "street" ? "out" : "";
       if (from in POS && to in POS && from !== to) return POS[to] > POS[from] ? "+1" : "-1";
@@ -168,6 +169,7 @@
         if (!w || !b || Date.now() - w.t > 8000) return;
         var from = w.dir === "+1" ? "translateX(14%)" : w.dir === "-1" ? "translateX(-14%)" : w.dir === "out" ? "scale(1.1)" : "";
         if (!from) return;
+        didWalkIn = true;
         document.documentElement.style.background = "#0c0a18";
         b.style.transformOrigin = "50% 60%"; b.style.transform = from; b.style.opacity = "0";
         var raf = window.requestAnimationFrame || function (f) { setTimeout(f, 16); };
@@ -208,5 +210,5 @@
       }
     }
 
-    return { go: go, viaLoader: viaLoader, ackBoot: ackBoot };
+    return { go: go, viaLoader: viaLoader, ackBoot: ackBoot, isWalking: function () { return didWalkIn; } };
   })();

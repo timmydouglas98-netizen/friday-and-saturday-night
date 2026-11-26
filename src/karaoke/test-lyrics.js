@@ -160,5 +160,157 @@ function assertNear(a, b, tol, msg) {
   assert(pick209.id === 101, "picks candidate 101 closest to 209.0s tape");
 })();
 
+// 9. True sub-word ELRC syllable segments (word.segs) & bad sub-word rejection
+(function testSubWordELRC() {
+  var lrc = [
+    "[00:10.00]<00:10.00>Ev<00:10.22>ery<00:10.45>bod<00:10.68>y <00:11.00>sing<00:11.60>",
+    "[00:14.00]<00:14.00>Bad<00:13.80>syl <00:14.50>word<00:15.00>",
+    "[00:16.00]<00:16.00>Over<00:22.00>shoot <00:22.50>late",
+    "[00:18.00]Next line"
+  ].join("\n");
+  var lines = buildLines(parseLRC(lrc), 60);
+  assert(lines[0].exact === true, "sub-word ELRC line is exact");
+  var w0 = lines[0].words[0], w1 = lines[0].words[1];
+  assert(w0.w === "Everybody", "sub-word ELRC preserves full word text");
+  assertNear(w0.a, 10.00, 0.001, "word 0 start a=10.00");
+  assertNear(w0.b, 11.00, 0.001, "word 0 end b=11.00");
+  assert(w0.bg === false, "word 0 keeps bg flag");
+  assert(w0.segs && w0.segs.length === 4, "Everybody has 4 syllable segments");
+  assert(w0.segs[0].txt === "Ev" && w0.segs[1].txt === "ery" && w0.segs[2].txt === "bod" && w0.segs[3].txt === "y", "segment texts match syllables");
+  assertNear(w0.segs[0].a, 10.00, 0.001, "seg 0 a=10.00");
+  assertNear(w0.segs[0].b, 10.22, 0.001, "seg 0 b=10.22");
+  assertNear(w0.segs[1].a, 10.22, 0.001, "seg 1 a=10.22");
+  assertNear(w0.segs[1].b, 10.45, 0.001, "seg 1 b=10.45");
+  assertNear(w0.segs[2].a, 10.45, 0.001, "seg 2 a=10.45");
+  assertNear(w0.segs[2].b, 10.68, 0.001, "seg 2 b=10.68");
+  assertNear(w0.segs[3].a, 10.68, 0.001, "seg 3 a=10.68");
+  assertNear(w0.segs[3].b, 11.00, 0.001, "seg 3 b=11.00");
+  assert(w1.w === "sing" && !w1.segs, "plain word without internal marks has no segs");
+  assertNear(w1.a, 11.00, 0.001, "word 1 a=11.00");
+  assertNear(w1.b, 11.60, 0.001, "word 1 b=11.60");
+  assert(lines[1].exact === false, "out-of-order sub-word mark rejected");
+  assert(lines[2].exact === false, "out-of-bounds sub-word mark rejected");
+  assert(lines.meta.mismatches === 2, "sub-word rejections increment mismatches to 2");
+})();
+
+// 10. Section-aware local + global pace estimation on multi-tempo song (slow verse + 8s break + fast chorus)
+(function testMultiTempoSections() {
+  function fmtT(sec) {
+    var m = Math.floor(sec / 60), s = (sec % 60).toFixed(2);
+    return "[" + (m < 10 ? "0" : "") + m + ":" + (s.length < 5 ? "0" : "") + s + "]";
+  }
+  var slowVerse = [
+    "Hold my hand inside the dark",
+    "Watch the embers lose their spark",
+    "Shadows falling on the floor",
+    "Softly knocking at the door"
+  ]; // 7 syl each, 0.46 s/syl
+  var fastChorus = [
+    "Run right through the city light",
+    "Turn it up and dance all night",
+    "Hands up high we touch the sky",
+    "Feel the rhythm flying by"
+  ]; // 7 syl each, 0.18 s/syl
+  var t = 10.0, rows = [];
+  slowVerse.forEach(function (txt) {
+    rows.push(fmtT(t) + txt);
+    t += 7 * 0.46 + 0.25;
+  });
+  t += 8.0; // 8s instrumental break (>= 5.0s section boundary)
+  fastChorus.forEach(function (txt) {
+    rows.push(fmtT(t) + txt);
+    t += 7 * 0.18 + 0.25;
+  });
+  rows.push(fmtT(t + 6.0) + "Final fade");
+  var lines = buildLines(parseLRC(rows.join("\n")), 120);
+  var slowLen = lines[3].end - lines[3].t; // last verse line before 8s break
+  var fastLen = lines[7].end - lines[7].t; // last chorus line before 6s break
+  assert(slowLen > 2.4, "slow ballad verse line gets slower local pace (len=" + slowLen.toFixed(2) + "s)");
+  assert(fastLen < 1.8, "fast chorus line gets faster local pace (len=" + fastLen.toFixed(2) + "s)");
+  assert(slowLen > fastLen * 1.4, "section-aware pace clearly separates ballad verse from fast chorus (" + slowLen.toFixed(2) + "s vs " + fastLen.toFixed(2) + "s)");
+  assert(lines.meta.sectionPaces && lines.meta.sectionPaces.length >= 2, "sectionPaces metadata populated");
+  assert(lines.meta.sectionPaces[0] > lines.meta.sectionPaces[1] + 0.10, "section 0 pace (" + lines.meta.sectionPaces[0] + ") > section 1 pace (" + lines.meta.sectionPaces[1] + ")");
+})();
+
+// 11. Prosody-weighted word timing (function words shorter, interjections & final words held longer)
+(function testProsodyWeighting() {
+  var lrc = "[00:10.00]Take the night and feel oh yeah\n[00:14.00]Next line";
+  var lines = buildLines(parseLRC(lrc), 60);
+  var ws = lines[0].words;
+  // ws: 0=Take(1.0), 1=the(0.78), 2=night(1.0), 3=and(0.78), 4=feel(1.0), 5=oh(1.45), 6=yeah(1.45+0.45)
+  var dTake = ws[0].b - ws[0].a;
+  var dThe = ws[1].b - ws[1].a;
+  var dNight = ws[2].b - ws[2].a;
+  var dAnd = ws[3].b - ws[3].a;
+  var dOh = ws[5].b - ws[5].a;
+  var dYeah = ws[6].b - ws[6].a;
+  assert(dThe < dTake * 0.85, "unstressed function word 'the' shorter than stressed 'Take'");
+  assert(dAnd < dNight * 0.85, "unstressed function word 'and' shorter than stressed 'night'");
+  assertNear(dThe / dTake, 0.78, 0.02, "function word weight ratio is ~0.78x");
+  assert(dOh > dTake * 1.25, "interjection 'oh' gets natural hold weight > content word");
+  assert(dYeah > dOh, "final interjection 'yeah' gets both interjection and final-word hold weight");
+
+  // Function word at end of line or with punctuation must NOT be shrunk to 0.78x
+  var lrc2 = "[00:10.00]Walk with, stay with me\n[00:14.00]End";
+  var l2 = buildLines(parseLRC(lrc2), 60)[0].words;
+  var dWalk = l2[0].b - l2[0].a;
+  var dMe = l2[4].b - l2[4].a;
+  assert(dMe > dWalk, "final function word 'me' is NOT shrunk and receives final hold weight");
+})();
+
+// 12. Simultaneous-timestamp line merging (lead + parenthetical backing & dual non-parenthetical)
+(function testSimultaneousMerging() {
+  var lrc = [
+    "[00:10.00]Sing it loud",
+    "[00:10.02](ooh yeah)",
+    "[00:14.00](hey now)",
+    "[00:14.00]Dance all night",
+    "[00:18.00]Lead line one",
+    "[00:18.01]Lead line two",
+    "[00:22.00]Closing line"
+  ].join("\n");
+  var lines = buildLines(parseLRC(lrc), 60);
+  assert(lines.length === 4, "simultaneous lines merged cleanly without skipped lines (got " + lines.length + ")");
+  assert(lines[0].text === "Sing it loud (ooh yeah)", "backing line merged onto lead line");
+  assert(lines[0].words[0].bg === false && lines[0].words[2].bg === false, "lead words remain bg=false");
+  assert(lines[0].words[3].bg === true && lines[0].words[4].bg === true, "merged backing words tagged bg=true");
+  assert(lines[1].text === "Dance all night (hey now)", "reversed backing+lead order puts lead first and backing as bg=true");
+  assert(lines[1].words[0].bg === false && lines[1].words[3].bg === true && lines[1].words[4].bg === true, "reversed merge tags backing words bg=true");
+  assert(lines[2].text.indexOf("Lead line one") !== -1 && lines[2].text.indexOf("Lead line two") !== -1, "both non-parenthetical simultaneous lines preserved");
+  for (var i = 0; i < lines.length - 1; i++) {
+    assert(lines[i].end < lines[i + 1].t, "merged lines never overlap (line " + i + ")");
+  }
+})();
+
+// 13. Credit & metadata line filtering while preserving nextT upper bound
+(function testCreditAndMetadataFiltering() {
+  var lrc = [
+    "[00:00.50]Lyrics by: Max Martin",
+    "[00:01.20]Composer: Shellback",
+    "[00:02.00]Producer: Ryan Tedder",
+    "[00:02.50]Arranged by: Greg Kurstin",
+    "[00:03.00]Written by: Adele Adkins",
+    "[00:03.50]作词：方文山",
+    "[00:04.00]作曲：周杰伦",
+    "[00:04.50]编曲：钟兴民",
+    "[00:05.00][Verse 1]",
+    "[00:06.00]---",
+    "[00:06.50]***",
+    "[00:07.00]...",
+    "[00:10.00]First real sung line",
+    "[00:13.00]Second sung line before break",
+    "[00:15.20]Instrumental",
+    "[00:16.00]纯音乐",
+    "[00:25.00][Chorus]",
+    "[00:26.00]Third real sung line"
+  ].join("\n");
+  var lines = buildLines(parseLRC(lrc), 60);
+  assert(lines.length === 3, "only the 3 sung lines remain after credit/metadata filtering (got " + lines.length + ")");
+  assert(lines[0].text === "First real sung line", "line 0 is first sung line");
+  assert(lines[1].text === "Second sung line before break", "line 1 is second sung line");
+  assert(lines[2].text === "Third real sung line", "line 2 is third sung line");
+  assert(lines[1].end < 15.20, "filtered Instrumental timestamp (15.20s) still caps preceding sung line end (got " + lines[1].end.toFixed(2) + "s)");
+})();
+
 _log("Lyrics tests: " + passed + " passed, " + failed + " failed.");
 if (failed > 0) throw new Error("Lyrics test suite failed (" + failed + " failures)");

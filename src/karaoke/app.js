@@ -1,4 +1,4 @@
-  var APP_VERSION = "0.6.6", APP_DATE = "23 Nov 2026";
+  var APP_VERSION = "0.7.2", APP_DATE = "26 Nov 2026";
   // Optional unlisted YouTube click-track video ID (clicks every 0.8s from 2.000s) for YouTube Sound Check
   var CHECK_YT_ID = "";
   function $(id) { return document.getElementById(id); }
@@ -588,7 +588,8 @@
   function phoneCount() { var n = 0, now = Date.now(); for (var k in phones) if (now - phones[k] < 4 * 3600000) n++; return n; }
   function toPhones(obj) { if (line) relaySend(topicPh(), obj, pkeyBytes).catch(function () {}); }
   function stateObj() {
-    return { t: "state", bar: prefs.barName, now: S && !S.loading ? { s: who(S.q), t: S.q.song.t, a: S.q.song.a } : null,
+    return { t: "state", bar: prefs.barName,
+      now: S && !S.loading ? { s: who(S.q), t: S.q.song.t, a: S.q.song.a, playing: !!(S.player && S.player.playing()), off: S.off, mode: S.q.mode } : null,
       q: queue.slice(0, 8).map(function (q) { return { s: who(q), t: clip(q.song.t, 60), a: clip(q.song.a, 40) }; }), n: queue.length, key: !!prefs.ytKey };
   }
   function sendState(force) {
@@ -626,6 +627,21 @@
       prefs.ytKey = k; savePrefs(); toPhones({ t: "ack", id: id2, ok: true }); sfx("stamp");
       openDesk("d-key"); say("Lovely. The jukebox key came through from the phone."); sendState(true);
     }
+    else if (m.t === "stage" && SC === "sing" && S && !S.loading) {
+      var cmd = str(m.cmd, 16);
+      if (cmd === "nudge") { nudge(m.dir < 0 ? -1 : 1, false); sendState(true); }
+      else if (cmd === "pause") {
+        if (S.player.playing()) S.player.pause();
+        else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); }
+        sendState(true);
+      }
+      else if (cmd === "cheer") {
+        S.cheers = (S.cheers || 0) + 1;
+        stageGlow("line " + (Math.random() < 0.5 ? "a" : "b"));
+        flashOsd("CHEERS FROM THE CROWD!", 2200);
+        if (ac && prefs.sound) sfx("score");
+      }
+    }
   }
   function qrSVG(text, px) {
     var q = qrcode(0, "M"); q.addData(text); q.make();
@@ -654,8 +670,49 @@
 
   // ---------- the regulars' wall ----------
   function polaroid(w) {
-    return '<div class="pol"><div class="ph" style="background:' + POL_BG[w.s % POL_BG.length] + '"><svg viewBox="0 0 200 150">' + Ci(100, 62, 26, "#f0b891", ink(4)) + Pt("M40,150 Q100,70 160,150 Z", "#2a1c18") + R(128, 58, 9, 60, "#55505e", ink(3)) + Ci(132, 54, 12, "#8d93a0", ink(3)) +
-      '<path d="M90,70 Q100,80 112,69" fill="none"' + ink(4) + "/></svg></div><div class=\"who\">" + esc(w.who) + '</div><div class="what">' + esc(w.t) + " · " + w.s + "</div></div>";
+    var key = String(w.who || "") + "|" + String(w.t || ""), h = 0, i;
+    for (i = 0; i < key.length; i++) h = ((h << 5) - h + key.charCodeAt(i)) | 0;
+    h = Math.abs(h);
+    var skins = ["#f0b891", "#e5a37a", "#c9855a", "#f5cba7", "#8d5524"];
+    var tops = ["#2a1c18", "#3a2240", "#1e3a5f", "#6b2232", "#224438"];
+    var skin = skins[h % skins.length], top = tops[(h >> 3) % tops.length], art = "";
+    if (String(w.who || "").indexOf(" & ") !== -1) {
+      var skin2 = skins[(h + 2) % skins.length], top2 = tops[(h + 3) % tops.length];
+      art = Pt("M12,150 Q62,82 112,150 Z", top) + Pt("M88,150 Q138,82 188,150 Z", top2) +
+        Ci(62, 66, 22, skin, ink(4)) + Ci(138, 66, 22, skin2, ink(4)) +
+        '<path d="M53,73 Q62,81 71,72" fill="none"' + ink(3.5) + '/>' +
+        '<path d="M129,73 Q138,81 147,72" fill="none"' + ink(3.5) + '/>' +
+        R(96, 78, 8, 56, "#55505e", ink(3)) + Ci(100, 72, 11, "#8d93a0", ink(3)) +
+        '<path d="M96,36 L96,18 L112,14 L112,30" fill="none" stroke="#ff5fa2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        Ci(92, 37, 4.5, "#ff5fa2", "") + Ci(108, 31, 4.5, "#ff5fa2", "");
+    } else {
+      var v = h % 4;
+      art = Pt("M40,150 Q100,70 160,150 Z", top) + Ci(100, 62, 26, skin, ink(4));
+      if (v === 0) {
+        art += R(128, 58, 9, 60, "#55505e", ink(3)) + Ci(132, 54, 12, "#8d93a0", ink(3)) +
+          '<path d="M90,70 Q100,80 112,69" fill="none"' + ink(4) + "/>";
+      } else if (v === 1) {
+        art += R(76, 52, 20, 12, "#191522", ink(3)) + R(104, 52, 20, 12, "#191522", ink(3)) +
+          '<path d="M96,57 L104,57 M76,56 L72,54 M124,56 L128,54" fill="none"' + ink(3) + '/>' +
+          '<path d="M80,55 L86,55 M108,55 L114,55" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' +
+          '<path d="M91,73 Q101,79 111,72" fill="none"' + ink(3.5) + '/>' +
+          R(128, 62, 9, 56, "#55505e", ink(3)) + Ci(132, 58, 11, "#8d93a0", ink(3));
+      } else if (v === 2) {
+        art += Pt("M86,44 L89,52 L97,52 L91,57 L93,65 L86,60 L79,65 L81,57 L75,52 L83,52 Z", "#ffd166", ink(2.5)) +
+          Pt("M114,44 L117,52 L125,52 L119,57 L121,65 L114,60 L107,65 L109,57 L103,52 L111,52 Z", "#ffd166", ink(2.5)) +
+          '<path d="M95,55 L105,55" fill="none"' + ink(2.5) + '/>' +
+          '<path d="M90,72 Q100,82 112,71" fill="none"' + ink(4) + '/>' +
+          Pt("M44,34 L47,42 L55,45 L47,48 L44,56 L41,48 L33,45 L41,42 Z", "#fff7d6", ink(2)) +
+          R(130, 62, 8, 54, "#55505e", ink(3)) + Ci(134, 58, 11, "#8d93a0", ink(3));
+      } else {
+        art += Pt("M74,52 Q100,32 126,52 Z", "#c4313d", ink(3.5)) +
+          R(118, 46, 22, 7, "#c4313d", ink(3)) +
+          R(75, 48, 50, 7, "#ff5fa2", ink(2.5)) +
+          Pt("M88,68 Q100,84 112,68 Z", "#fff", ink(3)) +
+          R(128, 62, 9, 56, "#55505e", ink(3)) + Ci(132, 58, 11, "#8d93a0", ink(3));
+      }
+    }
+    return '<div class="pol"><div class="ph" style="background:' + POL_BG[w.s % POL_BG.length] + '"><svg viewBox="0 0 200 150">' + art + '</svg></div><div class="who">' + esc(w.who) + '</div><div class="what">' + esc(w.t) + " · " + w.s + "</div></div>";
   }
   function openWall() {
     var h = '<div class="k">Pinned up behind the table</div><h3>The regulars</h3>';
@@ -786,51 +843,11 @@
       var ids = (j.items || []).map(function (i) { return i.id && i.id.videoId; }).filter(Boolean);
       if (!ids.length) return [];
       return getJSON(api + "videos?part=contentDetails,snippet&id=" + ids.join(",") + key).then(function (k) {
-        return (k.items || []).map(function (v, i) { var sn = v.snippet || {}; return { id: v.id, title: String(sn.title || ""), ch: String(sn.channelTitle || ""), desc: String(sn.description || "").slice(0, 400), dur: isoDur(v.contentDetails && v.contentDetails.duration), rank: i }; });
+        return (k.items || []).map(function (v, i) { var sn = v.snippet || {}; return { id: v.id, title: String(sn.title || ""), ch: String(sn.channelTitle || ""), desc: String(sn.description || "").slice(0, 1500), dur: isoDur(v.contentDetails && v.contentDetails.duration), rank: i }; });
       });
     });
   }
-  function nearestDurDiff(vDur, candDurs) {
-    if (!(vDur > 0)) return 0;
-    if (typeof candDurs === "number") return candDurs > 0 ? Math.abs(vDur - candDurs) : 0;
-    if (!Array.isArray(candDurs) || !candDurs.length) return 0;
-    var best = 1e9;
-    for (var i = 0; i < candDurs.length; i++) {
-      var d = Math.abs(vDur - candDurs[i]);
-      if (d < best) best = d;
-    }
-    return best < 1e8 ? best : 0;
-  }
-  function rankVideos(list, song, mode, candDurs) {
-    var nt = norm(song.t), bad = mode === "back" ? /\b(cover|live|remix|reaction|tutorial|lesson|piano|guitar|slowed|sped|8d|nightcore|lower key|higher key|drum|bass only)\b/ : /\b(cover|live|remix|reaction|tutorial|lesson|karaoke|instrumental|slowed|sped|8d|nightcore|lyrics?)\b/;
-    var want = /\b(instrumental|karaoke|backing|minus one|no vocals)\b/;
-    function low(x) { return String(x).toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim(); }
-    var artFull = low(song.a), art = low(firstArtist(song.a)), seen = {};
-    return list.filter(function (v) { if (seen[v.id]) return false; seen[v.id] = 1; return true; }).map(function (v) {
-      var full = low(v.title), t = full.replace(low(cleanTitle(song.t)), " "), d = nearestDurDiff(v.dur, candDurs), sc = d * 1.5 + v.rank * 0.4;
-      var ch = low(v.ch);
-      var isTopic = / topic$/.test(ch) || /provided to youtube by/i.test(v.desc);
-      var isArtistCh = (artFull && ch.indexOf(artFull) !== -1) || (art && ch.indexOf(art) !== -1);
-      var isVevo = /\bvevo\b/.test(ch);
-      var official = isTopic || isArtistCh || isVevo;
-      if (bad.test(t)) sc += 40;
-      if (mode === "back" && !want.test(t)) sc += 60;
-      if (full.indexOf(low(cleanTitle(song.t))) === -1 && full.indexOf(nt) === -1) sc += 30;
-      // the record company's own upload is the actual record (minus the vocals, for an instrumental),
-      // so the lyric timings line up closely. Re-recorded karaoke versions come next.
-      if (mode === "band") {
-        // In "With the band" mode: Topic tracks (exact album audio, no video intro) first, then official audio on artist channel, then VEVO/music videos
-        if (isTopic) sc -= 20;
-        else if (isArtistCh && /official audio/.test(t)) sc -= 14;
-        else if (isArtistCh || isVevo) sc -= 6;
-      } else {
-        if (official && /instrumental/.test(t)) sc -= 14;
-        if (/official instrumental/.test(t)) sc -= 6;
-        if (/\bkaraoke\b/.test(t) && !official) sc += 3;
-      }
-      return { id: v.id, dur: v.dur || 0, d: d, sc: sc, official: official, ch: v.ch };
-    }).sort(function (a, b) { return a.sc - b.sc; });
-  }
+  // nearestDurDiff() and rankVideos() live in src/karaoke/track-match.js
   function findVideo(song, mode, candDurs) {
     var memo = songMemo[songKey(song) + "|" + mode];
     if (memo && memo.v && (memo.rv >= 2 || memo.off)) return Promise.resolve([{ id: memo.v, dur: memo.dur || 0, d: memo.d || 0, memo: true }]);
@@ -864,10 +881,10 @@
   function jukeboxURL() { return store.get("snk-player-url", "") || phoneBase().replace(/index\.html$/, "") + "player.html"; }
   function urlOrigin(u) { var m = /^(https?:\/\/[^\/]+)/.exec(u); return m ? m[1] : ""; }
   function ytPlayer(id, h, tapeDur) {
+    var clk = createPlaybackClock();
     var p = {
-      kind: "yt", t0: 0, at: 0, rate: 1, state: -1, dur: tapeDur || 0, dead: false, got: false, blind: false, paused: false,
-      wrapped: true, wrapOK: false, seeking: null,
-      clockSrc: "init", lastReportAt: 0, reportIntervalMs: 0, lastCorrMs: 0, rawLogged: false
+      kind: "yt", dur: tapeDur || 0, dead: false, got: false, blind: false, paused: false,
+      wrapped: true, wrapOK: false, everPlayed: false, rawLogged: false, lastInfoT: NaN
     };
     var org = /^https?:\/\//.test(location.origin || "") ? "&origin=" + enc(location.origin) : "";
     var direct = "https://www.youtube-nocookie.com/embed/" + enc(id) + "?autoplay=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1" + org;
@@ -890,35 +907,18 @@
     function goBlind() {
       if (p.dead || p.got || p.everPlayed) { if (!p.dead && !p.got && !loadedAt) blindT = setTimeout(goBlind, 3000); return; }
       if (!loadedAt) { blindT = setTimeout(goBlind, 3000); return; }
-      p.blind = true; p.clockSrc = "blind"; p.everPlayed = true; clearTimeout(dog);
+      p.blind = true; p.everPlayed = true; clearTimeout(dog);
       // the tape usually starts a second or two after its page appears
-      p.t0 = Math.max(0, (performance.now() - loadedAt) / 1000 - 2); p.at = performance.now(); p.state = 1; p.rate = 1;
+      var tStart = Math.max(0, (performance.now() - loadedAt) / 1000 - 2);
+      clk.report(tStart, { src: "blind", state: 1, edge: true });
       schedEnd(); h.playing();
     }
     function schedEnd() { clearTimeout(endT); if (!p.blind || p.paused) return; var left = (p.dur || tapeDur || 240) + 2 - p.time(); endT = setTimeout(function () { if (!p.dead) h.ended(); }, Math.max(1, left) * 1000); }
-    function updateClock(reported, srcName) {
-      var now = performance.now();
-      if (p.lastReportAt) p.reportIntervalMs = Math.round(now - p.lastReportAt);
-      p.lastReportAt = now;
-      p.clockSrc = srcName;
-      if (p.seeking) {
-        if (Math.abs(reported - p.seeking.target) < 2.5 || (now - p.seeking.at) > 2500) {
-          p.seeking = null;
-          p.t0 = reported; p.at = now; p.rate = 1; p.lastCorrMs = 0;
-        }
-        return;
-      }
-      if (p.paused) return;
-      var predicted = p.time();
-      var diff = reported - predicted;
-      p.lastCorrMs = Math.round(diff * 1000);
-      if (!p.everPlayed || p.state !== 1 || Math.abs(diff) > 0.25) {
-        p.t0 = reported; p.at = now; p.rate = 1;
-      } else {
-        // Symmetric rate correction: absorb small error over ~0.5 s in either direction without jumping or stepping backwards
-        p.t0 = predicted; p.at = now;
-        p.rate = Math.max(0.80, Math.min(1.25, 1 + diff / 0.5));
-      }
+    function onPlayState(st) {
+      if (p.paused && st === 1) return;
+      clk.setState(st);
+      if (st === 1 && !p.everPlayed) { p.everPlayed = true; clearTimeout(dog); clearTimeout(blindT); cmd("unloadModule", ["captions"]); cmd("setVolume", [100]); h.playing(); }
+      if (st === 0) h.ended();
     }
     function onMsg(e) {
       if (p.dead || e.source !== fr.contentWindow) return;
@@ -930,10 +930,10 @@
       if (d.event === "snk-tick") {
         if (!p.got) { p.got = true; if (p.blind) { p.blind = false; clearTimeout(endT); } }
         if (typeof d.dur === "number" && d.dur > 0) p.dur = d.dur;
-        if (typeof d.state === "number") setState(d.state);
+        if (typeof d.state === "number") onPlayState(d.state);
         if (typeof d.t === "number") {
           var delay = typeof d.wall === "number" ? Math.max(0, Math.min(0.5, (Date.now() - d.wall) / 1000)) : 0;
-          updateClock(d.state === 1 ? d.t + delay : d.t, "YT.Player");
+          clk.report(d.t, { src: "YT.Player", state: d.state, edge: d.edge !== false, wallDelaySec: delay, dur: d.dur });
         }
         return;
       }
@@ -944,42 +944,26 @@
       if (info) {
         if (!p.rawLogged && isDebug()) { p.rawLogged = true; try { console.log("[SNK infoDelivery]", info); } catch (x) {} }
         if (typeof info.duration === "number" && info.duration) p.dur = info.duration;
-        if (typeof info.playerState === "number") setState(info.playerState);
+        if (typeof info.playerState === "number") onPlayState(info.playerState);
         if (typeof info.currentTime === "number") {
           var infoDelay = typeof info.currentTimeLastUpdated_ === "number"
             ? Math.max(0, Math.min(0.5, Date.now() / 1000 - info.currentTimeLastUpdated_)) : 0;
-          updateClock((p.state === 1 ? info.currentTime + infoDelay : info.currentTime), "infoDelivery");
+          var infoEdge = isNaN(p.lastInfoT) || Math.abs(info.currentTime - p.lastInfoT) >= 0.002;
+          p.lastInfoT = info.currentTime;
+          clk.report(info.currentTime, { src: "infoDelivery", state: clk.stats().state, edge: infoEdge, wallDelaySec: infoDelay, dur: info.duration });
         }
       }
-      if (d.event === "onStateChange" && typeof d.info === "number") setState(d.info);
-    }
-    function setState(st) {
-      if (p.paused && st === 1) return; // ignore stale playing report right after local pause
-      if (st === p.state) return;
-      if (p.state === 1) { p.t0 = p.time(); p.at = performance.now(); p.rate = 1; }
-      p.state = st;
-      if (st === 1) { p.at = performance.now(); p.rate = 1; }
-      if (st === 1 && !p.everPlayed) { p.everPlayed = true; clearTimeout(dog); clearTimeout(blindT); cmd("unloadModule", ["captions"]); cmd("setVolume", [100]); h.playing(); }
-      if (st === 0) h.ended();
+      if (d.event === "onStateChange" && typeof d.info === "number") onPlayState(d.info);
     }
     window.addEventListener("message", onMsg);
-    p.time = function () {
-      if (p.seeking) return p.seeking.target;
-      return p.state === 1 ? p.t0 + ((performance.now() - p.at) / 1000) * (p.rate || 1) : p.t0;
-    };
-    p.playing = function () { return p.state === 1 && !p.paused; };
-    p.pause = function () {
-      p.t0 = p.time(); p.at = performance.now(); p.rate = 1; p.state = 2; p.paused = true;
-      clearTimeout(endT); cmd("pauseVideo");
-    };
-    p.resume = function () {
-      p.paused = false; p.at = performance.now(); p.rate = 1; p.state = 1;
-      cmd("playVideo"); if (p.blind) schedEnd();
-    };
+    p.time = function () { return clk.time(); };
+    p.playing = function () { return clk.stats().state === 1 && !p.paused; };
+    p.stats = function () { return clk.stats(); };
+    p.pause = function () { p.paused = true; clk.pause(); clearTimeout(endT); cmd("pauseVideo"); };
+    p.resume = function () { p.paused = false; clk.resume(); cmd("playVideo"); if (p.blind) schedEnd(); };
     p.seek = function (d) {
-      var t = Math.max(0, p.time() + d);
-      p.t0 = t; p.at = performance.now(); p.rate = 1;
-      p.seeking = p.blind ? null : { target: t, at: performance.now() };
+      var t = Math.max(0, clk.time() + d);
+      clk.seekTo(t, p.blind);
       cmd("seekTo", [t, true]); schedEnd();
       if (pix) pix.resetMonotonic();
     };
@@ -987,9 +971,12 @@
     return p;
   }
   function housePlayer(h) {
-    var ctx = audioReady() ? ac : null;
-    var p = { kind: "house", dur: HOUSE_DUR, dead: false, clockSrc: "WebAudio", reportIntervalMs: 0, lastCorrMs: 0 };
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = null, ownCtx = false;
+    try { if (AC) { ctx = new AC(); ownCtx = true; } } catch (e) {}
+    if (!ctx && audioReady()) ctx = ac;
+    var p = { kind: "house", dur: HOUSE_DUR, dead: false, stats: function () { return { clockSrc: "WebAudio", reportIntervalMs: 0, lastCorrMs: 0, rmsJitterMs: 0, rate: 1, stalled: false }; } };
     if (!ctx) { setTimeout(function () { if (!p.dead) h.error("audio"); }, 100); p.time = function () { return 0; }; p.playing = function () { return false; }; p.pause = p.resume = p.seek = function () {}; p.stop = function () { p.dead = true; }; return p; }
+    if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
     var t0 = ctx.currentTime + 0.15, out = ctx.createGain(), nodes = []; out.gain.value = 0.9; out.connect(ctx.destination);
     function note(f, at, len, vol, type) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len); o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + len + 0.05); nodes.push(o); }
     var nb = noise(ctx);
@@ -1017,13 +1004,27 @@
       for (var i = 0; i < nodes.length; i++) { try { nodes[i].stop(); } catch (e) {} }
       nodes.length = 0;
       try { out.disconnect(); } catch (e) {}
-      if (paused) { paused = false; try { ctx.resume(); } catch (e) {} }
+      if (ownCtx) { try { ctx.close(); } catch (e) {} }
+      else if (paused) { paused = false; try { ctx.resume(); } catch (e) {} }
     };
     return p;
   }
 
   // ---------- on stage ----------
-  var winPainted = false, tickRaf = null, osdT = null, hudLastAt = 0;
+  var winPainted = false, tickRaf = null, osdT = null, chromeT = null, hudLastAt = 0;
+  function clearStageChrome() {
+    clearTimeout(chromeT); chromeT = null;
+    var sc = $("scSing"); if (sc) sc.classList.remove("chrome-idle");
+  }
+  function wakeStageChrome() {
+    clearStageChrome();
+    chromeT = setTimeout(function () {
+      chromeT = null;
+      if (SC === "sing" && S && !S.loading && !S.showHud && !S.flash && S.player && S.player.playing()) {
+        var sc = $("scSing"); if (sc) sc.classList.add("chrome-idle");
+      }
+    }, 4200);
+  }
   function paintWindow() {
     $("scSing").classList.toggle("classic", prefs.screen === "classic");
     if (!winPainted) { winPainted = true; svgToCanvas(windowPlateSVG(), $("wPlate"), yes, function () { texturize($("wPlate"), .3, false); }); }
@@ -1034,13 +1035,13 @@
     var q = queue.shift(); if (!q) return;
     ambience(null);
     fadeThen(function () {
-      go("sing"); paintWindow();
+      go("sing"); clearStageChrome(); paintWindow();
       ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("timingHud").hidden = true;
       var c = $("cue"); c.hidden = false; c.classList.remove("open");
       cue(who(q) + " — you're up", q.song.t, HOST + " is finding the words…");
-      hint("sgHint", [["", "OK  pause"], ["", "◄ ►  words earlier / later"], ["", "INFO  timing"], ["r", "Stop the song"]]);
+      hint("sgHint", [["", "OK  pause"], ["", "◄ ►  nudge"], ["g", "Sync line"], ["", "CH±  tape"], ["", "INFO  timing"], ["r", "Stop"]]);
       $("sgProg").firstChild.style.transform = "scaleX(0)"; $("sgProg").hidden = false;
-      S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
+      S = { q: q, lines: [], candidates: [], memoOnlyCands: false, lrcId: null, lrcMeta: null, ni: -2, off: 0, driftA: 0, driftB: 0, nudgePts: [], firstNudgeDir: 0, lastNudgeAt: 0, lastNudgeDir: 0, nudgeStreak: 0, nudgeCount: 0, cheers: 0, savedShiftUsed: false, showHud: false, vids: [], vi: 0, loading: true, id: Date.now() };
       var mine = S.id, load = prepare(q);
       load.then(function (d) { if (S && S.id === mine) beginSong(d); }, function (e) { if (S && S.id === mine) songFailed(e && e.kind || "net"); });
     });
@@ -1104,11 +1105,16 @@
     S.drift = (v.dur > 0 && S.dur > 0) ? Math.abs(v.dur - S.dur) : (v.d || 0);
     // Load shift keyed by tape ID + LRCLIB ID (falling back to legacy memo.off)
     var sk = shiftKey(v.id, S.lrcId), sh = songShifts[sk], memo = songMemo[memoKey()];
-    S.off = 0; S.driftA = 0; S.driftB = 0; S.nudgePts = []; S.firstNudgeDir = 0; S.savedShiftUsed = false;
+    S.off = 0; S.driftA = 0; S.driftB = 0; S.nudgePts = []; S.savedShiftUsed = false; S.autoIntroUsed = false;
     if (sh && typeof sh.a === "number") {
       S.off = sh.a; S.driftA = sh.a; S.driftB = sh.b || 0; S.savedShiftUsed = true;
     } else if (memo && memo.v === v.id && typeof memo.off === "number" && Math.abs(memo.off) >= 0.01) {
       S.off = memo.off; S.driftA = memo.off; S.driftB = 0; S.savedShiftUsed = true;
+    } else if (typeof v.introSec === "number" && S.lines && S.lines.length) {
+      var introShift = Math.round((v.introSec - S.lines[0].t) * 100) / 100;
+      if (introShift >= 1.5 && introShift <= 20) {
+        S.off = introShift; S.driftA = introShift; S.driftB = 0; S.autoIntroUsed = true;
+      }
     }
     cue(null, null, HOST + " is cueing up tape " + (S.vi + 1) + " of " + S.vids.length + "…");
     S.player = ytPlayer(v.id, S.h, v.dur || S.dur);
@@ -1150,6 +1156,8 @@
     $("osdR").innerHTML = esc(who(S.q).toUpperCase()) + "<br>♪ " + (S.q.mode === "band" ? "WITH THE BAND" : S.q.mode === "house" ? "HOUSE BAND" : "BACKING TRACK");
     if (S.savedShiftUsed && (Math.abs(S.off) >= 0.01 || Math.abs(S.driftB) > 0.0001)) {
       flashOsd("WORDS " + (S.off > 0 ? "+" : "") + S.off.toFixed(2) + " s (SAVED)", 5000);
+    } else if (S.autoIntroUsed) {
+      flashOsd("INTRO +" + S.off.toFixed(2) + " s (FROM CHAPTERS)", 5000);
     } else if (S.player.blind) {
       flashOsd("PLAYING BY EAR — ◄ ► TO LINE THE WORDS UP", 9000);
     } else if (S.exact) {
@@ -1159,6 +1167,7 @@
     } else if (S.drift > 2) {
       flashOsd("TIMING MAY WANDER — ◄ ► TO NUDGE", 7000);
     }
+    wakeStageChrome();
     cancelAnimationFrame(tickRaf); tickRaf = null;
     if (document.hidden) {
       if (S.player && S.player.playing()) S.player.pause();
@@ -1202,11 +1211,13 @@
   var lastFailed = null;
   ACT.otherway = function () { var q = lastFailed; closeModal(); if (!q) return; var nq = { song: q.song, singer: q.singer, mode: q.mode === "band" ? "back" : "band" }; if (q.singer2) nq.singer2 = q.singer2; queue.unshift(nq); startNext(); };
   var pix = null;
-  function stopSong() { $("sgProg").hidden = true; cancelAnimationFrame(tickRaf); tickRaf = null; $("timingHud").hidden = true; if (pix) pix.setPage(null); if (S && S.player) S.player.stop(); S = null; }
-  function flashOsd(t, ms) { S && (S.flash = t); clearTimeout(osdT); osdT = setTimeout(function () { if (S) S.flash = ""; }, ms || 2200); }
+  function stopSong() { clearStageChrome(); $("sgProg").hidden = true; cancelAnimationFrame(tickRaf); tickRaf = null; $("timingHud").hidden = true; if (pix) pix.setPage(null); if (S && S.player) S.player.stop(); S = null; }
+  function flashOsd(t, ms) { S && (S.flash = t); wakeStageChrome(); clearTimeout(osdT); osdT = setTimeout(function () { if (S) { S.flash = ""; wakeStageChrome(); } }, ms || 2200); }
   function currentOffset(t) { return S.driftB ? (S.driftA + S.driftB * t) : S.off; }
   function nudge(dir, isRepeat) {
     if (!S || S.loading) return;
+    S.nudgeCount = (S.nudgeCount || 0) + 1;
+    wakeStageChrome();
     var now = performance.now();
     if (dir === S.lastNudgeDir && (now - (S.lastNudgeAt || 0)) < 300) S.nudgeStreak = (S.nudgeStreak || 1) + 1;
     else S.nudgeStreak = 1;
@@ -1219,43 +1230,86 @@
     S.off = nextOff; S.driftA = nextOff; S.driftB = 0;
     if (pix) pix.resetMonotonic();
 
-    // Only learn linear drift on backing tracks (mode "back"), and only when both nudges (>= 60s apart) go the same way
+    // Learn linear tempo drift on backing tracks from anchors >= 45 s apart, but only while the nudges keep going one
+    // way (a nudge back against the last one is an overshoot correction, not drift): see fitDriftShift
     if (S.q.mode === "back" && t > 2) {
-      if (S.firstNudgeDir && S.firstNudgeDir !== dir) {
-        // Reversed direction (correcting an overshoot): reset drift anchor rather than inventing drift
-        S.nudgePts = [{ t: t, off: nextOff }];
-        S.firstNudgeDir = dir;
-      } else {
-        if (!S.firstNudgeDir) S.firstNudgeDir = dir;
-        if (!S.nudgePts.length || Math.abs(t - S.nudgePts[S.nudgePts.length - 1].t) > 15) {
-          S.nudgePts.push({ t: t, off: nextOff });
-        } else {
-          S.nudgePts[S.nudgePts.length - 1] = { t: t, off: nextOff };
-        }
-        if (S.nudgePts.length >= 2) {
-          var p1 = S.nudgePts[0], p2 = S.nudgePts[S.nudgePts.length - 1];
-          if (p2.t - p1.t >= 60 && (p2.off - p1.off) * dir > 0) {
-            var b = (p2.off - p1.off) / (p2.t - p1.t);
-            if (Math.abs(b) <= 0.03) {
-              S.driftB = Math.round(b * 100000) / 100000;
-              S.driftA = Math.round((p1.off - S.driftB * p1.t) * 1000) / 1000;
-            }
-          }
-        }
-      }
+      S.nudgePts = addDriftPoint(S.nudgePts, t, nextOff, dir);
+      var fit = fitDriftShift(S.nudgePts, 45, 0.03);
+      if (fit) { S.driftA = fit.a; S.driftB = fit.b; }
     }
 
     var driftTxt = S.driftB ? " (DRIFT " + (S.driftB > 0 ? "+" : "") + (S.driftB * 60).toFixed(2) + "s/min)" : "";
     flashOsd("WORDS " + (nextOff > 0 ? "+" : "") + nextOff.toFixed(2) + "s " + (nextOff > 0 ? "LATER" : nextOff < 0 ? "EARLIER" : "") + driftTxt);
-    if (S.player.kind === "yt") {
-      var v = S.vids[S.vi];
-      if (v) {
-        songShifts[shiftKey(v.id, S.lrcId)] = { a: S.driftA, b: S.driftB, t: Date.now() };
-        pruneObj(songShifts, 250);
-        store.set("snk-shifts", songShifts);
-      }
-      var m = songMemo[memoKey()];
-      if (m) { m.off = S.driftA; m.t = Date.now(); pruneObj(songMemo, 250); store.set("snk-songs", songMemo); }
+    saveShift();
+  }
+  function saveShift() {
+    if (!S || !S.player || S.player.kind !== "yt") return;
+    var v = S.vids[S.vi];
+    if (v) {
+      songShifts[shiftKey(v.id, S.lrcId)] = { a: S.driftA, b: S.driftB, t: Date.now() };
+      pruneObj(songShifts, 250);
+      store.set("snk-shifts", songShifts);
+    }
+    var m = songMemo[memoKey()];
+    if (m) { m.off = S.driftA; m.t = Date.now(); pruneObj(songMemo, 250); store.set("snk-songs", songMemo); }
+  }
+  // One-tap line sync: snap the current/upcoming line's start to right now
+  function syncLineNow() {
+    if (!S || S.loading || !S.lines.length) return;
+    wakeStageChrome();
+    var t = S.player ? S.player.time() : 0, lag = activeLag(S.player.kind);
+    var tl = t - currentOffset(t) - lag;
+    var idx = Math.max(0, Math.min(S.lines.length - 1, S.ni < 0 ? 0 : S.ni));
+    var curL = S.lines[idx], nxtL = S.lines[idx + 1];
+    // If we're more than 40% past the current line's end or within 3s of the next line, snap the next line
+    var target = (nxtL && tl > curL.end && (nxtL.t - tl) < 4) ? nxtL : curL;
+    var newOff = Math.round((t - lag - target.t) * 100) / 100;
+    if (Math.abs(newOff) > 45) { flashOsd("TOO FAR TO SNAP — USE ◄ ►", 2200); return; }
+    var prevOff = currentOffset(t);
+    S.off = newOff; S.driftA = newOff; S.driftB = 0; S.ni = -2;
+    if (S.q.mode === "back" && t > 2) {
+      S.nudgePts = addDriftPoint(S.nudgePts, t, newOff, newOff - prevOff);
+      var fit = fitDriftShift(S.nudgePts, 30, 0.05);
+      if (fit) { S.driftA = fit.a; S.driftB = fit.b; }
+    } else {
+      S.nudgePts = [{ t: t, off: newOff }];
+    }
+    if (pix) pix.resetMonotonic();
+    var driftTxt = S.driftB ? " (DRIFT " + (S.driftB > 0 ? "+" : "") + (S.driftB * 60).toFixed(2) + "s/min)" : "";
+    flashOsd("SYNCED LINE → " + (newOff > 0 ? "+" : "") + newOff.toFixed(2) + "s" + driftTxt);
+    saveShift();
+    sendState(true);
+  }
+  // Mid-song tape swap (CH+ / CH-) if tape 1 is a bad cover or wrong key
+  function swapTape(delta) {
+    if (!S || S.loading || S.q.song.house) return;
+    var mine = S.id;
+    function cycle() {
+      if (!S || S.id !== mine || S.vids.length < 2) { flashOsd("NO OTHER TAPES FOUND", 2000); return; }
+      S.loading = true;
+      cancelAnimationFrame(tickRaf); tickRaf = null;
+      if (S.player) S.player.stop();
+      S.vi = (S.vi + delta + S.vids.length) % S.vids.length;
+      var c = $("cue"); c.hidden = false; c.classList.remove("open");
+      cue(who(S.q) + " — swapping tape", S.q.song.t, HOST + " is cueing up tape " + (S.vi + 1) + " of " + S.vids.length + "…");
+      tryVideo();
+    }
+    if (S.vids.length < 2 && S.vids[0] && S.vids[0].memo) {
+      delete songMemo[memoKey()]; store.set("snk-songs", songMemo);
+      flashOsd("FINDING MORE TAPES…", 3000);
+      var candsP = S.memoOnlyCands ? findLyricsCandidates(S.q.song).catch(function () { return S.candidates; }) : Promise.resolve(S.candidates);
+      candsP.then(function (cands) {
+        if (!S || S.id !== mine) return;
+        if (cands && cands.length) { S.candidates = cands; S.memoOnlyCands = false; }
+        var candDurs = S.candidates.map(function (x) { return x.duration; }).filter(function (x) { return x > 10; });
+        return findVideo(S.q.song, S.q.mode, candDurs);
+      }).then(function (vids) {
+        if (!S || S.id !== mine) return;
+        if (vids && vids.length) { S.vids = vids; S.vi = 0; }
+        cycle();
+      }, function () { if (S && S.id === mine) flashOsd("NO OTHER TAPES FOUND", 2000); });
+    } else {
+      cycle();
     }
   }
   function toggleTimingHud() {
@@ -1264,17 +1318,19 @@
     $("timingHud").hidden = !S.showHud;
     hudLastAt = 0;
     if (S.showHud) updateTimingHud(S.player.time());
+    wakeStageChrome();
   }
   function updateTimingHud(t) {
     if (!S || !S.showHud) return;
-    var p = S.player, v = S.vids[S.vi] || {}, m = S.lrcMeta || {};
+    var p = S.player, st = p.stats ? p.stats() : {}, v = S.vids[S.vi] || {}, m = S.lrcMeta || {};
     var lag = activeLag(p.kind), effOff = currentOffset(t);
     var tapeLen = p.dur || S.tapeDur || 0, lrcLen = S.dur || 0;
     var diffStr = (tapeLen && lrcLen) ? (tapeLen - lrcLen).toFixed(1) + "s" : "n/a";
+    var modeStr = m.hasSubWordSyl ? "ELRC syl" : S.exact ? "word" : S.synced ? "line" : "plain";
     var lines = [
-      "CLOCK: " + (p.clockSrc || p.kind) + " · int " + (p.reportIntervalMs || 0) + "ms · corr " + (p.lastCorrMs >= 0 ? "+" : "") + (p.lastCorrMs || 0) + "ms",
+      "CLOCK: " + (st.clockSrc || p.kind) + " · rate " + (st.rate || 1).toFixed(3) + "x · rms ±" + (st.rmsJitterMs || 0).toFixed(1) + "ms · corr " + (st.lastCorrMs >= 0 ? "+" : "") + (st.lastCorrMs || 0) + "ms" + (st.stalled ? " [STALL]" : ""),
       "LAG(" + (p.kind === "yt" ? "YT" : "WA") + "): " + lagFmt(lag) + " · SHIFT: " + (effOff >= 0 ? "+" : "") + effOff.toFixed(2) + "s" + (S.driftB ? " (b=" + (S.driftB * 60).toFixed(2) + "s/m)" : ""),
-      "LYRIC #" + (S.lrcId != null ? S.lrcId : "-") + " (" + Math.round(lrcLen) + "s) vs TAPE " + (v.id || "house") + " (" + Math.round(tapeLen) + "s) · Δ " + diffStr,
+      "LYRIC #" + (S.lrcId != null ? S.lrcId : "-") + " (" + Math.round(lrcLen) + "s, " + modeStr + ") vs TAPE " + (S.vi + 1) + "/" + Math.max(1, S.vids.length) + " " + (v.id || "house") + " (" + Math.round(tapeLen) + "s) · Δ " + diffStr,
       "LINES: " + (m.exactCount || 0) + " exact / " + (m.estCount || 0) + " est · pace " + (m.pace || 0) + "s/syl · off " + (m.offsetMs || 0) + "ms · mism " + (m.mismatches || 0)
     ];
     $("timingHud").textContent = lines.join("\n");
@@ -1291,14 +1347,25 @@
     while (ni > 0 && L[ni - 1].end > tl) ni--;
     var now = L[ni];
     if (ni !== S.ni) { S.ni = ni; var lab = partLabel(now); pix.setPage(now, L[ni + 1], !!prefs.big, lab, lab ? lab.col : null); }
-    // the stage lights flare as each line starts (alternating sides), and blink with the count-in lamps
-    if (now && tl >= now.t && S.glowLine !== ni) { S.glowLine = ni; stageGlow("line " + (ni % 2 ? "a" : "b")); }
+    // the stage lights flare as each line starts (alternating sides, or duet singer colour), and blink with the count-in lamps
+    if (now && tl >= now.t && S.glowLine !== ni) {
+      S.glowLine = ni;
+      if (S.duet) stageGlow("line " + (now.part === 1 ? "p1" : now.part === 2 ? "p2" : "both"));
+      else stageGlow("line " + (ni % 2 ? "a" : "b"));
+    }
     var wait = now ? now.t - tl : 0, card = $("lyCard");
+    var beatSec = Math.max(0.45, Math.min(1.05, S.lrcMeta && S.lrcMeta.pace ? S.lrcMeta.pace * 2.4 : 0.75));
     var showCard = ni === 0 && now && wait > 4.5 && t < 30;
     if (showCard !== !card.hidden) { card.hidden = !showCard; if (showCard) card.innerHTML = '<div class="k">Now singing · ' + esc(who(S.q)) + '</div><div class="t">' + esc(S.q.song.t) + '</div><div class="s">' + esc(S.q.song.a) + "</div>"; }
-    var lit = now && wait > 0 && wait <= 4 && (ni === 0 || now.t - L[ni - 1].end >= 4) ? Math.ceil(wait) : -1;
+    var lit = now && wait > 0 && wait <= beatSec * 4 && (ni === 0 || now.t - L[ni - 1].end >= 4) ? Math.max(1, Math.min(4, Math.ceil(wait / beatSec))) : -1;
     var brk = !!(now && ni > 0 && wait > 4 && now.t - L[ni - 1].end >= 9) || (!now && n > 0 && S.dur - tl > 6);
     if (brk !== !$("lyBreak").hidden) $("lyBreak").hidden = !brk;
+    if (brk) {
+      var bTxt = now
+        ? "♪ &nbsp; ♪ &nbsp; ♪<small>Next in " + Math.ceil(wait) + "s: “" + esc(clip(now.text, 44)) + "”</small>"
+        : "♪ &nbsp; ♪ &nbsp; ♪<small>Instrumental outro</small>";
+      if (S.brkHtml !== bTxt) { S.brkHtml = bTxt; $("lyBreak").innerHTML = bTxt; }
+    }
     if (lit !== S.glowLit) { S.glowLit = lit; if (lit > 0) stageGlow("tick"); }
     pix.draw(tl, lit, !!now && wait <= 4.5);
     var total = p.dur || S.dur || 0, pct = total > 0 ? Math.max(0, Math.min(100, t / total * 100)) : 0;
@@ -1319,19 +1386,27 @@
   function finishSong(natural) {
     if (!S) return;
     var q = S.q, sung = S.player ? S.player.time() : 0, enough = natural || sung > 45 || (S.dur && sung > S.dur * 0.5);
+    var wasDuet = !!S.duet, cheers = S.cheers || 0, nudges = S.nudgeCount || 0;
     stopSong(); pix.setPage(null); $("lyBreak").hidden = true; $("lyCard").hidden = true; $("osd").textContent = "";
     if (!enough) { fadeThen(function () { showBar(); say("No shame in it, " + who(q) + ". Come back up whenever you like."); }); return; }
     var v = pick(VERDICTS), score = v[0] + Math.floor(Math.random() * 2);
+    var stampTxt = wasDuet ? "DUET MAGIC" : cheers >= 3 ? "CROWD FAVOURITE" : nudges === 0 && natural ? "LOCKED IN" : score >= 95 ? "ENCORE!" : "STANDING OVATION";
+    var noteParts = [];
+    if (wasDuet) noteParts.push("Duet harmony");
+    if (cheers > 0) noteParts.push(cheers + " crowd " + (cheers === 1 ? "cheer" : "cheers"));
+    if (nudges === 0 && natural) noteParts.push("Locked in · zero nudges");
+    var sessionNote = noteParts.length ? '<p class="sm" style="text-align:center;margin-top:4px">' + esc(noteParts.join(" · ")) + "</p>" : "";
     wall.unshift({ who: who(q), t: q.song.t, a: q.song.a, s: score, d: Date.now() }); wall = wall.slice(0, 40); store.set("snk-wall", wall);
     audioReady(); sfx("applause");
     var nx = queue[0];
-    openModal('<div class="k">The machine has spoken · ' + esc(who(q)) + '</div><div class="score" id="scoreN">00</div><div class="verdict">' + esc(v[1].replace("Rhonda", HOST)) + '</div><p class="sm" style="text-align:center">' + esc(q.song.t) + " — " + esc(q.song.a) + " · your polaroid's going on the wall</p>" +
+    openModal('<div class="k">The machine has spoken · ' + esc(who(q)) + '</div><div class="score" id="scoreN">00</div><div class="receipt-stamp" id="rStamp">' + esc(stampTxt) + '</div><div class="verdict">' + esc(v[1].replace("Rhonda", HOST)) + '</div><p class="sm" style="text-align:center">' + esc(q.song.t) + " — " + esc(q.song.a) + " · your polaroid's going on the wall</p>" + sessionNote +
       '<div class="btns" style="text-align:center">' + (nx ? '<span class="btn f" data-act="nextup">Next: ' + esc(clip(who(nx), 16)) + " — " + esc(clip(nx.song.t, 20)) + "</span>" : "") + '<span class="btn ' + (nx ? "plain " : "") + 'f" data-act="tobar">Back to the bar</span><span class="btn plain f" data-act="again">Sing it again</span></div>', function () { ACT.tobar(); }, "receipt");
     lastSung = q;
     var n = 0, el = $("scoreN"); clearInterval(scoreIv); scoreIv = setInterval(function () {
       n += Math.ceil((score - n) / 6) || 1;
       if (n >= score) {
         n = score; clearInterval(scoreIv); scoreIv = null; sfx("ta-da");
+        var stEl = $("rStamp"); if (stEl) stEl.classList.add("in");
         clearTimeout(autoNext); if (queue.length) autoNext = setTimeout(function () { if ($("scoreN") && !$("modal").hidden) { closeModal(); startIntermission(); } }, 7000);
       } else sfx("score");
       if (el) el.textContent = n;
@@ -1356,11 +1431,11 @@
     kind = kind === "yt" ? "yt" : "wa";
     if (kind === "wa" && !audioReady()) { say("This TV can't play the clicks, love."); return; }
     ambience(null);
-    go("sing"); paintWindow(); clearScreen();
+    go("sing"); clearStageChrome(); paintWindow(); clearScreen();
     ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("cue").hidden = true; $("timingHud").hidden = true;
-    hint("sgHint", [["", "◄ ►  move the flash"], ["", "OK  keep it"], ["", "BACK  leave it as it was"]]);
+    hint("sgHint", [["", "◄ ►  move the flash"], ["", "▼  tap along (8×)"], ["", "OK  keep it"], ["", "BACK  cancel"]]);
     if (kind === "yt") {
-      CHK = { kind: "yt", lag: prefs.lagYT, player: null, raf: null };
+      CHK = { kind: "yt", lag: prefs.lagYT, player: null, raf: null, taps: [] };
       drawCheck(); $("chkLamp").hidden = false;
       CHK.player = ytPlayer(checkYtId(), {
         playing: function () {},
@@ -1369,7 +1444,7 @@
       }, 60);
       CHK.raf = requestAnimationFrame(checkFrame);
     } else {
-      CHK = { kind: "wa", lag: prefs.lagWA, next: ac.currentTime + 0.5, flashes: [], timer: null, raf: null };
+      CHK = { kind: "wa", lag: prefs.lagWA, next: ac.currentTime + 0.5, flashes: [], timer: null, raf: null, taps: [] };
       drawCheck(); $("chkLamp").hidden = false;
       CHK.timer = setInterval(checkSchedule, 80); checkSchedule();
       CHK.raf = requestAnimationFrame(checkFrame);
@@ -1422,6 +1497,31 @@
     var l = $("chkLamp"); if (l.classList.contains("on") !== on) l.classList.toggle("on", on);
     CHK.raf = requestAnimationFrame(checkFrame);
   }
+  function checkTap() {
+    if (!CHK) return;
+    var err = null;
+    if (CHK.kind === "yt" && CHK.player) {
+      var t = CHK.player.time();
+      if (t < 1.6) return;
+      var k = Math.round((t - 2.0) / 0.8);
+      err = t - (2.0 + k * 0.8);
+    } else if (CHK.flashes && CHK.flashes.length) {
+      var now = performance.now(), best = 1e9;
+      for (var i = 0; i < CHK.flashes.length; i++) {
+        var d = (now - CHK.flashes[i]) / 1000;
+        if (Math.abs(d) < Math.abs(best)) best = d;
+      }
+      if (Math.abs(best) < 0.45) err = best;
+    }
+    if (err == null || Math.abs(err) > 0.45) return;
+    CHK.taps.push(err);
+    if (CHK.taps.length > 8) CHK.taps.shift();
+    var sorted = CHK.taps.slice().sort(function (a, b) { return a - b; });
+    var med = sorted[Math.floor(sorted.length / 2)];
+    CHK.lag = Math.max(-0.3, Math.min(1.0, Math.round(med * 100) / 100));
+    drawCheck();
+    say("Tap " + CHK.taps.length + "/8 → " + lagFmt(CHK.lag), "Sound check", 1200);
+  }
   function endCheck(keep) {
     if (!CHK) return;
     clearInterval(CHK.timer); cancelAnimationFrame(CHK.raf);
@@ -1447,7 +1547,7 @@
   function startIntermission() {
     if (!queue.length) { fadeThen(showBar); return; }
     if (INT) clearInterval(INT.t);
-    go("sing"); paintWindow(); clearScreen();
+    go("sing"); clearStageChrome(); paintWindow(); clearScreen();
     ["osd", "osdR"].forEach(function (id) { $(id).innerHTML = ""; }); $("lyCard").hidden = true; $("lyBreak").hidden = true; $("cue").hidden = true; $("timingHud").hidden = true;
     hint("sgHint", [["", "OK  start now"], ["r", "Skip this slip"], ["", "BACK  to the bar"]]);
     INT = { left: 15, t: document.hidden ? null : setInterval(intTick, 1000), bgPaused: !!document.hidden };
@@ -1487,14 +1587,14 @@
   }
 
   // ---------- the remote ----------
-  var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, PLAY: 415, PAUSE: 19, PP: 10252, STOP: 413, RW: 412, FF: 417, INFO: 457, IME_DONE: 65376, IME_CANCEL: 65385 };
-  ["ColorF0Red", "ColorF1Green", "ColorF2Yellow", "ColorF3Blue", "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop", "MediaRewind", "MediaFastForward", "Info"].forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
+  var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 10009, ESC: 27, BKSP: 8, RED: 403, GREEN: 404, YELLOW: 405, BLUE: 406, PLAY: 415, PAUSE: 19, PP: 10252, STOP: 413, RW: 412, FF: 417, CH_UP: 427, CH_DOWN: 428, INFO: 457, IME_DONE: 65376, IME_CANCEL: 65385 };
+  ["ColorF0Red", "ColorF1Green", "ColorF2Yellow", "ColorF3Blue", "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop", "MediaRewind", "MediaFastForward", "ChannelUp", "ChannelDown", "Info"].forEach(function (k) { try { tizen.tvinputdevice.registerKey(k); } catch (e) {} });
   function onKey(e) {
     var k = e.keyCode, typing = document.activeElement === $("oskReal");
     audioReady();
     if (typing) { if (k === KEY.OK || k === KEY.IME_DONE || k === KEY.IME_CANCEL || k === KEY.BACK || k === KEY.ESC) { e.preventDefault(); $("oskReal").blur(); } return; }
     // a desk keyboard stands in for the coloured / info buttons when you try the bar on a computer
-    if (!osk && e.key && e.key.length === 1) { var m = { r: KEY.RED, g: KEY.GREEN, y: KEY.YELLOW, b: KEY.BLUE, i: KEY.INFO }[e.key.toLowerCase()]; if (m) k = m; }
+    if (!osk && e.key && e.key.length === 1) { var m = { r: KEY.RED, g: KEY.GREEN, y: KEY.YELLOW, b: KEY.BLUE, i: KEY.INFO, "]": KEY.CH_UP, "[": KEY.CH_DOWN }[e.key.toLowerCase()]; if (m) k = m; }
     var dir = k === KEY.LEFT ? [-1, 0] : k === KEY.RIGHT ? [1, 0] : k === KEY.UP ? [0, -1] : k === KEY.DOWN ? [0, 1] : null;
     if (dir || k === KEY.OK || k === KEY.BACK || k === KEY.ESC || k === KEY.BKSP || (k >= 403 && k <= 406) || k === KEY.INFO) e.preventDefault();
     if (osk) {
@@ -1532,6 +1632,7 @@
     } else if (SC === "sing" && CHK) {
       if (k === KEY.LEFT) { CHK.lag = Math.max(-0.3, Math.round((CHK.lag - 0.02) * 100) / 100); drawCheck(); }
       else if (k === KEY.RIGHT) { CHK.lag = Math.min(1, Math.round((CHK.lag + 0.02) * 100) / 100); drawCheck(); }
+      else if (k === KEY.DOWN) checkTap();
       else if (k === KEY.OK) endCheck(true);
       else if (k === KEY.BACK || k === KEY.ESC) endCheck(false);
     } else if (SC === "sing" && INT) {
@@ -1544,9 +1645,13 @@
       }
     } else if (SC === "sing") {
       if (!S) return;
+      wakeStageChrome();
       if (k === KEY.RED || k === KEY.STOP || k === KEY.BACK || k === KEY.ESC) { if (S.loading) { stopSong(); fadeThen(showBar); } else finishSong(false); }
       else if (S.loading) return;
       else if (k === KEY.INFO) toggleTimingHud();
+      else if (k === KEY.GREEN) syncLineNow();
+      else if (k === KEY.CH_UP) swapTape(1);
+      else if (k === KEY.CH_DOWN) swapTape(-1);
       else if (k === KEY.OK || k === KEY.PP) { if (S.player.playing()) S.player.pause(); else { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
       else if (k === KEY.PLAY) { if (!S.player.playing()) { if (S.flash === "PAUSED — OK TO RESUME") { S.flash = ""; clearTimeout(osdT); } S.player.resume(); } }
       else if (k === KEY.PAUSE) { if (S.player.playing()) S.player.pause(); }
@@ -1581,7 +1686,7 @@
   $("grain").style.backgroundImage = "url(" + grainTexture() + ")";
   Array.prototype.forEach.call(document.querySelectorAll(".rain.near i"), function (i) { i.style.backgroundImage = dropTile(320, 22, 26, 52, 2.2, .3, .6, 31); });
   Array.prototype.forEach.call(document.querySelectorAll(".rain.far i"), function (i) { i.style.backgroundImage = dropTile(220, 40, 12, 26, 1.4, .22, .5, 57); });
-  function open() { showOutside(true); setTimeout(function () { $("fade").classList.remove("on"); }, 350); }
+  function open() { showOutside(true); if (FSN && typeof FSN.isWalking === "function" && FSN.isWalking()) $("fade").classList.remove("on"); else setTimeout(function () { $("fade").classList.remove("on"); }, 350); }
   try { if (document.fonts && document.fonts.load) { var opened = false, o1 = function () { if (!opened) { opened = true; open(); } }; Promise.all([document.fonts.load("40px Caprasimo"), document.fonts.load("600 20px Oswald"), document.fonts.load("20px VT323"), document.fonts.load("bold 19px SNKPix")]).then(o1, o1); setTimeout(o1, 2500); } else open(); } catch (e) { open(); }
   setInterval(function () { if (SC === "out") { $("oClock").textContent = clockText(); if (Date.now() - outPainted > 20 * 60000 && !entering) paintOutside(); } else if (SC === "bar" || SC === "book") lastCall(); }, 30000);
   FSN.ackBoot("karaoke", APP_VERSION);

@@ -11,8 +11,9 @@
 <div id="ytMount"></div>
 <script>
 // The jukebox. Runs on GitHub Pages so YouTube sees a real website origin.
-// Uses the official YouTube IFrame API to poll getCurrentTime() every 75ms and send wall-clock-stamped
-// timing ticks to the TV; falls back automatically to a plain iframe message relay if the API script stalls.
+// Uses the official YouTube IFrame API with rAF edge-triggered getCurrentTime() detection while playing
+// (emitting edge: true the exact frame the quantized clock ticks forward, plus 250ms heartbeats for stall detection);
+// falls back automatically to a plain iframe message relay if the API script stalls.
 (function () {
   "use strict";
   var hash = location.hash || "";
@@ -21,8 +22,8 @@
   var vid = m[1], here = location.href.split("#")[0];
   var wantMute = /[#&]mute=1(?:&|$)/.test(hash);
   var wantLoop = /[#&]loop=1(?:&|$)/.test(hash);
-  var mode = "init", player = null, fallbackFrame = null, pollT = null, pendingCmds = [];
-  var lastState = null, lastT = NaN;
+  var mode = "init", player = null, fallbackFrame = null, rafId = null, hbTimer = null, pendingCmds = [];
+  var lastState = null, lastT = NaN, lastSentAt = 0;
 
   function toTV(obj) {
     try { window.parent.postMessage(typeof obj === "string" ? obj : JSON.stringify(obj), "*"); } catch (x) {}
@@ -51,21 +52,37 @@
     while (pendingCmds.length) { var c = pendingCmds.shift(); runCmd(c[0], c[1]); }
   }
 
+  function emitTick(forceEdge) {
+    if (mode !== "api" || !player || typeof player.getCurrentTime !== "function") return;
+    try {
+      var st = typeof player.getPlayerState === "function" ? player.getPlayerState() : -1;
+      var t = player.getCurrentTime();
+      var dur = typeof player.getDuration === "function" ? player.getDuration() : 0;
+      if (typeof t !== "number" || isNaN(t)) return;
+      var changed = isNaN(lastT) || Math.abs(t - lastT) >= 0.002;
+      var stateChanged = st !== lastState;
+      var now = Date.now();
+      if (changed || stateChanged || forceEdge) {
+        lastState = st; lastT = t; lastSentAt = now;
+        toTV({ event: "snk-tick", t: t, dur: dur || 0, state: st, wall: now, edge: changed || !!forceEdge });
+      } else if (st === 1 && now - lastSentAt >= 250) {
+        lastSentAt = now;
+        toTV({ event: "snk-tick", t: t, dur: dur || 0, state: st, wall: now, edge: false });
+      }
+    } catch (x) {}
+  }
+
   function startPoll() {
-    clearInterval(pollT);
-    pollT = setInterval(function () {
-      if (mode !== "api" || !player || typeof player.getCurrentTime !== "function") return;
-      try {
-        var st = typeof player.getPlayerState === "function" ? player.getPlayerState() : -1;
-        var t = player.getCurrentTime();
-        var dur = typeof player.getDuration === "function" ? player.getDuration() : 0;
-        if (typeof t === "number" && !isNaN(t)) {
-          if (st !== 1 && st === lastState && Math.abs(t - lastT) < 0.01) return;
-          lastState = st; lastT = t;
-          toTV({ event: "snk-tick", t: t, dur: dur || 0, state: st, wall: Date.now() });
-        }
-      } catch (x) {}
-    }, 75);
+    if (rafId) cancelAnimationFrame(rafId);
+    clearInterval(hbTimer);
+    function frame() {
+      if (mode !== "api") return;
+      if (lastState === 1) emitTick(false);
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+    // Heartbeat fallback when tab/rAF is throttled or player is paused/buffering
+    hbTimer = setInterval(function () { emitTick(false); }, 150);
   }
 
   function startFallback() {
@@ -133,8 +150,9 @@
             var st = ev && typeof ev.data === "number" ? ev.data : -1;
             var t = 0, dur = 0;
             try { t = player.getCurrentTime() || 0; dur = player.getDuration() || 0; } catch (x) {}
-            lastState = st; lastT = t;
-            toTV({ event: "snk-tick", t: t, dur: dur, state: st, wall: Date.now() });
+            var now = Date.now();
+            lastState = st; lastT = t; lastSentAt = now;
+            toTV({ event: "snk-tick", t: t, dur: dur, state: st, wall: now, edge: true });
             toTV({ event: "onStateChange", info: st });
           },
           onError: function (ev) {

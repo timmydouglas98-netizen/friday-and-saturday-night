@@ -9,6 +9,16 @@
     believe: 2, angel: 2, little: 2, bottle: 2, trouble: 2, candle: 2, middle: 2
   };
 
+  var FUNC_WORDS = {
+    a: 1, an: 1, the: 1, to: 1, of: 1, in: 1, on: 1, at: 1, for: 1, and: 1, or: 1, but: 1,
+    is: 1, it: 1, my: 1, your: 1, you: 1, i: 1, we: 1, he: 1, she: 1, they: 1, so: 1,
+    as: 1, by: 1, be: 1, me: 1
+  };
+
+  var HOLD_WORDS = {
+    ooh: 1, aah: 1, yeah: 1, whoa: 1, oh: 1, hey: 1, la: 1
+  };
+
   function countSyllables(word) {
     var w = String(word || "").toLowerCase().replace(/[^a-zà-öø-ÿ']/g, "").replace(/'/g, "");
     if (!w) return 1;
@@ -46,6 +56,30 @@
     });
   }
 
+  function isAllBackingText(txt) {
+    var ws = String(txt || "").trim().split(/\s+/);
+    if (!ws.length || !ws[0]) return false;
+    var tagged = tagBackingWords(ws);
+    for (var i = 0; i < tagged.length; i++) {
+      if (!tagged[i].bg) return false;
+    }
+    return true;
+  }
+
+  // Detect non-sung credit, metadata, section header, instrumental, and separator lines
+  function isNonSungLine(txt) {
+    var t = String(txt || "").trim();
+    if (!t) return true;
+    if (/^[♪♫♬♩\s\-—–_*•·.=~|/\\]+$/.test(t)) return true;
+    if (/^\[[^\]]{1,40}\]$/.test(t)) return true;
+    if (/^[\(\[\-—–~\s]*(?:instrumental|interlude|guitar\s+solo|piano\s+solo|music\s+only|纯音乐|间奏|前奏|尾奏)[\)\]\-—–~\s.!]*$/i.test(t)) return true;
+    if (/纯音乐/.test(t)) return true;
+    if (/^(?:lyrics?|words?|music|composer|composed|producer|produced|arranged|arranger|written|writer|vocals?|mixed|mixing|mastered|mastering|recorded|recording|engineered|engineer|performed|performer|artist|singer|album|title|song|copyright|published|publisher)\s*(?:by\b|:|：)/i.test(t)) return true;
+    if (/^(?:作词|作詞|作曲|编曲|編曲|制作人|製作人|混音|母带|录音|监制|词曲)\s*(?:[:：]|$|\s+\S)/.test(t)) return true;
+    if (/^(?:演唱|歌手|出品|词|詞|曲)\s*[:：]/.test(t)) return true;
+    return false;
+  }
+
   function parseLRC(txt) {
     var out = [], offsetMs = 0, rawLines = String(txt || "").split(/\r?\n/);
     // Pass 1: read [offset:±ms] regardless of where it appears in the file
@@ -71,7 +105,7 @@
     return out;
   }
 
-  // Parse inline <mm:ss.xx> word/syllable timestamps, rejecting out-of-order marks
+  // Parse inline <mm:ss.xx> word/syllable timestamps, preserving sub-word segments and rejecting out-of-order marks
   function wordTimes(rest, offsetSec) {
     var off = offsetSec || 0;
     var re = /<(\d+):(\d+(?:[.:]\d+)?)>/g, m, marks = [];
@@ -83,17 +117,47 @@
     for (var k = 1; k < marks.length; k++) {
       if (marks[k].t < marks[k - 1].t - 0.01) return { ok: false, rejected: true };
     }
-    var words = [], cur = null, mi = -1, endT = null;
+    var words = [], cur = null, curSeg = null, mi = -1, endT = null;
     for (var i = 0; i < rest.length; i++) {
-      if (mi + 1 < marks.length && i === marks[mi + 1].at) { mi++; i = marks[mi].after - 1; continue; }
+      if (mi + 1 < marks.length && i === marks[mi + 1].at) {
+        mi++;
+        if (cur) {
+          curSeg = null;
+          cur._end = marks[mi].t;
+        }
+        i = marks[mi].after - 1;
+        continue;
+      }
       var ch = rest.charAt(i);
-      if (/\s/.test(ch)) { cur = null; continue; }
-      if (!cur) { cur = { w: "", a: mi >= 0 ? marks[mi].t : null }; words.push(cur); }
+      if (/\s/.test(ch)) { cur = null; curSeg = null; continue; }
+      if (!cur) {
+        cur = { w: "", a: mi >= 0 ? marks[mi].t : null, _segs: [], _end: null };
+        words.push(cur);
+      }
+      if (!curSeg) {
+        curSeg = { txt: "", a: mi >= 0 ? marks[mi].t : null };
+        cur._segs.push(curSeg);
+        cur._end = null;
+      }
       cur.w += ch;
+      curSeg.txt += ch;
     }
     if (marks.length && marks[marks.length - 1].after >= rest.replace(/\s+$/, "").length) endT = marks[marks.length - 1].t;
     if (!words.length || words.some(function (w) { return w.a == null; })) return { ok: false, rejected: true };
-    return { ok: true, words: words, end: endT };
+    var cleanWords = words.map(function (w, idx) {
+      var nextA = idx + 1 < words.length ? words[idx + 1].a : endT;
+      var wordEnd = w._end != null ? w._end : nextA;
+      var obj = { w: w.w, a: w.a };
+      if (w._end != null) obj.end = w._end;
+      if (w._segs.length > 1) {
+        obj.segs = w._segs.map(function (s, si) {
+          var sb = si + 1 < w._segs.length ? w._segs[si + 1].a : wordEnd;
+          return { txt: s.txt, a: s.a, b: sb != null ? Math.max(s.a + 0.01, sb) : null };
+        });
+      }
+      return obj;
+    });
+    return { ok: true, words: cleanWords, end: endT };
   }
 
   function percentile(arr, p) {
@@ -105,19 +169,99 @@
     return s[lo] + (s[hi] - s[lo]) * (idx - lo);
   }
 
-  // Convert timed rows into lines with per-song syllable pace estimation and zero overlap
+  // Convert timed rows into lines with section-aware pace estimation, prosody weighting, and zero overlap
   function buildLines(raw, dur) {
     var out = [], exactSamples = [], lineRates = [], mismatches = 0;
     var offsetMs = raw && typeof raw.offsetMs === "number" ? raw.offsetMs : 0;
+    var rawArr = raw || [];
 
-    // Pass 1: validate word-timed rows and collect pace samples across every line with a next line
+    // Collect all raw timestamps (including empty, credit, and metadata rows) as nextT upper bounds
+    var allTimes = [];
+    for (var ti = 0; ti < rawArr.length; ti++) {
+      allTimes.push(rawArr[ti].t);
+    }
+
+    // Pre-pass: filter non-sung credit/metadata lines and merge simultaneous-timestamp rows (within 0.05s)
+    var merged = [];
+    for (var ri = 0; ri < rawArr.length; ri++) {
+      var r = rawArr[ri];
+      if (isNonSungLine(r.text)) continue;
+      var trimmed = String(r.text).replace(/\s+/g, " ").trim();
+      var entry = {
+        t: r.t,
+        maxT: r.t,
+        text: trimmed,
+        wt: r.wt || null,
+        wtRejected: !!r.wtRejected,
+        extraBg: null
+      };
+      if (merged.length > 0 && Math.abs(entry.t - merged[merged.length - 1].t) <= 0.05) {
+        var prev = merged[merged.length - 1];
+        var prevBg = isAllBackingText(prev.text);
+        var curBg = isAllBackingText(entry.text);
+        if (curBg && !prevBg) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          if (prev.wt) {
+            prev.extraBg = (prev.extraBg ? prev.extraBg + " " : "") + entry.text;
+          } else {
+            prev.text = prev.text + " " + entry.text;
+          }
+          continue;
+        }
+        if (prevBg && !curBg) {
+          var bgTxt = prev.text;
+          prev.t = Math.min(prev.t, entry.t);
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.wt = entry.wt;
+          prev.wtRejected = entry.wtRejected;
+          if (entry.wt) {
+            prev.text = entry.text;
+            prev.extraBg = (prev.extraBg ? prev.extraBg + " " : "") + bgTxt;
+          } else {
+            prev.text = entry.text + " " + bgTxt;
+          }
+          continue;
+        }
+        if (prevBg && curBg) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.text = prev.text + " " + entry.text;
+          prev.wt = null;
+          continue;
+        }
+        // Two non-parenthetical lines sharing a timestamp
+        if (prev.text.toLowerCase() === entry.text.toLowerCase()) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          continue;
+        }
+        if (!prev.wt && !entry.wt) {
+          prev.maxT = Math.max(prev.maxT, entry.t);
+          prev.text = prev.text + " / " + entry.text;
+          continue;
+        }
+        // If either has exact word timings, keep both and offset the second cleanly
+        entry.t = prev.t + 0.5;
+        entry.maxT = entry.t;
+      }
+      merged.push(entry);
+    }
+
+    // Pass 1: validate word-timed rows, split into sections (>= 5.0s gap), and collect global + section pace samples
     var items = [];
-    raw.forEach(function (row, i) {
-      if (!row.text || /^[♪\s]*$/.test(row.text)) return;
+    var sections = [];
+    var curSecId = -1;
+    for (var i = 0; i < merged.length; i++) {
+      var row = merged[i];
+      if (i === 0 || (row.t - merged[i - 1].t) >= 5.0) {
+        curSecId++;
+        sections.push({ rates: [] });
+      }
       var words = row.text.split(/\s+/);
       var nextT = null;
-      for (var j = i + 1; j < raw.length; j++) {
-        if (raw[j].t > row.t + 0.001) { nextT = raw[j].t; break; }
+      for (var j = 0; j < allTimes.length; j++) {
+        if (allTimes[j] > row.maxT + 0.001) { nextT = allTimes[j]; break; }
+      }
+      if (i + 1 < merged.length && merged[i + 1].t > row.t + 0.001) {
+        if (nextT == null || merged[i + 1].t < nextT) nextT = merged[i + 1].t;
       }
       var tagged = tagBackingWords(words);
       var hasMain = tagged.some(function (x) { return !x.bg; });
@@ -134,19 +278,31 @@
           mismatches++;
         } else {
           var bad = false;
-          var firstA = W[0].a, lastA = W[W.length - 1].a;
+          var firstA = W[0].a;
+          var lastW = W[W.length - 1];
+          var lastMarkA = (lastW.segs && lastW.segs.length) ? lastW.segs[lastW.segs.length - 1].a : lastW.a;
           if (firstA < row.t - 1.5) bad = true;
           if (nextT != null && firstA > nextT + 0.5) bad = true;
-          if (nextT != null && lastA > nextT + 1.0) bad = true;
+          if (nextT != null && lastMarkA > nextT + 1.0) bad = true;
           for (var k = 1; k < W.length; k++) {
             if (W[k].a < W[k - 1].a - 0.01) { bad = true; break; }
           }
-          if (row.wt.end != null && row.wt.end < lastA - 0.01) bad = true;
+          if (!bad) {
+            for (var wk = 0; wk < W.length; wk++) {
+              if (W[wk].segs && W[wk].segs.length > 1) {
+                for (var sk = 1; sk < W[wk].segs.length; sk++) {
+                  if (W[wk].segs[sk].a < W[wk].segs[sk - 1].a - 0.01) { bad = true; break; }
+                }
+                if (bad) break;
+              }
+            }
+          }
+          if (row.wt.end != null && row.wt.end < lastMarkA - 0.01) bad = true;
           if (bad) {
             mismatches++;
           } else {
             validWt = row.wt;
-            var span = (row.wt.end || (lastA + 0.25)) - firstA;
+            var span = (row.wt.end || (lastMarkA + 0.25)) - firstA;
             if (span > 0.2 && effSyl >= 2) {
               var ep = span / effSyl;
               if (ep >= 0.10 && ep <= 0.80) exactSamples.push(ep);
@@ -155,30 +311,43 @@
         }
       }
 
-      // Compute (gap - breath) / syllables for every line with a next line; breaks naturally sit in the upper tail
+      // Compute (gap - breath) / syllables for every estimated line with a next line
       if (!validWt && nextT != null && effSyl >= 2) {
         var gap = nextT - row.t;
         if (gap > 0.25) {
           var rate = (gap - 0.25) / effSyl;
-          if (rate > 0.05) lineRates.push(rate);
+          if (rate > 0.05) {
+            lineRates.push(rate);
+            sections[curSecId].rates.push(rate);
+          }
         }
       }
 
-      items.push({ row: row, words: words, tagged: tagged, hasMain: hasMain, effSyl: effSyl, nextT: nextT, validWt: validWt });
-    });
+      items.push({ row: row, words: words, tagged: tagged, hasMain: hasMain, effSyl: effSyl, nextT: nextT, validWt: validWt, secId: curSecId });
+    }
 
-    // Learn song pace: median of exact lines if available, else 25th percentile across all lines (works for fast pop and slow ballads)
+    // Learn global song pace: median of exact lines if available, else 25th percentile across all lines
     var rawPace = exactSamples.length >= 2 ? percentile(exactSamples, 0.5)
       : lineRates.length >= 2 ? percentile(lineRates, 0.25)
       : exactSamples.length ? exactSamples[0]
       : lineRates.length ? lineRates[0]
       : 0.26;
-    var pace = Math.max(0.12, Math.min(0.65, rawPace));
+    var globalPace = Math.max(0.12, Math.min(0.65, rawPace));
+
+    // Compute per-section blended pace for sections with >= 3 estimated lines that have a next line
+    var sectionPaces = sections.map(function (sec) {
+      if (sec.rates.length >= 3) {
+        var localPace = percentile(sec.rates, 0.25);
+        return Math.max(0.11, Math.min(0.68, 0.65 * localPace + 0.35 * globalPace));
+      }
+      return globalPace;
+    });
 
     // Pass 2: build timed word entries
     var exactCount = 0, estCount = 0;
     items.forEach(function (it) {
       var row = it.row, tagged = it.tagged, nextT = it.nextT;
+      var linePace = sectionPaces[it.secId];
       var capEnd = nextT != null
         ? Math.max(row.t + 0.05, nextT - 0.04)
         : Math.min(dur || (row.t + 8), row.t + 8);
@@ -188,20 +357,44 @@
         exactCount++;
         var W = it.validWt.words;
         var startT = Math.min(row.t, W[0].a);
-        var defaultLastEnd = W[W.length - 1].a + Math.max(0.28, countSyllables(W[W.length - 1].w) * pace);
+        var lastWObj = W[W.length - 1];
+        var lastRefA = (lastWObj.segs && lastWObj.segs.length) ? lastWObj.segs[lastWObj.segs.length - 1].a : lastWObj.a;
+        var defaultLastEnd = lastRefA + Math.max(0.28, countSyllables(lastWObj.w) * linePace);
         var lastEnd = it.validWt.end != null ? it.validWt.end : defaultLastEnd;
         if (nextT != null) lastEnd = Math.min(lastEnd, capEnd);
-        lastEnd = Math.max(W[W.length - 1].a + 0.05, lastEnd);
-        if (nextT != null && lastEnd > nextT - 0.01) lastEnd = Math.max(W[W.length - 1].a + 0.02, nextT - 0.01);
+        lastEnd = Math.max(lastRefA + 0.05, lastEnd);
+        if (nextT != null && lastEnd > nextT - 0.01) lastEnd = Math.max(lastRefA + 0.02, nextT - 0.01);
+        var builtWords = W.map(function (x, k) {
+          var nextWA = k + 1 < W.length ? W[k + 1].a : lastEnd;
+          var rawB = x.end != null ? Math.min(x.end, nextWA) : nextWA;
+          var wb = Math.max(x.a + 0.03, Math.min(rawB, lastEnd));
+          var wObj = { w: x.w, a: x.a, b: wb, bg: tagged[k].bg };
+          if (x.segs && x.segs.length > 1) {
+            wObj.segs = x.segs.map(function (s, si) {
+              var sb = si + 1 < x.segs.length ? x.segs[si + 1].a : wb;
+              return { txt: s.txt, a: s.a, b: Math.max(s.a + 0.01, Math.min(sb, wb)) };
+            });
+          }
+          return wObj;
+        });
+        var finalText = row.text;
+        if (row.extraBg) {
+          var bgWs = row.extraBg.split(/\s+/);
+          var bgSpan = Math.min(0.6, Math.max(0.15, (capEnd - lastEnd)));
+          var bgStart = lastEnd;
+          var bgStep = bgSpan / bgWs.length;
+          bgWs.forEach(function (bw, bi) {
+            builtWords.push({ w: bw, a: bgStart + bi * bgStep, b: bgStart + (bi + 1) * bgStep, bg: true });
+          });
+          lastEnd = Math.min(capEnd, bgStart + bgSpan);
+          finalText = finalText + " " + row.extraBg;
+        }
         out.push({
           t: startT,
           end: lastEnd,
-          text: row.text,
+          text: finalText,
           exact: true,
-          words: W.map(function (x, k) {
-            var b = k + 1 < W.length ? W[k + 1].a : lastEnd;
-            return { w: x.w, a: x.a, b: Math.max(x.a + 0.03, b), bg: tagged[k].bg };
-          })
+          words: builtWords
         });
         return;
       }
@@ -211,14 +404,26 @@
       var weights = tagged.map(function (x, k) {
         var isLast = k === tagged.length - 1;
         var hasPause = !isLast && /[,;:—–-]$/.test(x.w);
+        var hasPunct = /[,;:—–\-!?.]$/.test(x.w);
         if (hasPause) commaCount++;
-        var base = (x.bg && it.hasMain) ? 0.35 : countSyllables(x.w);
+        var base;
+        if (x.bg && it.hasMain) {
+          base = 0.35;
+        } else {
+          base = countSyllables(x.w);
+          var cleanW = String(x.w || "").toLowerCase().replace(/[^a-zà-öø-ÿ']/g, "").replace(/'/g, "");
+          if (!isLast && !hasPunct && FUNC_WORDS[cleanW]) {
+            base = base * 0.78;
+          } else if (HOLD_WORDS[cleanW] || /^(?:oo+h|aa+h|yea+h|whoa+|oh+|hey+|la+)$/.test(cleanW)) {
+            base = base * 1.45;
+          }
+        }
         return base + (isLast ? 0.45 : 0) + (hasPause ? 0.45 : 0);
       });
       var totalW = 0;
       weights.forEach(function (v) { totalW += v; });
 
-      var pacedLen = it.effSyl * pace + 0.22 + commaCount * 0.14;
+      var pacedLen = it.effSyl * linePace + 0.22 + commaCount * 0.14;
       var end = Math.min(row.t + pacedLen, capEnd);
       if (nextT != null) {
         end = Math.max(Math.min(capEnd, row.t + 0.12), Math.min(end, capEnd));
@@ -240,7 +445,14 @@
       });
     });
 
-    out.meta = { pace: Math.round(pace * 1000) / 1000, exactCount: exactCount, estCount: estCount, mismatches: mismatches, offsetMs: offsetMs };
+    out.meta = {
+      pace: Math.round(globalPace * 1000) / 1000,
+      exactCount: exactCount,
+      estCount: estCount,
+      mismatches: mismatches,
+      offsetMs: offsetMs,
+      sectionPaces: sectionPaces.map(function (p) { return Math.round(p * 1000) / 1000; })
+    };
     return out;
   }
 

@@ -93,7 +93,7 @@
   var extraAisles = [];      // catalogs from the person's installed addons
   var pager = {};            // aisle key -> { base, extras, type, skip, done, loading }
   var MAX_PER_AISLE = 600;
-  var APP_VERSION = "0.22.2", APP_UPDATED = "23 Nov 2026";
+  var APP_VERSION = "0.22.3", APP_UPDATED = "24 Nov 2026";
   /* @@SHARED_VENUE_BRIDGE@@ */
   var staffConnected = false;
   function staffOn() { return staffConnected || !!(account && prefs.staffSeen); }

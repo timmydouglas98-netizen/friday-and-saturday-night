@@ -167,6 +167,8 @@ def main():
         + "\n" + read("karaoke/relay.js")
         + "\n" + read("karaoke/pixly.js")
         + "\n// ===== lyrics parser & pace estimator =====\n" + read("karaoke/lyrics.js")
+        + "\n// ===== filtered PLL playback clock =====\n" + read("karaoke/clock.js")
+        + "\n// ===== instrumental / chapter track matcher =====\n" + read("karaoke/track-match.js")
         + "\n// ===== the bar =====\n" + karaoke_app
         + "\n})();\n</script>\n</body>\n</html>\n"
     )

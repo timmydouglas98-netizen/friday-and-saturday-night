@@ -16,9 +16,14 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; font-family: var(--f-ui); -webkit-user-select: none; user-select: none; }
 #stage { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #141942; }
-#zoom { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transition: transform .75s cubic-bezier(.5,0,.75,.25); }
-#stage.enter-video #zoom { transform-origin: 31% 62%; transform: scale(2.45); }
-#stage.enter-karaoke #zoom { transform-origin: 77% 62%; transform: scale(2.45); }
+#zoom { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; }
+.z-layer { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transition: transform .75s cubic-bezier(.5,0,.75,.25); will-change: transform; }
+.z-fg { pointer-events: none; }
+#stage.enter-video .z-layer { transform-origin: 31% 62%; }
+#stage.enter-karaoke .z-layer { transform-origin: 77% 62%; }
+#stage.enter-video .z-sky, #stage.enter-karaoke .z-sky { transform: scale(1.35); }
+#stage.enter-video .z-mid, #stage.enter-karaoke .z-mid { transform: scale(2.45); }
+#stage.enter-video .z-fg, #stage.enter-karaoke .z-fg { transform: scale(2.85); }
 .weave { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; animation: weave 2s steps(1) infinite; }
 .weave canvas, .weave svg { position: absolute; top: 0; left: 0; display: block; width: 1920px; height: 1080px; }
 @keyframes weave { 0% { transform: translate(-.35px,-.4px); } 17% { transform: translate(.35px,-.25px); } 33% { transform: translate(.4px,.3px); } 50% { transform: translate(-.4px,.2px); } 67% { transform: translate(.5px,-.3px); } 83% { transform: translate(-.25px,-.1px); } }
@@ -54,9 +59,9 @@ html, body { margin: 0; height: 100%; background: #0c0a18; overflow: hidden; fon
 .clock { position: absolute; top: 34px; right: 54px; z-index: 20; font-family: var(--f-ui); font-weight: 600; font-size: 32px; letter-spacing: .06em; color: var(--cream);
   text-shadow: 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink), 2px 4px 0 var(--ink); }
 /* the selected shop is lit (door glow, the other shop in shadow); one caption sits below the kerb */
-.shade { opacity: 0; transition: opacity .35s; }
-.shade.on { opacity: .45; }
-.dglow { opacity: 0; transition: opacity .35s; }
+.shade { opacity: 0; transition: opacity .4s ease; }
+.shade.on { opacity: .55; }
+.dglow { opacity: 0; transition: opacity .4s ease; }
 .dglow.on { opacity: 1; }
 .dry .rain { display: none; }
 .hit { position: absolute; top: 120px; height: 700px; z-index: 22; cursor: pointer; }
@@ -75,14 +80,22 @@ html.calm .weave, html.calm .grain, html.calm .pan, html.calm .rain, html.calm .
 <body>
 <div id="stage" data-fsn="fsn-street">
   <div id="zoom">
-    <div class="weave">
-      <canvas id="oSky" width="960" height="540"></canvas>
-      <div class="pan"><canvas id="oCloudA" width="1920" height="640"></canvas><canvas id="oCloudB" width="1920" height="640"></canvas></div>
-      <canvas id="oPlate" width="1920" height="1080"></canvas>
-      <svg id="oCels" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="Friday Night Video and Saturday Night Karaoke side by side on the strip"></svg>
+    <div class="z-layer z-sky">
+      <div class="weave">
+        <canvas id="oSky" width="960" height="540"></canvas>
+        <div class="pan"><canvas id="oCloudA" width="1920" height="640"></canvas><canvas id="oCloudB" width="1920" height="640"></canvas></div>
+      </div>
     </div>
-    <div class="rain far"><i></i></div>
-    <div class="rain near"><i></i></div>
+    <div class="z-layer z-mid">
+      <div class="weave">
+        <canvas id="oPlate" width="1920" height="1080"></canvas>
+        <svg id="oCels" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="Friday Night Video and Saturday Night Karaoke side by side on the strip"></svg>
+      </div>
+    </div>
+    <div class="z-layer z-fg">
+      <div class="rain far"><i></i></div>
+      <div class="rain near"><i></i></div>
+    </div>
   </div>
   <div class="clock" id="oClock"></div>
   <div class="hit" id="hitVideo" style="left:0;width:960px"></div>
@@ -97,7 +110,7 @@ html.calm .weave, html.calm .grain, html.calm .pan, html.calm .rain, html.calm .
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "1.0.5";
+  var APP_VERSION = "1.0.6";
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function ljson(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
@@ -192,6 +205,30 @@ html.calm .weave, html.calm .grain, html.calm .pan, html.calm .rain, html.calm .
 
   function buildCelsSVG(P) {
     var o = "", lit = P.lit;
+    o += "<defs>" +
+      '<linearGradient id="shL" x1="0" y1="0" x2="1120" y2="0" gradientUnits="userSpaceOnUse">' +
+        '<stop offset="0" stop-color="#0a0818" stop-opacity=".95"/>' +
+        '<stop offset=".62" stop-color="#0a0818" stop-opacity=".82"/>' +
+        '<stop offset=".84" stop-color="#0a0818" stop-opacity=".35"/>' +
+        '<stop offset="1" stop-color="#0a0818" stop-opacity="0"/>' +
+      "</linearGradient>" +
+      '<linearGradient id="shR" x1="800" y1="0" x2="1920" y2="0" gradientUnits="userSpaceOnUse">' +
+        '<stop offset="0" stop-color="#0a0818" stop-opacity="0"/>' +
+        '<stop offset=".16" stop-color="#0a0818" stop-opacity=".35"/>' +
+        '<stop offset=".38" stop-color="#0a0818" stop-opacity=".82"/>' +
+        '<stop offset="1" stop-color="#0a0818" stop-opacity=".95"/>' +
+      "</linearGradient>" +
+      '<radialGradient id="rgV">' +
+        '<stop offset="0" stop-color="#fff2c8" stop-opacity=".46"/>' +
+        '<stop offset=".45" stop-color="#ffd996" stop-opacity=".22"/>' +
+        '<stop offset="1" stop-color="#ffc266" stop-opacity="0"/>' +
+      "</radialGradient>" +
+      '<radialGradient id="rgK">' +
+        '<stop offset="0" stop-color="#ffe2be" stop-opacity=".44"/>' +
+        '<stop offset=".48" stop-color="#ffb8c8" stop-opacity=".22"/>' +
+        '<stop offset="1" stop-color="#ff5fa2" stop-opacity="0"/>' +
+      "</radialGradient>" +
+      "</defs>";
     // the video store's channel letters, its OPEN sign and its glass door, exactly where they are at the store
     var fs = Math.min(62, fitSize(videoName, 700, 62, .52)), letter = lit ? "#ff5b48" : Lc(P, "#cf3a2e"), rim = lit ? "#ffe9b8" : Lc(P, "#f3e2b9"), g = '<g transform="' + VT + '">';
     if (lit) g += '<text x="1262" y="430" text-anchor="middle" font-family="' + YT + '" font-size="' + fs + '" fill="none" stroke="#ff6a4d" stroke-opacity=".22" stroke-width="18" stroke-linejoin="round">' + esc(videoName) + "</text>";
@@ -229,13 +266,13 @@ html.calm .weave, html.calm .grain, html.calm .pan, html.calm .rain, html.calm .
     // the streetlight
     if (lit) o += halo(1814, 214, 120, 70, "#ffe2a6", .5 * P.warm) + Pg([1792, 212, 1836, 212, 1900, 800, 1720, 800], "#ffe2a6", op((.07 * P.warm).toFixed(3)));
     o += El(1814, 211, 22, 5, lit ? "#fff3cf" : "#c9c4b8");
-    // which shop you're at: the other one falls into shadow, and light spills from your door
-    o += '<g class="shade" id="shadeVideo">' + R(34, 106, 244, 198, "#0a0818") + R(50, 312, 212, 86, "#0a0818") + R(92, 398, 18, 394, "#0a0818") + R(196, 398, 18, 394, "#0a0818") + R(92, 304, 18, 8, "#0a0818") + R(196, 304, 18, 8, "#0a0818") + R(252, 420, 696, 342, "#0a0818") + R(vx(1352), vy(692), 60 * VS, 30, "#0a0818") + "</g>";
-    o += '<g class="shade" id="shadeKaraoke">' + R(970, 160, 920, 602, "#0a0818") + R(1886, 230, 22, 540, "#0a0818") + "</g>";
-    // light spilling out of the open-for-business door onto the footpath
+    // which shop you're at: soft dusk gradient wash dims the other side, and warm radial door-light halos spill out
+    o += '<g class="shade" id="shadeVideo">' + R(0, 0, 1120, 1080, "url(#shL)") + "</g>";
+    o += '<g class="shade" id="shadeKaraoke">' + R(800, 0, 1120, 1080, "url(#shR)") + "</g>";
+    // soft radial door-light halos spilling onto the footpath
     var dx0 = vx(1258), dx1 = vx(1346), dyt = vy(570), dcx = (dx0 + dx1) / 2;
-    o += '<g class="dglow" id="glowVideo">' + R(dx0, dyt, dx1 - dx0, 760 - dyt, "#fff2c8", op(".22")) + Pg([dx0, 760, dx1, 760, dx1 + 100, 812, dx0 - 100, 812], "#ffe2a6", op(".28")) + El(dcx, 812, 190, 18, "#ffd38c", op(".3")) + "</g>";
-    o += '<g class="dglow" id="glowKaraoke">' + R(1428, 556, 112, 204, "#ffd9b0", op(".18")) + Pg([1428, 760, 1540, 760, 1650, 812, 1318, 812], "#ffc8a0", op(".28")) + El(1484, 812, 200, 18, "#ffb8c8", op(".3")) + "</g>";
+    o += '<g class="dglow" id="glowVideo">' + El(dcx, 736, 260, 175, "url(#rgV)") + El(dcx, 804, 240, 44, "url(#rgV)") + R(dx0, dyt, dx1 - dx0, 760 - dyt, "#fff2c8", op(".16")) + "</g>";
+    o += '<g class="dglow" id="glowKaraoke">' + El(1484, 710, 290, 195, "url(#rgK)") + El(1484, 804, 270, 46, "url(#rgK)") + R(1428, 556, 112, 204, "#ffd9b0", op(".14")) + "</g>";
     return o;
   }
 
